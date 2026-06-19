@@ -1,0 +1,187 @@
+/* ===================================
+   TABLE
+=================================== */
+
+.table-toolbar{
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  margin-bottom:20px;
+
+}
+
+.prints-table{
+
+  width:100%;
+
+  border-collapse:collapse;
+
+}
+
+
+.prints-table th{
+
+  text-align:left;
+
+  padding:20px;
+
+  color:#8ca0bd;
+
+  font-size:13px;
+
+}
+
+.prints-table td{
+  padding:20px;
+  border-top:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      .05
+    );
+
+}
+
+
+.margin-cell{
+
+  color:#30df74;
+
+  font-weight:700;
+
+}
+
+.prints-table-container{
+
+  background:
+    linear-gradient(
+      145deg,
+      #0d1a2b,
+      #09111d
+    );
+box-shadow:
+  0 0 35px
+  rgba(
+    0,
+    148,
+    255,
+    .08
+  );
+  border-radius:24px;
+
+  border:
+    1px solid
+    rgba(
+      0,
+      148,
+      255,
+      .12
+    );
+
+  overflow:hidden;
+
+}
+
+.prints-table{
+
+  width:100%;
+
+  border-collapse:collapse;
+
+}
+
+
+
+.profit-cell{
+
+  color:#00d26a;
+
+  font-weight:600;
+
+}
+
+
+
+.print-name-cell{
+
+  display:flex;
+  align-items:center;
+  gap:14px;
+
+}
+
+.print-thumb{
+
+ width:52px;
+  height:52px;
+
+  border-radius:14px;
+
+  background:#101f35;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  overflow:hidden;
+
+}
+
+.print-thumb img{
+
+  width:100%;
+  height:100%;
+
+  object-fit:cover;
+
+}
+
+.clickable-row{
+
+  cursor:pointer;
+
+}
+
+.clickable-row:hover{
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      .03
+    );
+
+}
+
+.prints-table tbody tr{
+
+  transition:.2s;
+
+}
+
+.prints-table tbody tr:hover{
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      .02
+    );
+
+}
+
+.prints-table td{
+  font-size:15px;
+}
+
+.print-name-cell span{
+  font-weight:600;
+}

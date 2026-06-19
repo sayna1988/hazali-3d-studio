@@ -1,0 +1,73 @@
+.ui-button{
+
+    border:none;
+
+    border-radius:16px;
+
+    padding:14px 22px;
+
+    cursor:pointer;
+
+    font-weight:600;
+
+    transition:.2s;
+
+    font-size:15px;
+
+}
+
+.ui-button.primary{
+
+    background:var(--accent);
+
+    color:white;
+
+}
+
+.ui-button.primary:hover{
+
+    background:var(--accent-hover);
+
+}
+
+.ui-button.secondary{
+
+    background:#132238;
+
+    color:white;
+
+}
+
+.ui-button.secondary:hover{
+
+    background:#1a2d49;
+
+}
+
+.ui-button.danger{
+
+    background:#D64045;
+
+    color:white;
+
+}
+
+.ui-button.danger:hover{
+
+    background:#b63035;
+
+}
+
+.ui-button.full-width{
+
+    width:100%;
+
+}
+
+.ui-button:disabled{
+
+    opacity:.5;
+
+    cursor:not-allowed;
+
+}

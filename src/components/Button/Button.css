@@ -1,0 +1,75 @@
+.hz-button{
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+
+    height:46px;
+
+    padding:0 20px;
+
+    border:none;
+    border-radius:14px;
+
+    cursor:pointer;
+
+    transition:all .2s ease;
+
+    font-size:15px;
+    font-weight:600;
+
+}
+
+.hz-button:disabled{
+
+    opacity:.5;
+    cursor:not-allowed;
+
+}
+
+.hz-button.primary{
+
+    background:#0094FF;
+    color:white;
+
+}
+
+.hz-button.primary:hover:not(:disabled){
+
+    background:#1CA0FF;
+
+}
+
+.hz-button.secondary{
+
+    background:#152740;
+    color:white;
+
+}
+
+.hz-button.secondary:hover:not(:disabled){
+
+    background:#203A5E;
+
+}
+
+.hz-button.danger{
+
+    background:#FF4D4D;
+    color:white;
+
+}
+
+.hz-button.danger:hover:not(:disabled){
+
+    background:#FF6363;
+
+}
+
+.hz-button-icon{
+
+    display:flex;
+    align-items:center;
+
+}

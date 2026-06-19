@@ -1,0 +1,60 @@
+.card{
+
+    background:
+        linear-gradient(
+            145deg,
+            #0D1C31,
+            #091524
+        );
+
+    border-radius:24px;
+
+    border:1px solid rgba(0,148,255,.12);
+
+    box-shadow:
+        0 0 35px
+        rgba(0,148,255,.08);
+
+    overflow:hidden;
+
+}
+
+.card-header{
+
+    padding:24px 28px;
+
+    border-bottom:
+        1px solid
+        rgba(255,255,255,.06);
+
+}
+
+.card-header h2{
+
+    font-size:22px;
+
+    font-weight:600;
+
+}
+
+.card-body{
+
+    padding:24px 28px;
+
+}
+
+@media(max-width:768px){
+
+    .card-header{
+
+        padding:18px;
+
+    }
+
+    .card-body{
+
+        padding:18px;
+
+    }
+
+}

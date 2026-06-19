@@ -1,0 +1,74 @@
+.modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+}
+
+.modal{
+    width:520px;
+    background:#08172d;
+    border:1px solid #163b6b;
+    border-radius:18px;
+    padding:28px;
+    color:white;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+
+.modal h2{
+    margin:0 0 25px;
+}
+
+.form-group{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:18px;
+}
+
+.form-group label{
+    font-weight:600;
+    color:#b8d7ff;
+}
+
+.form-group input{
+    background:#0d2345;
+    border:1px solid #204e86;
+    border-radius:10px;
+    color:white;
+    padding:12px;
+    font-size:15px;
+}
+
+.modal-buttons{
+    display:flex;
+    justify-content:flex-end;
+    gap:12px;
+    margin-top:25px;
+}
+
+.save-button{
+    background:#2c8cff;
+    color:white;
+    border:none;
+    border-radius:10px;
+    padding:12px 20px;
+    cursor:pointer;
+}
+
+.cancel-button{
+    background:#1d2f4a;
+    color:white;
+    border:none;
+    border-radius:10px;
+    padding:12px 20px;
+    cursor:pointer;
+}
+
+.import-message{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:-8px 0 20px;padding:13px 16px;border:1px solid rgba(58,201,146,.32);border-radius:12px;background:rgba(58,201,146,.1);color:#a7f3d0}
+.import-message.error{border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.1);color:#fecaca}
+.import-message button{border:0;background:transparent;color:inherit;cursor:pointer;font-size:22px;line-height:1}
+.filter-button:disabled{opacity:.6;cursor:wait}

@@ -1,0 +1,54 @@
+:root {
+
+  /* ===== Brand ===== */
+
+  --color-primary: #1f9cff;
+  --color-primary-hover: #3aa8ff;
+
+  /* ===== Backgrounds ===== */
+
+  --bg-page: #020b18;
+  --bg-sidebar: #041222;
+  --bg-card: #071426;
+  --bg-card-hover: #0b1b33;
+
+  /* ===== Borders ===== */
+
+  --border-color: rgba(255,255,255,.08);
+
+  /* ===== Text ===== */
+
+  --text-primary: #ffffff;
+  --text-secondary: #93a7c7;
+  --text-muted: #6f87ab;
+
+  /* ===== Status ===== */
+
+  --success: #00d26a;
+  --warning: #ffb000;
+  --danger: #ff4f4f;
+
+  /* ===== Radius ===== */
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  /* ===== Shadows ===== */
+
+  --shadow-card:
+    0 10px 30px rgba(0,0,0,.25);
+
+  /* ===== Layout ===== */
+
+  --sidebar-width: 240px;
+
+  --content-max-width: 1600px;
+
+  /* ===== Animation ===== */
+
+  --transition:
+    .2s ease-in-out;
+
+}

@@ -1,0 +1,39 @@
+.dashboard-grid{
+
+    display:grid;
+
+    grid-template-columns:2fr 1.3fr;
+
+    gap:24px;
+
+    align-items:start;
+
+}
+
+.dashboard-grid-bottom{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:24px;
+
+    margin-top:24px;
+
+}
+
+@media (max-width:1200px){
+
+    .dashboard-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .dashboard-grid-bottom{
+
+        grid-template-columns:1fr;
+
+    }
+
+}

@@ -1,0 +1,180 @@
+/* ==========================================
+   TABLET
+========================================== */
+
+@media (max-width: 1200px) {
+
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+
+  .calculator-layout {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media (max-width: 768px) {
+
+  /* Algemene layout */
+
+  .app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .page-content {
+    width: 100%;
+    padding: 20px;
+  }
+
+  .page-header h1 {
+    font-size: 34px;
+  }
+
+  .page-header p {
+    font-size: 15px;
+  }
+
+  /* Dashboard */
+
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .stat-card {
+    min-height: 110px;
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .stat-card svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .stat-label {
+    margin-top: 8px;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .stat-value {
+    margin-top: 10px;
+    font-size: 32px;
+    line-height: 1;
+  }
+
+  .stat-change {
+    margin-top: 10px;
+    font-size: 13px;
+  }
+
+  .dashboard-card {
+    min-height: auto;
+    padding: 18px;
+  }
+
+  /* Calculator */
+
+  .calculator-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .calculator-top {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+  }
+
+  .calculator-box {
+    padding: 18px;
+  }
+
+  /* Tabellen */
+
+  .table-toolbar,
+  .prints-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+  }
+
+  .table-actions,
+  .prints-toolbar {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .table-search,
+  .table-button {
+    width: 100%;
+  }
+
+}
+
+
+/* ==========================================
+   KLEINE MOBIELE SCHERMEN
+========================================== */
+
+@media (max-width: 480px) {
+
+  .page-content {
+    padding: 16px;
+  }
+
+  .page-header h1 {
+    font-size: 28px;
+  }
+
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .stat-card {
+    min-height: 95px;
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+
+  .stat-card svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+  }
+
+  .stat-change {
+    font-size: 12px;
+  }
+
+  .calculator-box {
+    padding: 16px;
+  }
+
+}

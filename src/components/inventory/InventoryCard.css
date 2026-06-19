@@ -1,0 +1,143 @@
+.inventory-card{
+
+    overflow:hidden;
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    transition:.2s;
+
+}
+
+.inventory-card:hover{
+
+    transform:translateY(-4px);
+
+}
+
+.inventory-image{
+
+    width:100%;
+
+    aspect-ratio:1;
+
+    object-fit:cover;
+
+}
+
+.inventory-card-body{
+
+    padding:18px;
+
+}
+
+.inventory-sku{
+
+    opacity:.6;
+
+    font-size:13px;
+
+    margin-top:4px;
+
+}
+
+.inventory-info{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin:18px 0;
+
+}
+
+.inventory-footer{
+
+    border-top:1px solid var(--border);
+
+    padding-top:14px;
+
+}
+
+.inventory-footer strong{
+
+    display:block;
+
+    font-size:22px;
+
+}
+
+.inventory-footer span{
+
+    opacity:.6;
+
+    font-size:12px;
+
+}
+
+.inventory-stock{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:16px;
+
+    margin:20px 0;
+
+}
+
+.stock-button{
+
+    width:36px;
+
+    height:36px;
+
+    border:none;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-size:20px;
+
+    background:var(--primary);
+
+    color:white;
+
+    transition:.2s;
+
+}
+
+.stock-button:hover{
+
+    transform:scale(1.08);
+
+}
+
+.stock-value{
+
+    font-size:24px;
+
+    font-weight:700;
+
+    min-width:40px;
+
+    text-align:center;
+
+}
+
+.inventory-actions{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    margin-top:18px;
+
+}

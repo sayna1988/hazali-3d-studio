@@ -1,0 +1,25 @@
+.page{
+
+    width:100%;
+
+}
+
+.page-content{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:24px;
+
+}
+
+@media (max-width:768px){
+
+    .page-content{
+
+        gap:18px;
+
+    }
+
+}
