@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { db } from "../database/db";
+import { lookupEan } from "../services/EanLookupService";
 import type { Filament } from "../types/Filament";
 import Page from "../components/Page/Page";
 import "./Filamenten.css";
@@ -36,6 +37,22 @@ const KLEUREN: Record<string, string> = {
   naturel: "#e7dcc5",
 };
 
+const KLEUR_ALIASSEN: Record<string, string> = {
+  black: "zwart",
+  white: "wit",
+  red: "rood",
+  blue: "blauw",
+  green: "groen",
+  yellow: "geel",
+  orange: "oranje",
+  purple: "paars",
+  violet: "paars",
+  grey: "grijs",
+  gray: "grijs",
+  pink: "roze",
+  natural: "naturel",
+};
+
 type BarcodeResult = { rawValue: string };
 type BarcodeDetectorInstance = { detect: (source: HTMLVideoElement) => Promise<BarcodeResult[]> };
 type BarcodeDetectorConstructor = new (options: { formats: string[] }) => BarcodeDetectorInstance;
@@ -51,7 +68,11 @@ function geldigeEan(code: string) {
 function herkenEigenschappen(tekst: string) {
   const boven = tekst.toUpperCase();
   const materiaal = MATERIAAL_TYPES.find((item) => new RegExp(`\\b${item}\\b`).test(boven)) ?? "PLA";
-  const kleur = Object.keys(KLEUREN).find((item) => boven.includes(item.toUpperCase())) ?? "Onbekend";
+  const nederlandseKleur = Object.keys(KLEUREN).find((item) => boven.includes(item.toUpperCase()));
+  const engelseKleur = Object.entries(KLEUR_ALIASSEN).find(([alias]) =>
+    new RegExp(`\\b${alias}\\b`, "i").test(tekst),
+  )?.[1];
+  const kleur = nederlandseKleur ?? engelseKleur ?? "Onbekend";
   return { materiaal, kleur };
 }
 
@@ -216,35 +237,37 @@ export default function Filamenten() {
       return;
     }
 
+    let zoekfout = false;
     try {
-      const response = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(code)}`);
-      if (!response.ok) throw new Error("Lookup mislukt");
-      const data = await response.json() as { items?: Array<{ title?: string; brand?: string; lowest_recorded_price?: number }> };
-      const product = data.items?.[0];
-      if (product?.title) {
-        const herkend = herkenEigenschappen(product.title);
+      const product = await lookupEan(code);
+      if (product) {
+        const herkend = herkenEigenschappen(
+          [product.name, product.brand, product.description, product.category].join(" "),
+        );
         await db.filamenten.add({
-          naam: product.title,
-          merk: product.brand || "Onbekend merk",
+          naam: product.name,
+          merk: product.brand,
           kleur: herkend.kleur,
           type: herkend.materiaal,
-          prijsPerKg: product.lowest_recorded_price || 24.95,
+          prijsPerKg: 24.95,
           voorraadGram: 1000,
           ean: code,
         });
         await laden();
-        setMelding(`${product.title} is automatisch toegevoegd.`);
+        setMelding(`${product.name} is gevonden via ${product.source} en automatisch toegevoegd.`);
         window.setTimeout(() => setMelding(""), 4500);
         return;
       }
-    } catch { /* Onbekende EAN wordt hieronder handmatig aangevuld. */ }
+    } catch { zoekfout = true; }
 
     setEan(code);
     setNaam("");
     setMerk("");
     setKleur("");
     setToonFormulier(true);
-    setMelding("Deze EAN is nog onbekend. Vul het product één keer aan; volgende scans worden automatisch herkend.");
+    setMelding(zoekfout
+      ? "De online productzoekopdracht is mislukt. Vul de gegevens hieronder handmatig aan."
+      : "Deze EAN is niet gevonden in de openbare productdatabases. Vul het product één keer aan; volgende scans worden automatisch herkend.");
   }
 
   useEffect(() => {
