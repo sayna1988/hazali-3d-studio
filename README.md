@@ -1,5 +1,14 @@
 # React + TypeScript + Vite
 
+## Supabase cloud sync
+
+1. Voer `supabase/migrations/202606200001_create_prints.sql` uit in de Supabase SQL Editor.
+2. Zet in Vercel `VITE_SUPABASE_URL` en `VITE_SUPABASE_ANON_KEY`. De gebruikelijke Vercel/Supabase-aliasen worden ook ondersteund.
+3. Stel in Supabase Authentication > URL Configuration de Site URL in op `https://hazali.nl` en voeg `https://hazali.nl/**` toe aan Redirect URLs.
+4. Deploy opnieuw. Log op desktop en mobiel in met hetzelfde e-mailadres.
+
+Bestaande lokale prints worden bij de eerste login gemigreerd. Het originele 3MF-bestand blijft alleen lokaal; metadata en afbeeldingen worden gesynchroniseerd.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

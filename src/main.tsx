@@ -9,12 +9,16 @@ registerSW({
 
 import "./styles/index.css";
 import App from "./App";
+import { AuthProvider } from "./auth/AuthProvider";
+import { AuthGate } from "./auth/AuthGate";
 
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <AuthGate><App /></AuthGate>
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>
 );

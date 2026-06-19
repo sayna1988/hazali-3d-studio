@@ -1,6 +1,8 @@
 export interface Print {
 
   id?: number;
+  cloudId?: string;
+  syncKey?: string;
 
   // Algemene gegevens
 

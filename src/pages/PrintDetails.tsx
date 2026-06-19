@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../database/db";
+import { savePrint } from "../services/PrintService";
 import type { Print } from "../types/Print";
 import type { Filament } from "../types/Filament";
 import { colorName, colorsMatch, safeColor } from "../utils/colorNames";
@@ -82,7 +83,7 @@ export default function PrintDetails() {
     if (!printData?.id) return;
     setOpmerkingOpslaan(true);
     try {
-      await db.prints.update(printData.id, { opmerkingen: printData.opmerkingen ?? "" });
+      await savePrint({ ...printData, opmerkingen: printData.opmerkingen ?? "" });
       setOpmerkingOpgeslagen(true);
     } finally {
       setOpmerkingOpslaan(false);

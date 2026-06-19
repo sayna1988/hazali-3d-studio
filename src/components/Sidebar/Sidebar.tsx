@@ -8,9 +8,13 @@ import {
   Package,
   Printer,
   Boxes,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "../../auth/AuthProvider";
 
 export default function Sidebar() {
+
+  const { session, signOut } = useAuth();
 
   return (
 
@@ -50,6 +54,10 @@ export default function Sidebar() {
         </NavLink>
 
       </nav>
+
+      <button className="sidebar-account" onClick={signOut} title="Uitloggen">
+        <span>{session?.user.email}</span><LogOut size={16}/>
+      </button>
 
 
     </aside>

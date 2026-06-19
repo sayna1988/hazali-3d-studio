@@ -1,5 +1,6 @@
 import { db } from "../database/db";
 import { parse3MF } from "./ThreeMFParser";
+import { createPrint } from "./PrintService";
 
 export async function import3MF(file: File) {
 
@@ -21,7 +22,7 @@ export async function import3MF(file: File) {
   const verpakkingKosten = settings?.verpakking ?? 0;
   const kostprijs = materiaalKosten + stroomKosten + onderhoudKosten + verpakkingKosten;
 
-  const id = await db.prints.add({
+  const id = await createPrint({
 
   naam: result.naam,
 

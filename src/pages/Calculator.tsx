@@ -3,6 +3,7 @@ import { db } from "../database/db";
 import type { SettingsModel } from "../types/Settings";
 import { berekenPrint } from "../services/CalculationService";
 import type { Filament } from "../types/Filament";
+import { createPrint } from "../services/PrintService";
 
 export default function Calculator() {
 
@@ -37,11 +38,11 @@ const [settings,
   );
   
     function uploadFoto(
-  event:any
+  event: React.ChangeEvent<HTMLInputElement>
 ){
 
   const file =
-    event.target.files[0];
+    event.target.files?.[0];
 
   if(!file) return;
 
@@ -141,7 +142,7 @@ async function opslaan() {
 
   }
 
-    await db.prints.add({
+    await createPrint({
 
       naam,
 

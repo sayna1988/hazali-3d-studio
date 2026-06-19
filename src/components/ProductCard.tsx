@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { db } from "../database/db";
 import type { SettingsModel } from "../types/Settings";
+import { createPrint } from "../services/PrintService";
+import type { Filament } from "../types/Filament";
 
 export default function Calculator() {
 
@@ -17,7 +19,7 @@ export default function Calculator() {
     useState(0);
 
   const [filamenten, setFilamenten] =
-    useState<any[]>([]);
+    useState<Filament[]>([]);
 
   const [filamentId, setFilamentId] =
     useState<number>();
@@ -157,7 +159,7 @@ verkoopprijsExcl *
 
     }
 
-await db.prints.add({
+await createPrint({
 
   naam,
 
@@ -228,7 +230,7 @@ await db.prints.add({
 
 });
 
-    if (filament) {
+    if (filament?.id) {
 
       await db.filamenten.update(
 
