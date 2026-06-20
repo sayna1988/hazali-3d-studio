@@ -1,4 +1,6 @@
 import "./EditPrintModal.css";
+import { useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import type { Print } from "../../types/Print";
 import { colorName, safeColor } from "../../utils/colorNames";
 
@@ -12,7 +14,7 @@ interface Props {
 
   setPrint: (printData: Print) => void;
 
-  onSave: () => void;
+  onSave: (tags: string[]) => void;
 
   onCancel: () => void;
 
@@ -32,14 +34,48 @@ export default function EditPrintModal({
 
 }: Props) {
 
-  const updateFilament = (index: number, field: "gewicht" | "uren" | "minuten", value: number) => {
+  const [tagsInput, setTagsInput] = useState((print?.tags ?? []).join(", "));
+
+  const parsedTags = () => Array.from(new Set(
+    tagsInput.split(",").map((tag) => tag.trim()).filter(Boolean)
+  ));
+
+  const currentFilaments = (): PrintFilament[] => print
+    ? (print.filamenten ?? print.filamentKleuren.map((kleur) => ({ kleur, gewicht: 0 })))
+    : [];
+
+  const setFilaments = (filamenten: PrintFilament[]) => {
     if (!print) return;
-    const filamenten: PrintFilament[] = [...(print.filamenten ?? print.filamentKleuren.map((kleur) => ({ kleur, gewicht: 0 })))];
-    filamenten[index] = { ...filamenten[index], [field]: Math.max(0, value) };
     const gewicht = filamenten.reduce((sum, item) => sum + Number(item.gewicht || 0), 0);
     const totalMinutes = filamenten.reduce((sum, item) => sum + Number(item.uren || 0) * 60 + Number(item.minuten || 0), 0);
-    setPrint({ ...print, filamenten, gewicht, filamentGewicht: gewicht, uren: Math.floor(totalMinutes / 60), minuten: totalMinutes % 60 });
+    setPrint({
+      ...print,
+      filamenten,
+      filamentKleuren: filamenten.map((item) => item.kleur),
+      gewicht: gewicht || print.gewicht,
+      filamentGewicht: gewicht || print.filamentGewicht,
+      uren: totalMinutes ? Math.floor(totalMinutes / 60) : print.uren,
+      minuten: totalMinutes ? totalMinutes % 60 : print.minuten,
+      splitPrintBron: "handmatig"
+    });
   };
+
+  const updateFilament = (index: number, field: "gewicht" | "uren" | "minuten", value: number) => {
+    if (!print) return;
+    const filamenten: PrintFilament[] = [...currentFilaments()];
+    filamenten[index] = { ...filamenten[index], [field]: Math.max(0, value) };
+    setFilaments(filamenten);
+  };
+
+  const updateFilamentColor = (index: number, kleur: string) => {
+    const filamenten = [...currentFilaments()];
+    filamenten[index] = { ...filamenten[index], kleur: kleur.toUpperCase() };
+    setFilaments(filamenten);
+  };
+
+  const removeFilament = (index: number) => setFilaments(currentFilaments().filter((_, itemIndex) => itemIndex !== index));
+
+  const addFilament = () => setFilaments([...currentFilaments(), { kleur: "#64748B", gewicht: 0, uren: 0, minuten: 0 }]);
 
   if (!open || !print) {
 
@@ -156,14 +192,9 @@ export default function EditPrintModal({
         <div className="form-group">
           <label>Tags voor deze print</label>
           <input
-            value={(print.tags ?? []).join(", ")}
+            value={tagsInput}
             placeholder="Bijv. klantorder, decoratie, spoed"
-            onChange={(event) => setPrint({
-              ...print,
-              tags: Array.from(new Set(
-                event.target.value.split(",").map((tag: string) => tag.trim()).filter(Boolean)
-              ))
-            })}
+            onChange={(event) => setTagsInput(event.target.value)}
           />
           <small className="tag-help">Scheid meerdere tags met een komma.</small>
         </div>
@@ -181,22 +212,25 @@ export default function EditPrintModal({
           <span><strong>Split print</strong><small>Elke kleur wordt op een aparte plaat geprint.</small></span>
         </label>
 
-        {print.splitPrint && (
-          <div className="split-filaments">
+        <div className="split-filaments">
             <div className="split-filaments-heading">
-              <strong>Gegevens per kleur</strong>
+              <strong>Kleuren en gegevens</strong>
               {print.splitPrintBron === "3mf" && <span>Automatisch uit 3MF</span>}
             </div>
-            {(print.filamenten ?? print.filamentKleuren.map((kleur): PrintFilament => ({ kleur, gewicht: 0 }))).map((filament, index) => (
+            {currentFilaments().map((filament, index) => (
               <div className="split-filament-card" key={`${filament.kleur}-${index}`}>
-                <div className="split-color-name"><i style={{ background: safeColor(filament.kleur) }} />{colorName(filament.kleur)}</div>
+                <div className="split-color-control">
+                  <input type="color" value={safeColor(filament.kleur)} aria-label={`Kleur ${index + 1} kiezen`} onChange={(event) => updateFilamentColor(index, event.target.value)} />
+                  <div><strong>{colorName(filament.kleur)}</strong><input className="color-hex-input" value={filament.kleur} maxLength={7} aria-label={`Hexcode kleur ${index + 1}`} onChange={(event) => updateFilamentColor(index, event.target.value)} /></div>
+                </div>
                 <label>Gewicht (g)<input type="number" min="0" step="0.01" value={filament.gewicht || 0} onChange={(e) => updateFilament(index, "gewicht", Number(e.target.value))} /></label>
                 <label>Uren<input type="number" min="0" value={filament.uren || 0} onChange={(e) => updateFilament(index, "uren", Number(e.target.value))} /></label>
                 <label>Minuten<input type="number" min="0" max="59" value={filament.minuten || 0} onChange={(e) => updateFilament(index, "minuten", Number(e.target.value))} /></label>
+                <button type="button" className="remove-filament-button" aria-label={`${colorName(filament.kleur)} verwijderen`} title="Kleur verwijderen" onClick={() => removeFilament(index)}><Trash2 size={16} /></button>
               </div>
             ))}
+            <button type="button" className="add-filament-button" onClick={addFilament}><Plus size={16} /> Kleur toevoegen</button>
           </div>
-        )}
 
         <div className="modal-buttons">
 
@@ -204,7 +238,7 @@ export default function EditPrintModal({
 
             className="save-button"
 
-            onClick={onSave}
+            onClick={() => onSave(parsedTags())}
 
           >
 

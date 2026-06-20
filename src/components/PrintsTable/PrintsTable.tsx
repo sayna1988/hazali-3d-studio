@@ -31,7 +31,6 @@ export default function PrintsTable({
           <tr>
             <th>Naam</th>
             <th>Gewicht</th>
-            <th>Kleuren</th>
             <th>Tijd</th>
             <th>Tijd per kleur</th>
             <th>Split</th>
@@ -48,7 +47,7 @@ export default function PrintsTable({
           {prints.length === 0 && (
 
             <tr>
-              <td colSpan={11}>
+              <td colSpan={10}>
                 Geen prints gevonden.
               </td>
             </tr>
@@ -108,15 +107,6 @@ export default function PrintsTable({
 
               <td>
                 <div>{Number(p.gewicht || 0).toLocaleString("nl-NL", { maximumFractionDigits: 2 })} g</div>
-              </td>
-
-              <td>
-                {p.filamentKleuren?.length > 0 ? <div className="filament-swatches table-color-list">
-                  {p.filamentKleuren.slice(0, 3).map((kleur, index) => <span className="filament-color" key={`${kleur}-${index}`} title={kleur}>
-                    <i style={{ background: safeColor(kleur) }} />{colorName(kleur)}
-                  </span>)}
-                  {p.filamentKleuren.length > 3 && <small>+{p.filamentKleuren.length - 3}</small>}
-                </div> : <span className="table-empty">–</span>}
               </td>
 
               <td>{p.uren}u {p.minuten}m</td>

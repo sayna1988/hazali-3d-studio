@@ -31,9 +31,9 @@ export default function Prints() {
     setPrints(await loadPrints());
   }
 
-  async function savePrintChanges() {
+  async function savePrintChanges(tags: string[]) {
     if (!selectedPrint) return;
-    await savePrint(selectedPrint);
+    await savePrint({ ...selectedPrint, tags });
     setShowEditModal(false);
     await laden();
   }
@@ -106,10 +106,19 @@ export default function Prints() {
     return () => { actief = false; };
   }, []);
 
-  const beschikbareTags = useMemo(
-    () => [...new Set(prints.flatMap((print) => print.tags ?? []))].sort((a, b) => a.localeCompare(b, "nl")),
-    [prints]
-  );
+  const tagRanking = useMemo(() => {
+    const aantallen = new Map<string, number>();
+
+    prints.forEach((print) => {
+      new Set(print.tags ?? []).forEach((tag) => {
+        aantallen.set(tag, (aantallen.get(tag) ?? 0) + 1);
+      });
+    });
+
+    return [...aantallen.entries()]
+      .map(([tag, aantal]) => ({ tag, aantal }))
+      .sort((a, b) => b.aantal - a.aantal || a.tag.localeCompare(b.tag, "nl"));
+  }, [prints]);
 
   const gefilterdePrints = [...prints]
     .filter((print) => {
@@ -152,12 +161,12 @@ export default function Prints() {
         setZoekterm={setZoekterm}
         sortering={sortering}
         setSortering={setSortering}
-        tags={beschikbareTags}
+        tagRanking={tagRanking}
         geselecteerdeTag={geselecteerdeTag}
         setGeselecteerdeTag={setGeselecteerdeTag}
       />
       <PrintsTable prints={gefilterdePrints} navigate={navigate} verwijderen={verwijderen} setSelectedPrint={setSelectedPrint} setShowEditModal={setShowEditModal} toggleSplitPrint={(printData, checked) => void toggleSplitPrint(printData, checked)} />
-      <EditPrintModal open={showEditModal} print={selectedPrint} setPrint={setSelectedPrint} onSave={savePrintChanges} onCancel={() => setShowEditModal(false)} />
+      <EditPrintModal key={`${showEditModal}-${selectedPrint?.id ?? "new"}`} open={showEditModal} print={selectedPrint} setPrint={setSelectedPrint} onSave={savePrintChanges} onCancel={() => setShowEditModal(false)} />
     </div>
   );
 }

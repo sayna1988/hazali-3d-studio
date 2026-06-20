@@ -72,6 +72,22 @@ function splitPlateFilaments(documents: Array<{ name: string; text: string }>) {
     : new Map<string, { gewicht: number; lengteMeter: number; seconds: number; materiaal?: string }>();
 }
 
+function usedFilamentColors(documents: Array<{ name: string; text: string }>) {
+  const colors: string[] = [];
+  for (const { text } of documents.filter((doc) => /slice_info|plate.*\.config/i.test(doc.name))) {
+    for (const match of text.matchAll(/<filament\b([^>]*)\/?\s*>/gi)) {
+      const filament = attributes(match[1]);
+      const used = numberValue(filament.used_g ?? filament.weight ?? filament.filament_weight)
+        ?? numberValue(filament.used_m)
+        ?? numberValue(filament.used_mm);
+      if (!used || used <= 0) continue;
+      const color = cleanColor(filament.color ?? filament.colour ?? filament.filament_color ?? "");
+      if (/^#[0-9a-f]{6}$/i.test(color) && !colors.includes(color)) colors.push(color);
+    }
+  }
+  return colors;
+}
+
 const numberValue = (value?: string | null) => {
   if (!value) return undefined;
   const parsed = Number(value.replace(",", ".").match(/-?\d+(?:\.\d+)?/)?.[0]);
@@ -132,16 +148,6 @@ function jsonValuesForKeys(documents: Array<{ name: string; text: string }>, key
     try { visit(JSON.parse(document.text)); } catch { /* Niet ieder .config-bestand is JSON. */ }
   }
   return found;
-}
-
-function modelResourceColors(models: string[]) {
-  const colors: string[] = [];
-  for (const model of models) {
-    for (const match of model.matchAll(/\b(?:displaycolor|display_color|color)\s*=\s*["'](#[0-9a-f]{6}(?:[0-9a-f]{2})?)["']/gi)) {
-      colors.push(match[1]);
-    }
-  }
-  return colors;
 }
 
 const colorDistance = (a: [number, number, number], b: [number, number, number]) =>
@@ -273,6 +279,7 @@ export async function parse3MF(file: File): Promise<Parsed3MF> {
   const models = documents.filter((doc) => /\.model$/i.test(doc.name)).map((doc) => doc.text);
   const geometry = geometryFromModels(models);
   const splitFilaments = splitPlateFilaments(documents);
+  const usedColors = usedFilamentColors(documents);
   const sources = documents.filter((doc) => /Metadata|Auxiliaries|\.model$/i.test(doc.name)).map((doc) => doc.name);
 
   const weights = valuesForKeys(combined, ["total_weight", "total filament weight [g]", "filament used [g]", "filament_weight", "used_filament", "weight"])
@@ -282,8 +289,7 @@ export async function parse3MF(file: File): Promise<Parsed3MF> {
   const colorKeys = ["filament_colour", "filament_color", "filament_colors", "extruder_colour", "extruder_color", "default_filament_colour"];
   const metadataColors = [
     ...jsonValuesForKeys(documents, colorKeys),
-    ...listValue(valuesForKeys(combined, colorKeys)),
-    ...modelResourceColors(models)
+    ...listValue(valuesForKeys(combined, colorKeys))
   ].map(cleanColor).filter((color) => /^#[0-9A-F]{6}$/i.test(color));
   const materialKeys = ["filament_type", "material", "filament_settings_id"];
   const materials = [
@@ -308,9 +314,9 @@ export async function parse3MF(file: File): Promise<Parsed3MF> {
   const thumbnailBlob = thumbnailFile ? await thumbnailFile.async("blob") : undefined;
   const thumbnail = await asDataUrl(thumbnailFile);
   const uniqueMetadataColors = metadataColors.filter((color, index, list) => list.indexOf(color) === index);
-  const fallbackColors = uniqueMetadataColors.length ? [] : await previewColors(thumbnailBlob);
-  const colors = uniqueMetadataColors.length ? uniqueMetadataColors : fallbackColors;
-  const kleurBron: Parsed3MF["kleurBron"] = uniqueMetadataColors.length ? "3mf-metadata" : fallbackColors.length ? "preview" : "geen";
+  const fallbackColors = usedColors.length || uniqueMetadataColors.length ? [] : await previewColors(thumbnailBlob);
+  const colors = usedColors.length ? usedColors : uniqueMetadataColors.length ? uniqueMetadataColors : fallbackColors;
+  const kleurBron: Parsed3MF["kleurBron"] = usedColors.length || uniqueMetadataColors.length ? "3mf-metadata" : fallbackColors.length ? "preview" : "geen";
 
   let weight = weights[0] ?? 0;
   const warnings: string[] = [];

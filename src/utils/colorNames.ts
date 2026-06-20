@@ -1,13 +1,3 @@
-const palette = [
-  ["Rood", "#E53935"], ["Donkerrood", "#8B1E1E"], ["Oranje", "#F57C00"],
-  ["Geel", "#FDD835"], ["Limoengroen", "#8BC34A"], ["Groen", "#2EAD64"],
-  ["Donkergroen", "#176B3A"], ["Turquoise", "#20BFA9"], ["Cyaan", "#20BDEB"],
-  ["Lichtblauw", "#64B5F6"], ["Blauw", "#2878D0"], ["Donkerblauw", "#173B73"],
-  ["Paars", "#7E57C2"], ["Magenta", "#D13CA4"], ["Roze", "#F48FB1"],
-  ["Bruin", "#795548"], ["Beige", "#D8C39A"], ["Goud", "#C9A227"],
-  ["Zilver", "#AEB6BF"]
-] as const;
-
 const rgb = (hex: string) => {
   const match = hex.match(/^#([0-9a-f]{6})$/i);
   if (!match) return null;
@@ -32,14 +22,26 @@ export function colorName(hex: string) {
     return "Wit";
   }
 
-  let nearest: (typeof palette)[number] = palette[0];
-  let distance = Number.POSITIVE_INFINITY;
-  for (const candidate of palette) {
-    const candidateRgb = rgb(candidate[1])!;
-    const difference = Math.hypot(red - candidateRgb[0], green - candidateRgb[1], blue - candidateRgb[2]);
-    if (difference < distance) { nearest = candidate; distance = difference; }
+  const delta = maximum - minimum;
+  let hue = 0;
+  if (delta) {
+    if (maximum === red) hue = 60 * (((green - blue) / delta) % 6);
+    else if (maximum === green) hue = 60 * ((blue - red) / delta + 2);
+    else hue = 60 * ((red - green) / delta + 4);
   }
-  return nearest[0];
+  if (hue < 0) hue += 360;
+
+  if (hue < 15 || hue >= 345) return brightness < 105 ? "Donkerrood" : brightness > 205 ? "Roze" : "Rood";
+  if (hue < 42) return brightness < 95 ? "Bruin" : "Oranje";
+  if (hue < 68) return saturation < .45 ? "Goud" : "Geel";
+  if (hue < 95) return "Limoengroen";
+  if (hue < 155) return brightness < 90 ? "Donkergroen" : "Groen";
+  if (hue < 180) return "Turquoise";
+  if (hue < 200) return "Cyaan";
+  if (hue < 250) return brightness < 95 ? "Donkerblauw" : brightness > 205 ? "Lichtblauw" : "Blauw";
+  if (hue < 295) return "Paars";
+  if (hue < 335) return "Magenta";
+  return "Roze";
 }
 
 export function safeColor(hex: string) {

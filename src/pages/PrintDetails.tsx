@@ -19,7 +19,9 @@ import {
   Download,
   Save,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Plus,
+  Trash2
   ,Layers3
 } from "lucide-react";
 
@@ -102,6 +104,29 @@ export default function PrintDetails() {
     setFilamentOpgeslagen(false);
   }
 
+  function updateFilamentColor(index: number, kleur: string) {
+    if (!printData) return;
+    const filamenten = [...(printData.filamenten ?? filamentKleuren.map((item) => ({ kleur: item, gewicht: 0, uren: 0, minuten: 0 })))];
+    filamenten[index] = { ...filamenten[index], kleur: kleur.toUpperCase() };
+    setPrintData({ ...printData, filamenten, filamentKleuren: filamenten.map((item) => item.kleur), splitPrintBron: "handmatig" });
+    setFilamentOpgeslagen(false);
+  }
+
+  function removeFilament(index: number) {
+    if (!printData) return;
+    const filamenten = (printData.filamenten ?? filamentKleuren.map((kleur) => ({ kleur, gewicht: 0, uren: 0, minuten: 0 })))
+      .filter((_, itemIndex) => itemIndex !== index);
+    setPrintData({ ...printData, filamenten, filamentKleuren: filamenten.map((item) => item.kleur), splitPrintBron: "handmatig" });
+    setFilamentOpgeslagen(false);
+  }
+
+  function addFilament() {
+    if (!printData) return;
+    const filamenten = [...(printData.filamenten ?? filamentKleuren.map((kleur) => ({ kleur, gewicht: 0, uren: 0, minuten: 0 }))), { kleur: "#64748B", gewicht: 0, uren: 0, minuten: 0 }];
+    setPrintData({ ...printData, filamenten, filamentKleuren: filamenten.map((item) => item.kleur), splitPrintBron: "handmatig" });
+    setFilamentOpgeslagen(false);
+  }
+
   async function slaFilamentenOp() {
     if (!printData?.id) return;
     setFilamentOpslaan(true);
@@ -112,6 +137,7 @@ export default function PrintDetails() {
       const bijgewerkt = {
         ...printData,
         filamenten,
+        filamentKleuren: filamenten.map((item) => item.kleur),
         gewicht: gewicht > 0 ? gewicht : printData.gewicht,
         filamentGewicht: gewicht > 0 ? gewicht : printData.filamentGewicht,
         uren: minutenTotaal > 0 ? Math.floor(minutenTotaal / 60) : printData.uren,
@@ -254,12 +280,9 @@ export default function PrintDetails() {
 
   }
 
- const filamentKleuren: string[] =
-  Array.isArray(
-    printData?.filamentKleuren
-  )
-    ? printData.filamentKleuren
-    : [];
+ const filamentKleuren: string[] = printData?.filamenten?.length
+  ? printData.filamenten.map((item) => item.kleur)
+  : Array.isArray(printData?.filamentKleuren) ? printData.filamentKleuren : [];
   return (
 
     <div className="print-details-page">
@@ -638,9 +661,10 @@ export default function PrintDetails() {
                           }}
                         >
 
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ display: "inline-block", width: 14, height: 14, borderRadius: "50%", background: safeColor(kleur), border: "1px solid rgba(255,255,255,.45)" }} />
-                            <strong>{colorName(kleur)}</strong>
+                          <div className="detail-color-heading">
+                            <input type="color" value={safeColor(kleur)} aria-label={`Kleur ${index + 1} kiezen`} onChange={(event) => updateFilamentColor(index, event.target.value)} />
+                            <div><strong>{colorName(kleur)}</strong><input value={kleur} maxLength={7} aria-label={`Hexcode kleur ${index + 1}`} onChange={(event) => updateFilamentColor(index, event.target.value)} /></div>
+                            <button type="button" aria-label={`${colorName(kleur)} verwijderen`} title="Kleur verwijderen" onClick={() => removeFilament(index)}><Trash2 size={15} /></button>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 7, color: opVoorraad ? "#6ee7b7" : "#fca5a5", fontSize: 12 }}>
                             {opVoorraad ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
@@ -662,6 +686,8 @@ export default function PrintDetails() {
                     )
 
                   }
+
+                  <button type="button" className="detail-add-color" onClick={addFilament}><Plus size={15} /> Kleur toevoegen</button>
 
                 </div>
 
