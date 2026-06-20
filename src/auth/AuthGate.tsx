@@ -6,6 +6,8 @@ import "./AuthGate.css";
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, loading, syncError } = useAuth();
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -21,11 +23,27 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       setSending(true);
       setMessage("");
       const { error } = await supabase!.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: window.location.origin }
+        email: email.trim(),
+        options: { shouldCreateUser: true }
       });
-      setMessage(error ? error.message : "Controleer je e-mail en open de inloglink.");
+      if (error) setMessage(error.message);
+      else {
+        setCodeSent(true);
+        setMessage("Vul de 6-cijferige code uit de e-mail hieronder in.");
+      }
       setSending(false);
+    }
+
+    async function verifyCode(event: React.FormEvent) {
+      event.preventDefault();
+      setSending(true);
+      setMessage("");
+      const { error } = await supabase!.auth.verifyOtp({ email: email.trim(), token: code, type: "email" });
+      if (error) {
+        setMessage(error.message);
+        setSending(false);
+      }
+      // Bij succes verwerkt AuthProvider de nieuwe sessie en verdwijnt dit scherm.
     }
 
     return (
@@ -34,12 +52,21 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           <img src="/logo.png" alt="Hazali" />
           <span>Cloud sync</span>
           <h1>Log in bij je studio</h1>
-          <p>Gebruik op desktop en mobiel hetzelfde e-mailadres. Je krijgt een veilige inloglink zonder wachtwoord.</p>
-          <form onSubmit={login}>
-            <label htmlFor="auth-email">E-mailadres</label>
-            <input id="auth-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" placeholder="jij@voorbeeld.nl" />
-            <button disabled={sending}>{sending ? "Link versturen…" : "Stuur inloglink"}</button>
-          </form>
+          <p>Gebruik op desktop en mobiel hetzelfde e-mailadres. Je krijgt een veilige inlogcode zonder wachtwoord.</p>
+          {!codeSent ? (
+            <form onSubmit={login}>
+              <label htmlFor="auth-email">E-mailadres</label>
+              <input id="auth-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" placeholder="jij@voorbeeld.nl" />
+              <button disabled={sending}>{sending ? "Code versturen…" : "Stuur inlogcode"}</button>
+            </form>
+          ) : (
+            <form onSubmit={verifyCode}>
+              <label htmlFor="auth-code">Inlogcode voor {email}</label>
+              <input id="auth-code" className="auth-code" type="text" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} required minLength={6} maxLength={6} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" placeholder="000000" autoFocus />
+              <button disabled={sending || code.length !== 6}>{sending ? "Controleren…" : "Log in"}</button>
+              <button className="auth-secondary" type="button" disabled={sending} onClick={() => { setCodeSent(false); setCode(""); setMessage(""); }}>Ander e-mailadres</button>
+            </form>
+          )}
           {message && <div className="auth-message">{message}</div>}
         </section>
       </main>
