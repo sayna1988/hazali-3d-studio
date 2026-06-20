@@ -1,0 +1,118 @@
+.print-details-page {
+  width: 100%;
+  min-width: 0;
+  padding: 32px;
+}
+
+.print-details-hero-grid {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 24px;
+}
+
+.print-details-image {
+  width: 220px;
+  height: 220px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 148, 255, .15);
+  border-radius: 22px;
+  background: linear-gradient(145deg, #0d1a2b, #09111d);
+}
+
+.print-details-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.print-details-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.print-details-page h1,
+.print-details-page .page-subtitle,
+.print-details-page .details-grid > div {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1000px) {
+  .print-details-hero-grid,
+  .print-details-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .print-details-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .content:has(> .print-details-page) {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .print-details-page {
+    padding: 0;
+  }
+
+  .print-details-page > .save-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .print-details-page .dashboard-panel {
+    min-width: 0;
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .print-details-hero-grid {
+    gap: 20px;
+  }
+
+  .print-details-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    max-height: 360px;
+  }
+
+  .print-details-stats {
+    gap: 18px 12px;
+  }
+
+  .print-details-stats h4 {
+    margin-top: 4px;
+    font-size: 13px;
+  }
+
+  .print-details-stats h2 {
+    font-size: clamp(20px, 6vw, 28px);
+  }
+
+  .print-details-columns {
+    gap: 0;
+  }
+
+  .print-details-page .details-grid {
+    gap: 18px;
+  }
+}
+
+@media (max-width: 380px) {
+  .print-details-page .dashboard-panel {
+    padding: 16px;
+  }
+
+  .print-details-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

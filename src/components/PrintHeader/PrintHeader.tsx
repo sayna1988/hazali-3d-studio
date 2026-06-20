@@ -11,6 +11,9 @@ interface Props {
 export default function PrintHeader({ onFiles, importing = false, importProgress = null }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const progressPercentage = importProgress?.total
+    ? Math.min(100, Math.max(0, (importProgress.current / importProgress.total) * 100))
+    : 0;
 
   function selectFiles(files: FileList | null) {
     const selected = Array.from(files ?? []);
@@ -48,7 +51,19 @@ export default function PrintHeader({ onFiles, importing = false, importProgress
         role="button"
         tabIndex={0}
         aria-disabled={importing}
+        aria-label={importing ? `3MF-bestanden analyseren: ${Math.round(progressPercentage)} procent voltooid` : undefined}
       >
+        {importing && (
+          <span
+            className="dropzone-progress"
+            style={{ width: `${progressPercentage}%` }}
+            role="progressbar"
+            aria-label="Verwerkingsvoortgang"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progressPercentage)}
+          />
+        )}
         <span className="dropzone-icon"><FileUp size={24} /></span>
         <span className="dropzone-copy">
           <strong>{importing ? `3MF-bestanden analyseren (${importProgress?.current ?? 0}/${importProgress?.total ?? 0})` : "Sleep je 3MF-bestanden hierheen"}</strong>

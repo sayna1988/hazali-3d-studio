@@ -5,6 +5,7 @@ import { savePrint } from "../services/PrintService";
 import type { Print } from "../types/Print";
 import type { Filament } from "../types/Filament";
 import { colorName, colorsMatch, safeColor } from "../utils/colorNames";
+import "./PrintDetails.css";
 
 
 import {
@@ -227,11 +228,7 @@ export default function PrintDetails() {
     : [];
   return (
 
-    <div
-      style={{
-        padding: "32px"
-      }}
-    >
+    <div className="print-details-page">
 
       <button
         className="save-button"
@@ -251,34 +248,11 @@ export default function PrintDetails() {
 
       </button>
 
-      <div
-        className="dashboard-panel"
-      >
+      <div className="dashboard-panel print-details-hero">
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "220px 1fr",
-            gap: "24px"
-          }}
-        >
+        <div className="print-details-hero-grid">
 
-          <div
-            style={{
-              width: "220px",
-              height: "220px",
-              borderRadius: "22px",
-              overflow: "hidden",
-              background:
-                "linear-gradient(145deg,#0D1A2B,#09111D)",
-              border:
-                "1px solid rgba(0,148,255,.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
-          >
+          <div className="print-details-image">
 
             {
 
@@ -366,15 +340,7 @@ export default function PrintDetails() {
               </button>
             )}
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "repeat(4,1fr)",
-                gap: "24px",
-                marginTop: "24px"
-              }}
-            >
+            <div className="print-details-stats">
 
               <div>
 
@@ -492,15 +458,7 @@ export default function PrintDetails() {
 
       </div>
 
-      <div
-        style={{
-          marginTop: "24px",
-          display: "grid",
-          gridTemplateColumns:
-            "1.2fr .8fr",
-          gap: "24px"
-        }}
-      >
+      <div className="print-details-columns">
 
         <div
           className="dashboard-panel"
