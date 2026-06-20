@@ -10,7 +10,6 @@ import BottomNavigation from "./components/BottomNavigation/BottomNavigation";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import Filamenten from "./pages/Filamenten";
-import Calculator from "./pages/Calculator";
 import Prints from "./pages/Prints";
 import PrintDetails from "./pages/PrintDetails";
 import Voorraad from "./pages/Voorraad";
@@ -44,11 +43,6 @@ function App() {
           <Route
             path="/filamenten"
             element={<Filamenten />}
-          />
-
-          <Route
-            path="/calculator"
-            element={<Calculator />}
           />
 
           <Route

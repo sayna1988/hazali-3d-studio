@@ -4,14 +4,12 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Boxes,
-  Calculator,
   ChevronRight,
   CircleDollarSign,
   Clock3,
   Euro,
   Layers3,
   Package,
-  Plus,
   Sparkles,
   TrendingUp,
   TriangleAlert,
@@ -86,9 +84,6 @@ export default function Dashboard() {
             Alles wat er in je 3D-printstudio gebeurt, helder op één plek.
           </p>
           <div className="dashboard-hero__actions">
-            <button className="dashboard-btn dashboard-btn--primary" onClick={() => navigate("/calculator") }>
-              <Plus size={18} /> Nieuwe berekening
-            </button>
             <button className="dashboard-btn dashboard-btn--ghost" onClick={() => navigate("/prints") }>
               Bekijk alle prints <ArrowRight size={17} />
             </button>
@@ -131,11 +126,8 @@ export default function Dashboard() {
           {recentePrints.length === 0 ? (
             <div className="dashboard-empty">
               <div className="dashboard-empty__icon"><Layers3 size={28} /></div>
-              <h3>Je eerste print begint hier</h3>
-              <p>Maak een kostprijsberekening en bouw stap voor stap je studio-overzicht op.</p>
-              <button className="dashboard-btn dashboard-btn--primary" onClick={() => navigate("/calculator") }>
-                <Calculator size={17} /> Start berekening
-              </button>
+              <h3>Nog geen prints opgeslagen</h3>
+              <p>Je opgeslagen prints verschijnen hier zodra ze beschikbaar zijn.</p>
             </div>
           ) : (
             <div className="dashboard-print-list">
@@ -183,7 +175,6 @@ export default function Dashboard() {
 
           <div className="dashboard-panel dashboard-shortcuts">
             <span className="dashboard-section-label">Snel naar</span>
-            <button onClick={() => navigate("/calculator") }><Calculator size={19} /><span><strong>Berekening</strong><small>Nieuwe kostprijs</small></span><ChevronRight size={17} /></button>
             <button onClick={() => navigate("/inventaris") }><Boxes size={19} /><span><strong>Inventaris</strong><small>Producten & voorraad</small></span><ChevronRight size={17} /></button>
             <button onClick={() => navigate("/prints") }><CircleDollarSign size={19} /><span><strong>Printresultaten</strong><small>Omzet & winst</small></span><ChevronRight size={17} /></button>
           </div>

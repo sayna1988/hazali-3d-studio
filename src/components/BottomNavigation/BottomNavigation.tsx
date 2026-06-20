@@ -5,8 +5,7 @@ import { NavLink } from "react-router-dom";
 import {
   House,
   Package,
-  PlusCircle,
- Boxes,
+  Boxes,
   Printer
 } from "lucide-react";
 
@@ -29,15 +28,6 @@ export default function BottomNavigation() {
         <Package size={22} />
 
         <span>Prints</span>
-
-      </NavLink>
-
-      <NavLink
-        to="/calculator"
-        className="fab-button"
-      >
-
-        <PlusCircle size={34} />
 
       </NavLink>
 

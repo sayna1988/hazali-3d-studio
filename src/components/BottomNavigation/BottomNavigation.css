@@ -82,33 +82,4 @@
 
     }
 
-    .fab-button{
-
-        width:66px;
-
-        height:66px;
-
-        margin-top:-34px;
-
-        border-radius:50%;
-
-        background:#0094FF;
-
-        color:white !important;
-
-        flex:none !important;
-
-        box-shadow:
-            0 10px 30px rgba(0,148,255,.45);
-
-    }
-
-    .fab-button svg{
-
-        width:34px;
-
-        height:34px;
-
-    }
-
 }
