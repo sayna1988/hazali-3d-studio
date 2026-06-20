@@ -1,1 +1,8 @@
 .tag-help{color:var(--text-muted);font-size:12px}
+.split-toggle{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin:14px 0;border:1px solid rgba(0,148,255,.25);border-radius:12px;background:rgba(0,148,255,.08);cursor:pointer}
+.split-toggle input{width:17px;height:17px;margin-top:2px;accent-color:#0094ff}
+.split-toggle span{display:flex;flex-direction:column;gap:3px}.split-toggle small{color:var(--text-muted)}
+.split-filaments{display:grid;gap:10px;margin-bottom:18px}.split-filaments-heading{display:flex;align-items:center;justify-content:space-between}.split-filaments-heading span{font-size:11px;color:#6ee7b7;background:rgba(16,185,129,.12);padding:4px 7px;border-radius:999px}
+.split-filament-card{display:grid;grid-template-columns:minmax(120px,1.4fr) repeat(3,minmax(75px,1fr));gap:10px;align-items:end;padding:12px;border:1px solid rgba(0,148,255,.2);border-radius:12px;background:rgba(5,15,30,.5)}
+.split-filament-card label{font-size:11px;color:var(--text-muted)}.split-filament-card input{width:100%;margin-top:4px}.split-color-name{display:flex;gap:8px;align-items:center;font-weight:700;padding-bottom:10px}.split-color-name i{width:14px;height:14px;border-radius:50%;border:1px solid rgba(255,255,255,.45)}
+@media(max-width:650px){.split-filament-card{grid-template-columns:1fr 1fr}.split-color-name{grid-column:1/-1;padding-bottom:0}}

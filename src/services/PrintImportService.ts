@@ -64,6 +64,8 @@ export async function import3MF(file: File) {
     result.filamentKleuren,
 
   kleurBron: result.kleurBron,
+  splitPrint: result.splitPrint,
+  splitPrintBron: result.splitPrintBron,
 
   filamentGewicht:
     result.gewicht,

@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Layers3, Pencil, Trash2 } from "lucide-react";
 import "./PrintsTable.css";
 import type { Print } from "../../types/Print";
 import { colorName, safeColor } from "../../utils/colorNames";
@@ -78,6 +78,7 @@ export default function PrintsTable({
 
                   <div className="print-title-and-tags">
                     <span>{p.naam}</span>
+                    {p.splitPrint && <span className="split-print-badge"><Layers3 size={12} /> Split print</span>}
                     {(p.tags?.length ?? 0) > 0 && (
                       <div className="print-tags">
                         {p.tags!.map((tag) => <span key={tag}>{tag}</span>)}

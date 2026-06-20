@@ -20,6 +20,7 @@ import {
   Save,
   CheckCircle2,
   XCircle
+  ,Layers3
 } from "lucide-react";
 
 export default function PrintDetails() {
@@ -314,6 +315,7 @@ export default function PrintDetails() {
               }
 
             </p>
+            {printData.splitPrint && <div className="split-detail-badge"><Layers3 size={15} /> Split print · kleuren op aparte platen</div>}
 
             {(printData.tags?.length ?? 0) > 0 && (
               <div className="print-tags" style={{ marginTop: "12px" }}>
@@ -611,6 +613,10 @@ export default function PrintDetails() {
                             {opVoorraad ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
                             {opVoorraad ? `Op voorraad · ${voorraadGram.toLocaleString("nl-NL")} g` : "Niet op voorraad"}
                           </div>
+                          {printData.splitPrint && (() => {
+                            const detail = printData.filamenten?.find((item) => item.kleur === kleur);
+                            return detail ? <div className="split-color-stats"><span>{Number(detail.gewicht || 0).toLocaleString("nl-NL", { maximumFractionDigits: 2 })} g</span><span>{detail.uren || 0}u {detail.minuten || 0}m</span></div> : null;
+                          })()}
 
                         </div>
 

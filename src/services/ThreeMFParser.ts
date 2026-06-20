@@ -5,6 +5,8 @@ export interface ParsedFilament {
   gewicht: number;
   lengteMeter?: number;
   materiaal?: string;
+  uren?: number;
+  minuten?: number;
 }
 
 export interface Parsed3MF {
@@ -30,6 +32,44 @@ export interface Parsed3MF {
   bestandsGrootte?: number;
   metadataBronnen: string[];
   waarschuwingen: string[];
+  splitPrint: boolean;
+  splitPrintBron?: "3mf";
+}
+
+const attributes = (tag: string) => Object.fromEntries(
+  [...tag.matchAll(/([\w:-]+)\s*=\s*["']([^"']*)["']/g)].map((match) => [match[1].toLowerCase(), match[2]])
+);
+
+function splitPlateFilaments(documents: Array<{ name: string; text: string }>) {
+  const perColor = new Map<string, { gewicht: number; lengteMeter: number; seconds: number; materiaal?: string }>();
+  let usablePlates = 0;
+  for (const { text } of documents.filter((doc) => /slice_info|plate.*\.config/i.test(doc.name))) {
+    for (const plateMatch of text.matchAll(/<plate\b([^>]*)>([\s\S]*?)<\/plate>/gi)) {
+      const plateText = plateMatch[2];
+      const plateAttrs = attributes(plateMatch[1]);
+      const filamentTags = [...plateText.matchAll(/<filament\b([^>]*)\/?\s*>/gi)]
+        .map((match) => attributes(match[1]))
+        .filter((attrs) => numberValue(attrs.used_g ?? attrs.weight ?? attrs.filament_weight));
+      if (filamentTags.length !== 1) continue;
+      const filament = filamentTags[0];
+      const kleur = cleanColor(filament.color ?? filament.colour ?? filament.filament_color ?? "");
+      if (!/^#[0-9a-f]{6}$/i.test(kleur)) continue;
+      const seconds = secondsFromText(
+        plateAttrs.prediction ?? plateAttrs.print_time ??
+        valuesForKeys(plateText, ["prediction", "print_time", "estimated_print_time"])[0]
+      );
+      const current = perColor.get(kleur) ?? { gewicht: 0, lengteMeter: 0, seconds: 0 };
+      current.gewicht += numberValue(filament.used_g ?? filament.weight ?? filament.filament_weight) ?? 0;
+      current.lengteMeter += (numberValue(filament.used_m) ?? 0) + (numberValue(filament.used_mm) ?? 0) / 1000;
+      current.seconds += seconds;
+      current.materiaal ??= filament.type ?? filament.material;
+      perColor.set(kleur, current);
+      usablePlates += 1;
+    }
+  }
+  return usablePlates > 1 && perColor.size > 1
+    ? perColor
+    : new Map<string, { gewicht: number; lengteMeter: number; seconds: number; materiaal?: string }>();
 }
 
 const numberValue = (value?: string | null) => {
@@ -88,7 +128,7 @@ function jsonValuesForKeys(documents: Array<{ name: string; text: string }>, key
     }
   };
   for (const document of documents) {
-    if (!/\.json$|project_settings\.config$/i.test(document.name) && !/^\s*[\[{]/.test(document.text)) continue;
+    if (!/\.json$|project_settings\.config$/i.test(document.name) && !/^\s*(?:\[|\{)/.test(document.text)) continue;
     try { visit(JSON.parse(document.text)); } catch { /* Niet ieder .config-bestand is JSON. */ }
   }
   return found;
@@ -232,6 +272,7 @@ export async function parse3MF(file: File): Promise<Parsed3MF> {
   const combined = documents.map((doc) => doc.text).join("\n");
   const models = documents.filter((doc) => /\.model$/i.test(doc.name)).map((doc) => doc.text);
   const geometry = geometryFromModels(models);
+  const splitFilaments = splitPlateFilaments(documents);
   const sources = documents.filter((doc) => /Metadata|Auxiliaries|\.model$/i.test(doc.name)).map((doc) => doc.name);
 
   const weights = valuesForKeys(combined, ["total_weight", "total filament weight [g]", "filament used [g]", "filament_weight", "used_filament", "weight"])
@@ -249,7 +290,7 @@ export async function parse3MF(file: File): Promise<Parsed3MF> {
     ...jsonValuesForKeys(documents, materialKeys),
     ...listValue(valuesForKeys(combined, materialKeys))
   ].map((value) => value.replace(/^\[?["']|["']?\]?$/g, "").trim())
-    .filter((value, index, list) => value && !/[\[\]{}]/.test(value) && list.indexOf(value) === index);
+    .filter((value, index, list) => value && !["[", "]", "{", "}"].some((character) => value.includes(character)) && list.indexOf(value) === index);
   const timeValues = valuesForKeys(combined, ["prediction", "print_time", "estimated_print_time", "normal mode", "total_time"]);
   const seconds = Math.max(0, ...timeValues.map(secondsFromText));
   const title = valuesForKeys(combined, ["Title", "title", "name"])[0];
@@ -280,20 +321,31 @@ export async function parse3MF(file: File): Promise<Parsed3MF> {
   if (!seconds) warnings.push("De 3MF bevat geen bruikbare schatting van de printtijd.");
   if (kleurBron === "preview") warnings.push("De 3MF bevatte geen kleurmetadata; kleuren zijn benaderd op basis van de preview-afbeelding.");
   if (!colors.length) warnings.push("Er zijn geen filamentkleuren in het bestand of de preview gevonden.");
-  const filamenten = colors.map((kleur, index) => ({
-    kleur,
-    gewicht: colors.length === 1 ? weight : 0,
-    materiaal: materials[index] ?? materials[0],
-    lengteMeter: lengths[index] ? lengths[index] / 1000 : undefined
-  }));
+  const filamentColors = splitFilaments.size ? [...splitFilaments.keys()] : colors;
+  const filamenten = filamentColors.map((kleur, index) => {
+    const split = splitFilaments.get(kleur);
+    return {
+      kleur,
+      gewicht: split?.gewicht ?? (filamentColors.length === 1 ? weight : 0),
+      materiaal: split?.materiaal ?? materials[index] ?? materials[0],
+      lengteMeter: split?.lengteMeter || (lengths[index] ? lengths[index] / 1000 : undefined),
+      uren: split ? Math.floor(split.seconds / 3600) : undefined,
+      minuten: split ? Math.round((split.seconds % 3600) / 60) : undefined
+    };
+  });
+  if (splitFilaments.size) {
+    weight = [...splitFilaments.values()].reduce((sum, item) => sum + item.gewicht, 0) || weight;
+  }
+  const splitSeconds = [...splitFilaments.values()].reduce((sum, item) => sum + item.seconds, 0);
+  const totalSeconds = splitSeconds || seconds;
 
   return {
     naam: (title && title.length < 150 ? title : file.name.replace(/\.3mf$/i, "")),
     gewicht: Math.round(weight * 100) / 100,
-    uren: Math.floor(seconds / 3600),
-    minuten: Math.round((seconds % 3600) / 60),
+    uren: Math.floor(totalSeconds / 3600),
+    minuten: Math.round((totalSeconds % 3600) / 60),
     filamenten,
-    filamentKleuren: colors,
+    filamentKleuren: filamentColors,
     kleurBron,
     filamentNaam: materials.join(" / ") || "Onbekend",
     thumbnail,
@@ -309,6 +361,8 @@ export async function parse3MF(file: File): Promise<Parsed3MF> {
     plateAantal: Math.max(plateIds.size, plateImages.length, 1),
     bestandsGrootte: file.size,
     metadataBronnen: sources,
-    waarschuwingen: warnings
+    waarschuwingen: warnings,
+    splitPrint: splitFilaments.size > 0,
+    splitPrintBron: splitFilaments.size > 0 ? "3mf" : undefined
   };
 }
