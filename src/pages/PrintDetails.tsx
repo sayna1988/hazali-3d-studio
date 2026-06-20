@@ -415,7 +415,10 @@ export default function PrintDetails() {
 
                   {
 
-                    printData.gewicht
+                    Number(printData.gewicht || 0).toLocaleString("nl-NL", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })
 
                   } g
 
@@ -672,10 +675,12 @@ export default function PrintDetails() {
                           </div>
                           {(() => {
                             const detail = printData.filamenten?.find((item) => item.kleur === kleur) ?? { kleur, gewicht: 0, uren: 0, minuten: 0 };
-                            return <div className="split-color-editor">
+                            return <div className={`split-color-editor${printData.splitPrint ? "" : " single-field"}`}>
                               <label>Gram<input type="number" min="0" step="0.01" value={detail.gewicht || 0} onChange={(event) => updateFilament(index, "gewicht", Number(event.target.value))} /></label>
-                              <label>Uren<input type="number" min="0" value={detail.uren || 0} onChange={(event) => updateFilament(index, "uren", Number(event.target.value))} /></label>
-                              <label>Min.<input type="number" min="0" max="59" value={detail.minuten || 0} onChange={(event) => updateFilament(index, "minuten", Number(event.target.value))} /></label>
+                              {printData.splitPrint && <>
+                                <label>Uren<input type="number" min="0" value={detail.uren || 0} onChange={(event) => updateFilament(index, "uren", Number(event.target.value))} /></label>
+                                <label>Min.<input type="number" min="0" max="59" value={detail.minuten || 0} onChange={(event) => updateFilament(index, "minuten", Number(event.target.value))} /></label>
+                              </>}
                             </div>;
                           })()}
 
@@ -709,7 +714,10 @@ export default function PrintDetails() {
 
           {filamentKleuren.length > 0 && (
             <div className="filament-save-row">
-              <span>{filamentOpgeslagen ? "Gewicht en printtijd opgeslagen" : "Pas gewicht en printtijd direct per kleur aan"}</span>
+              <span>{filamentOpgeslagen
+                ? (printData.splitPrint ? "Gewicht en printtijd opgeslagen" : "Gewicht opgeslagen")
+                : (printData.splitPrint ? "Pas gewicht en printtijd direct per kleur aan" : "Pas het gewicht direct per kleur aan")}
+              </span>
               <button className="save-button" type="button" disabled={filamentOpslaan} onClick={slaFilamentenOp}>
                 <Save size={15} /> {filamentOpslaan ? "Opslaan…" : "Kleurgegevens opslaan"}
               </button>
@@ -827,7 +835,10 @@ export default function PrintDetails() {
             <div>
 
               {
-                printData.gewicht
+                Number(printData.gewicht || 0).toLocaleString("nl-NL", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })
               } g
 
             </div>

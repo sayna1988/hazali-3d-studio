@@ -114,7 +114,7 @@ export default function PrintToolbar({
       </div>
       {tagRanking.length > 0 ? (
         <div className="tag-ranking__list">
-          {tagRanking.map(({ tag, aantal }, index) => (
+          {tagRanking.map(({ tag, aantal }) => (
             <button
               type="button"
               key={tag}
@@ -122,7 +122,6 @@ export default function PrintToolbar({
               aria-pressed={geselecteerdeTag === tag}
               onClick={() => setGeselecteerdeTag(geselecteerdeTag === tag ? "" : tag)}
             >
-              <span className="tag-ranking__position">{index + 1}</span>
               <span className="tag-ranking__name">{tag}</span>
               <span className="tag-ranking__count">{aantal}</span>
             </button>
