@@ -53,10 +53,6 @@ const KLEUR_ALIASSEN: Record<string, string> = {
   natural: "naturel",
 };
 
-type BarcodeResult = { rawValue: string };
-type BarcodeDetectorInstance = { detect: (source: HTMLVideoElement) => Promise<BarcodeResult[]> };
-type BarcodeDetectorConstructor = new (options: { formats: string[] }) => BarcodeDetectorInstance;
-
 function geldigeEan(code: string) {
   if (!/^\d{8}$|^\d{13}$/.test(code)) return false;
   const cijfers = code.split("").map(Number);
@@ -82,41 +78,53 @@ function BarcodeScanner({ onScan, onClose }: { onScan: (code: string) => void; o
   const [scannerStatus, setScannerStatus] = useState("Camera wordt gestart…");
 
   useEffect(() => {
-    let stream: MediaStream | undefined;
-    let timer: number | undefined;
     let actief = true;
+    let stopScanner: (() => void) | undefined;
 
-    navigator.mediaDevices?.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false })
-      .then(async (cameraStream) => {
-        if (!actief) { cameraStream.getTracks().forEach((track) => track.stop()); return; }
-        stream = cameraStream;
-        if (!videoRef.current) return;
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+    async function startScanner() {
+      if (!navigator.mediaDevices?.getUserMedia || !videoRef.current) {
+        setScannerStatus("Camera niet beschikbaar. Je kunt de EAN-code handmatig invoeren.");
+        return;
+      }
 
-        const Detector = (window as Window & { BarcodeDetector?: BarcodeDetectorConstructor }).BarcodeDetector;
-        if (!Detector) {
-          setScannerStatus("Live scannen wordt niet door deze browser ondersteund. Voer de EAN-code hieronder in.");
-          return;
-        }
+      try {
+        const { BrowserMultiFormatReader } = await import("@zxing/browser");
+        if (!actief || !videoRef.current) return;
+        const reader = new BrowserMultiFormatReader(undefined, {
+          delayBetweenScanAttempts: 200,
+          delayBetweenScanSuccess: 800,
+        });
+        const controls = await reader.decodeFromConstraints(
+          {
+            audio: false,
+            video: {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            },
+          },
+          videoRef.current,
+          (result) => {
+            const code = result?.getText().replace(/\D/g, "") ?? "";
+            if (!actief || !geldigeEan(code)) return;
+            actief = false;
+            stopScanner?.();
+            onScan(code);
+          },
+        );
+        stopScanner = () => controls.stop();
+        if (actief) setScannerStatus("Houd de barcode stil binnen het kader");
+        else controls.stop();
+      } catch {
+        if (actief) setScannerStatus("Camera niet beschikbaar. Controleer de cameratoestemming of voer de EAN-code handmatig in.");
+      }
+    }
 
-        const detector = new Detector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] });
-        setScannerStatus("Houd de barcode binnen het kader");
-        timer = window.setInterval(async () => {
-          if (!videoRef.current) return;
-          try {
-            const codes = await detector.detect(videoRef.current);
-            const code = codes[0]?.rawValue?.replace(/\D/g, "");
-            if (code && actief) { actief = false; onScan(code); }
-          } catch { /* Een onscherp frame is normaal tijdens het scannen. */ }
-        }, 350);
-      })
-      .catch(() => setScannerStatus("Camera niet beschikbaar. Je kunt de EAN-code handmatig invoeren."));
+    void startScanner();
 
     return () => {
       actief = false;
-      if (timer) window.clearInterval(timer);
-      stream?.getTracks().forEach((track) => track.stop());
+      stopScanner?.();
     };
   }, [onScan]);
 
