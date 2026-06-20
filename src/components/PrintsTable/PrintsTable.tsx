@@ -1,4 +1,4 @@
-import { Layers3, Pencil, Trash2 } from "lucide-react";
+import { Layers3, Pencil, Tag, Trash2 } from "lucide-react";
 import "./PrintsTable.css";
 import type { Print } from "../../types/Print";
 import { colorName, safeColor } from "../../utils/colorNames";
@@ -84,6 +84,18 @@ export default function PrintsTable({
                         {p.tags!.map((tag) => <span key={tag}>{tag}</span>)}
                       </div>
                     )}
+                    <button
+                      type="button"
+                      className="manage-tags-button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setSelectedPrint({ ...p });
+                        setShowEditModal(true);
+                      }}
+                    >
+                      <Tag size={12} />
+                      {(p.tags?.length ?? 0) > 0 ? "Tags beheren" : "Tag toevoegen"}
+                    </button>
                   </div>
 
                 </div>
@@ -125,6 +137,8 @@ export default function PrintsTable({
 
                   <button
                     className="icon-button"
+                    aria-label={`${p.naam} bewerken`}
+                    title="Print bewerken"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedPrint({ ...p });
@@ -136,6 +150,8 @@ export default function PrintsTable({
 
                   <button
                     className="delete-icon"
+                    aria-label={`${p.naam} verwijderen`}
+                    title="Print verwijderen"
                     onClick={(e) => {
                       e.stopPropagation();
 

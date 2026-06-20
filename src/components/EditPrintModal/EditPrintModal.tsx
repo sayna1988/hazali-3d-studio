@@ -154,7 +154,7 @@ export default function EditPrintModal({
         </div>
 
         <div className="form-group">
-          <label>Tags</label>
+          <label>Tags voor deze print</label>
           <input
             value={(print.tags ?? []).join(", ")}
             placeholder="Bijv. klantorder, decoratie, spoed"

@@ -1,4 +1,4 @@
-import { Search, Filter } from "lucide-react";
+import { Search, Tag } from "lucide-react";
 import "./PrintToolbar.css";
 
 interface Props {
@@ -93,22 +93,13 @@ export default function PrintToolbar({
 
       </select>
 
-      {tags.length > 0 && (
+      <div className="tag-filter-wrapper">
+        <Tag size={16} aria-hidden="true" />
         <select className="sort-select tag-filter" value={geselecteerdeTag} onChange={(event) => setGeselecteerdeTag(event.target.value)} aria-label="Filter op tag">
           <option value="">Alle tags</option>
           {tags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
         </select>
-      )}
-
-      <button
-        className="filter-button"
-      >
-
-        <Filter size={16}/>
-
-        Filter
-
-      </button>
+      </div>
 
     </div>
 
