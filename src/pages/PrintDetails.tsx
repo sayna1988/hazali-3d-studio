@@ -341,6 +341,12 @@ export default function PrintDetails() {
 
             </p>
 
+            {(printData.tags?.length ?? 0) > 0 && (
+              <div className="print-tags" style={{ marginTop: "12px" }}>
+                {printData.tags!.map((tag) => <span key={tag}>{tag}</span>)}
+              </div>
+            )}
+
             {printData.bronBestand && (
               <button
                 className="filter-button"

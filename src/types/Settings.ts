@@ -24,4 +24,6 @@ export interface SettingsModel {
 
   printerCameraUrl?: string;
 
+  printerDeviceToken?: string;
+
 }

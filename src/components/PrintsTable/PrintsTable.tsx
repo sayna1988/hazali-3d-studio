@@ -76,9 +76,14 @@ export default function PrintsTable({
                     )}
                   </div>
 
-                  <span>
-                    {p.naam}
-                  </span>
+                  <div className="print-title-and-tags">
+                    <span>{p.naam}</span>
+                    {(p.tags?.length ?? 0) > 0 && (
+                      <div className="print-tags">
+                        {p.tags!.map((tag) => <span key={tag}>{tag}</span>)}
+                      </div>
+                    )}
+                  </div>
 
                 </div>
               </td>

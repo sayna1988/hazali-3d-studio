@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Prints.css";
 import EditPrintModal from "../components/EditPrintModal/EditPrintModal";
@@ -15,11 +15,15 @@ export default function Prints() {
   const [prints, setPrints] = useState<Print[]>([]);
   const [zoekterm, setZoekterm] = useState("");
   const [sortering, setSortering] = useState("nieuwste");
+  const [geselecteerdeTag, setGeselecteerdeTag] = useState("");
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
   const [importMessage, setImportMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const navigate = useNavigate();
 
-  async function laden() { setPrints(await loadPrints()); }
+  async function laden() {
+    setPrints(await loadPrints());
+  }
 
   async function savePrintChanges() {
     if (!selectedPrint) return;
@@ -34,26 +38,42 @@ export default function Prints() {
     await laden();
   }
 
-  async function importeer3MF(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
+  async function importeer3MF(files: File[]) {
     if (!files.length) return;
+
+    const geldigeBestanden = files.filter((file) => file.name.toLowerCase().endsWith(".3mf"));
+    const overgeslagen = files.length - geldigeBestanden.length;
+    if (!geldigeBestanden.length) {
+      setImportMessage({ type: "error", text: "Selecteer één of meerdere bestanden met de extensie .3mf." });
+      return;
+    }
+
+    setImporting(true);
+    setImportMessage(null);
+    setImportProgress({ current: 0, total: geldigeBestanden.length });
+    const results = [];
+    const mislukt: string[] = [];
+
     try {
-      setImporting(true);
-      setImportMessage(null);
-      const results = [];
-      for (const file of files) results.push(await import3MF(file));
+      for (const [index, file] of geldigeBestanden.entries()) {
+        try {
+          results.push(await import3MF(file));
+        } catch (error) {
+          console.error(error);
+          mislukt.push(file.name);
+        }
+        setImportProgress({ current: index + 1, total: geldigeBestanden.length });
+      }
+
       await laden();
       const warnings = results.reduce((sum, result) => sum + result.waarschuwingen.length, 0);
       setImportMessage({
-        type: "success",
-        text: `${results.length} ${results.length === 1 ? "3MF-bestand" : "3MF-bestanden"} geanalyseerd en geïmporteerd${warnings ? ` · ${warnings} aandachtspunt${warnings === 1 ? "" : "en"}` : ""}.`
+        type: mislukt.length ? "error" : "success",
+        text: `${results.length} van ${geldigeBestanden.length} ${geldigeBestanden.length === 1 ? "3MF-bestand" : "3MF-bestanden"} geïmporteerd${warnings ? ` · ${warnings} aandachtspunt${warnings === 1 ? "" : "en"}` : ""}${overgeslagen ? ` · ${overgeslagen} ongeldig bestand overgeslagen` : ""}${mislukt.length ? ` · mislukt: ${mislukt.join(", ")}` : ""}.`
       });
-    } catch (error) {
-      console.error(error);
-      setImportMessage({ type: "error", text: error instanceof Error ? error.message : "De 3MF kon niet worden geïmporteerd." });
     } finally {
       setImporting(false);
-      event.target.value = "";
+      setImportProgress(null);
     }
   }
 
@@ -63,8 +83,17 @@ export default function Prints() {
     return () => { actief = false; };
   }, []);
 
+  const beschikbareTags = useMemo(
+    () => [...new Set(prints.flatMap((print) => print.tags ?? []))].sort((a, b) => a.localeCompare(b, "nl")),
+    [prints]
+  );
+
   const gefilterdePrints = [...prints]
-    .filter((print) => print.naam?.toLowerCase().includes(zoekterm.toLowerCase()))
+    .filter((print) => {
+      const zoek = zoekterm.trim().toLowerCase();
+      return !zoek || print.naam?.toLowerCase().includes(zoek) || print.tags?.some((tag) => tag.toLowerCase().includes(zoek));
+    })
+    .filter((print) => !geselecteerdeTag || print.tags?.includes(geselecteerdeTag))
     .sort((a, b) => {
       if (sortering === "winst") return b.winst - a.winst;
       if (sortering === "verkoopprijs") return b.verkoopprijs - a.verkoopprijs;
@@ -73,18 +102,22 @@ export default function Prints() {
 
   return (
     <div>
-      <PrintHeader
-        onImport={() => document.getElementById("import3mf")?.click()}
-        onImportChange={importeer3MF}
-        importing={importing}
-      />
+      <PrintHeader onFiles={(files) => void importeer3MF(files)} importing={importing} importProgress={importProgress} />
       {importMessage && (
         <div className={`import-message ${importMessage.type}`} role="status">
           <span>{importMessage.text}</span>
           <button aria-label="Melding sluiten" onClick={() => setImportMessage(null)}>×</button>
         </div>
       )}
-      <PrintToolbar zoekterm={zoekterm} setZoekterm={setZoekterm} sortering={sortering} setSortering={setSortering} />
+      <PrintToolbar
+        zoekterm={zoekterm}
+        setZoekterm={setZoekterm}
+        sortering={sortering}
+        setSortering={setSortering}
+        tags={beschikbareTags}
+        geselecteerdeTag={geselecteerdeTag}
+        setGeselecteerdeTag={setGeselecteerdeTag}
+      />
       <PrintsTable prints={gefilterdePrints} navigate={navigate} verwijderen={verwijderen} setSelectedPrint={setSelectedPrint} setShowEditModal={setShowEditModal} />
       <EditPrintModal open={showEditModal} print={selectedPrint} setPrint={setSelectedPrint} onSave={savePrintChanges} onCancel={() => setShowEditModal(false)} />
     </div>

@@ -13,6 +13,7 @@ export interface Print {
   bestandsGrootte?: number;
   aangemaaktOp: string;
   opmerkingen?: string;
+  tags?: string[];
 
   // Printgegevens
 

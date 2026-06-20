@@ -13,7 +13,7 @@ import Filamenten from "./pages/Filamenten";
 import Prints from "./pages/Prints";
 import PrintDetails from "./pages/PrintDetails";
 import Voorraad from "./pages/Voorraad";
-import MijnPrinter from "./pages/MijnPrinter";
+import MijnPrinter from "../MijnPrinterRealtime";
 import { Navigate } from "react-router-dom";
 import Inventaris from "./pages/Inventaris";
 

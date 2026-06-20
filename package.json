@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "printer:relay": "node --env-file=.env.printer-relay.local scripts/printer-relay.mjs",
     "dev:mobile": "vite --host",
     "preview:mobile": "vite preview --host"
   },

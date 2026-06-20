@@ -1,12 +1,13 @@
 import "./EditPrintModal.css";
+import type { Print } from "../../types/Print";
 
 interface Props {
 
   open: boolean;
 
-  print: any;
+  print: Print | null;
 
-  setPrint: (printData: any) => void;
+  setPrint: (printData: Print) => void;
 
   onSave: () => void;
 
@@ -138,6 +139,21 @@ export default function EditPrintModal({
 
           />
 
+        </div>
+
+        <div className="form-group">
+          <label>Tags</label>
+          <input
+            value={(print.tags ?? []).join(", ")}
+            placeholder="Bijv. klantorder, decoratie, spoed"
+            onChange={(event) => setPrint({
+              ...print,
+              tags: Array.from(new Set(
+                event.target.value.split(",").map((tag: string) => tag.trim()).filter(Boolean)
+              ))
+            })}
+          />
+          <small className="tag-help">Scheid meerdere tags met een komma.</small>
         </div>
 
         <div className="modal-buttons">

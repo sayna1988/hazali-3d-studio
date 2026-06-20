@@ -8,6 +8,9 @@ interface Props {
 
   sortering: string;
   setSortering: (value: string) => void;
+  tags: string[];
+  geselecteerdeTag: string;
+  setGeselecteerdeTag: (value: string) => void;
 
 }
 
@@ -16,7 +19,10 @@ export default function PrintToolbar({
   zoekterm,
   setZoekterm,
   sortering,
-  setSortering
+  setSortering,
+  tags,
+  geselecteerdeTag,
+  setGeselecteerdeTag
 
 }: Props) {
 
@@ -86,6 +92,13 @@ export default function PrintToolbar({
         </option>
 
       </select>
+
+      {tags.length > 0 && (
+        <select className="sort-select tag-filter" value={geselecteerdeTag} onChange={(event) => setGeselecteerdeTag(event.target.value)} aria-label="Filter op tag">
+          <option value="">Alle tags</option>
+          {tags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+        </select>
+      )}
 
       <button
         className="filter-button"
