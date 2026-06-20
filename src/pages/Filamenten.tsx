@@ -10,6 +10,7 @@ import {
   Layers3,
   Minus,
   PackageOpen,
+  Pencil,
   Plus,
   Search,
   SlidersHorizontal,
@@ -185,28 +186,9 @@ export default function Filamenten() {
   const [ean, setEan] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [melding, setMelding] = useState("");
+  const [bewerkenId, setBewerkenId] = useState<number | null>(null);
 
-  async function laden() {
-    setFilamenten(await db.filamenten.toArray());
-  }
-
-  async function toevoegen(event: React.FormEvent) {
-    event.preventDefault();
-    if (!naam.trim() || !merk.trim() || !kleur.trim()) {
-      setFoutmelding("Vul minimaal de naam, het merk en de kleur in.");
-      return;
-    }
-
-    await db.filamenten.add({
-      naam: naam.trim(),
-      merk: merk.trim(),
-      kleur: kleur.trim(),
-      type,
-      prijsPerKg: Math.max(0, prijsPerKg),
-      voorraadGram: Math.max(0, voorraadGram),
-      ean: ean || undefined,
-    });
-
+  function resetFormulier() {
     setNaam("");
     setMerk("");
     setKleur("");
@@ -215,8 +197,65 @@ export default function Filamenten() {
     setVoorraadGram(1000);
     setEan("");
     setFoutmelding("");
+    setBewerkenId(null);
+  }
+
+  function openToevoegen() {
+    resetFormulier();
+    setToonFormulier(true);
+  }
+
+  function openBewerken(filament: Filament) {
+    if (filament.id === undefined) return;
+    setNaam(filament.naam);
+    setMerk(filament.merk);
+    setKleur(filament.kleur);
+    setType(filament.type);
+    setPrijsPerKg(filament.prijsPerKg);
+    setVoorraadGram(filament.voorraadGram);
+    setEan(filament.ean ?? "");
+    setFoutmelding("");
+    setBewerkenId(filament.id);
+    setToonFormulier(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function sluitFormulier() {
+    resetFormulier();
     setToonFormulier(false);
+  }
+
+  async function laden() {
+    setFilamenten(await db.filamenten.toArray());
+  }
+
+  async function opslaan(event: React.FormEvent) {
+    event.preventDefault();
+    if (!naam.trim() || !merk.trim() || !kleur.trim()) {
+      setFoutmelding("Vul minimaal de naam, het merk en de kleur in.");
+      return;
+    }
+
+    const gegevens = {
+      naam: naam.trim(),
+      merk: merk.trim(),
+      kleur: kleur.trim(),
+      type,
+      prijsPerKg: Math.max(0, prijsPerKg),
+      voorraadGram: Math.max(0, voorraadGram),
+      ean: ean || undefined,
+    };
+
+    if (bewerkenId === null) await db.filamenten.add(gegevens);
+    else await db.filamenten.update(bewerkenId, gegevens);
+
+    const wasBewerking = bewerkenId !== null;
+    sluitFormulier();
     await laden();
+    if (wasBewerking) {
+      setMelding(`${gegevens.naam} is bijgewerkt.`);
+      window.setTimeout(() => setMelding(""), 3500);
+    }
   }
 
   async function verwijderen(id: number) {
@@ -368,7 +407,7 @@ export default function Filamenten() {
               </select>
               <ChevronDown size={15} />
             </label>
-            <button className="filament-add-button" type="button" onClick={() => setToonFormulier((open) => !open)}>
+            <button className="filament-add-button" type="button" onClick={() => toonFormulier ? sluitFormulier() : openToevoegen()}>
               {toonFormulier ? <X size={19} /> : <Plus size={19} />}
               {toonFormulier ? "Sluiten" : "Filament toevoegen"}
             </button>
@@ -379,9 +418,9 @@ export default function Filamenten() {
         </div>
 
         {toonFormulier && (
-          <form className="filament-form" onSubmit={toevoegen}>
+          <form className="filament-form" onSubmit={opslaan}>
             <div className="filament-form__heading">
-              <div><span>Nieuwe rol</span><h3>Voeg filament toe aan je voorraad</h3></div>
+              <div><span>{bewerkenId === null ? "Nieuwe rol" : "Filament bewerken"}</span><h3>{bewerkenId === null ? "Voeg filament toe aan je voorraad" : "Werk de gegevens van deze rol bij"}</h3></div>
               <div className="filament-form__swatch" style={{ background: filamentKleur(kleur) }} />
             </div>
             <div className="filament-form__grid">
@@ -395,7 +434,7 @@ export default function Filamenten() {
             </div>
             <div className="filament-form__footer">
               <span className={foutmelding ? "filament-form__error" : "filament-form__hint"}>{foutmelding || "Velden met een * zijn verplicht."}</span>
-              <button type="submit"><Check size={18} /> Rol opslaan</button>
+              <button type="submit"><Check size={18} /> {bewerkenId === null ? "Rol opslaan" : "Wijzigingen opslaan"}</button>
             </div>
           </form>
         )}
@@ -411,7 +450,10 @@ export default function Filamenten() {
                   <div className="filament-card__header">
                     <div className="filament-spool" aria-hidden="true"><span /><i /></div>
                     <div className="filament-card__identity"><span>{f.merk || "Onbekend merk"}</span><h3>{f.naam}</h3></div>
-                    <button className="filament-delete" type="button" onClick={() => f.id !== undefined && verwijderen(f.id)} aria-label={`${f.naam} verwijderen`}><Trash2 size={17} /></button>
+                    <div className="filament-card__actions">
+                      <button className="filament-edit" type="button" onClick={() => openBewerken(f)} aria-label={`${f.naam} bewerken`} title="Filament bewerken"><Pencil size={16} /></button>
+                      <button className="filament-delete" type="button" onClick={() => f.id !== undefined && verwijderen(f.id)} aria-label={`${f.naam} verwijderen`} title="Filament verwijderen"><Trash2 size={17} /></button>
+                    </div>
                   </div>
                   <div className="filament-card__tags"><span>{f.type}</span><span><i style={{ background: filamentKleur(f.kleur) }} />{f.kleur || "Geen kleur"}</span></div>
                   {f.ean && <div className="filament-card__ean"><Barcode size={14} /> {f.ean}</div>}
@@ -437,7 +479,7 @@ export default function Filamenten() {
             <span><PackageOpen size={30} /></span>
             <h3>{filamenten.length ? "Geen filamenten gevonden" : "Je filamentkast is nog leeg"}</h3>
             <p>{filamenten.length ? "Pas je zoekopdracht of materiaalfilter aan." : "Voeg je eerste rol toe om voorraad en kosten bij te houden."}</p>
-            {!filamenten.length && <button type="button" onClick={() => setToonFormulier(true)}><Plus size={18} /> Eerste filament toevoegen</button>}
+            {!filamenten.length && <button type="button" onClick={openToevoegen}><Plus size={18} /> Eerste filament toevoegen</button>}
           </div>
         )}
       </section>

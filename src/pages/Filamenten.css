@@ -106,7 +106,9 @@
 .filament-card__identity { min-width: 0; flex: 1; }
 .filament-card__identity span { display: block; overflow: hidden; color: #8095b4; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .filament-card__identity h3 { overflow: hidden; margin-top: 3px; font-size: 17px; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
-.filament-delete { display: grid; flex: 0 0 34px; place-items: center; width: 34px; height: 34px; color: #7186a5; border: 1px solid transparent; border-radius: 9px; background: transparent; cursor: pointer; transition: .2s; }
+.filament-card__actions { display: flex; align-items: center; gap: 3px; }
+.filament-edit, .filament-delete { display: grid; flex: 0 0 34px; place-items: center; width: 34px; height: 34px; color: #7186a5; border: 1px solid transparent; border-radius: 9px; background: transparent; cursor: pointer; transition: .2s; }
+.filament-edit:hover { color: #63baff; border-color: rgba(31, 156, 255, .2); background: rgba(31, 156, 255, .09); }
 .filament-delete:hover { color: #ff6e75; border-color: rgba(255, 78, 88, .18); background: rgba(255, 78, 88, .08); }
 .filament-card__tags { display: flex; gap: 7px; padding: 0 18px 16px; }
 .filament-card__tags span { display: flex; align-items: center; gap: 6px; max-width: 60%; padding: 5px 9px; overflow: hidden; color: #9eb0c9; font-size: 11px; font-weight: 650; border: 1px solid rgba(148, 177, 218, .1); border-radius: 7px; background: rgba(255, 255, 255, .025); text-overflow: ellipsis; white-space: nowrap; }
