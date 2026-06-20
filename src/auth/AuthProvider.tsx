@@ -22,23 +22,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!supabase) return;
     let active = true;
 
-    async function applySession(nextSession: Session | null) {
-      if (!active) return;
-      setLoading(true);
-      setSession(nextSession);
-      setSyncError(null);
-      if (nextSession) {
-        try {
-          await syncPrints();
-        } catch (error) {
+    async function synchronize() {
+      try {
+        await syncPrints();
+      } catch (error) {
+        if (active) {
           setSyncError(error instanceof Error ? error.message : "Synchroniseren is mislukt.");
         }
       }
-      if (active) setLoading(false);
+    }
+
+    function applySession(nextSession: Session | null) {
+      if (!active) return;
+      setSession(nextSession);
+      setSyncError(null);
+      setLoading(false);
+
+      // Supabase waarschuwt ervoor om geen andere auth/database-aanroepen af te
+      // wachten binnen onAuthStateChange. Start de synchronisatie daarom los.
+      if (nextSession) void synchronize();
     }
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      void applySession(nextSession);
+      applySession(nextSession);
+    });
+
+    // Lees de bewaarde sessie bij iedere app-start expliciet terug. Hierdoor is
+    // de app niet afhankelijk van de timing van het INITIAL_SESSION-event.
+    void supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
+      if (error) {
+        setSyncError(error.message);
+        setLoading(false);
+        return;
+      }
+      applySession(data.session);
     });
 
     return () => {
