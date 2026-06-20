@@ -9,6 +9,7 @@ interface Props {
   verwijderen: (id: number) => void;
   setSelectedPrint: (printData: Print) => void;
   setShowEditModal: (value: boolean) => void;
+  toggleSplitPrint: (printData: Print, checked: boolean) => void;
 }
 
 export default function PrintsTable({
@@ -16,7 +17,8 @@ export default function PrintsTable({
   navigate,
   verwijderen,
   setSelectedPrint,
-  setShowEditModal
+  setShowEditModal,
+  toggleSplitPrint
 }: Props) {
 
   return (
@@ -29,7 +31,10 @@ export default function PrintsTable({
           <tr>
             <th>Naam</th>
             <th>Gewicht</th>
+            <th>Kleuren</th>
             <th>Tijd</th>
+            <th>Tijd per kleur</th>
+            <th>Split</th>
             <th>Kostprijs</th>
             <th>Verkoopprijs</th>
             <th>Winstmarge</th>
@@ -43,7 +48,7 @@ export default function PrintsTable({
           {prints.length === 0 && (
 
             <tr>
-              <td colSpan={8}>
+              <td colSpan={11}>
                 Geen prints gevonden.
               </td>
             </tr>
@@ -103,15 +108,43 @@ export default function PrintsTable({
 
               <td>
                 <div>{Number(p.gewicht || 0).toLocaleString("nl-NL", { maximumFractionDigits: 2 })} g</div>
-                {p.filamentKleuren?.length > 0 && <div className="filament-swatches">
+              </td>
+
+              <td>
+                {p.filamentKleuren?.length > 0 ? <div className="filament-swatches table-color-list">
                   {p.filamentKleuren.slice(0, 3).map((kleur, index) => <span className="filament-color" key={`${kleur}-${index}`} title={kleur}>
                     <i style={{ background: safeColor(kleur) }} />{colorName(kleur)}
                   </span>)}
                   {p.filamentKleuren.length > 3 && <small>+{p.filamentKleuren.length - 3}</small>}
-                </div>}
+                </div> : <span className="table-empty">–</span>}
               </td>
 
               <td>{p.uren}u {p.minuten}m</td>
+
+              <td>
+                {p.splitPrint && (p.filamenten?.length ?? 0) > 0 ? (
+                  <div className="color-time-list">
+                    {p.filamenten!.map((filament, index) => (
+                      <span key={`${filament.kleur}-${index}`} title={colorName(filament.kleur)}>
+                        <i style={{ background: safeColor(filament.kleur) }} />
+                        {filament.uren || 0}u {filament.minuten || 0}m
+                      </span>
+                    ))}
+                  </div>
+                ) : <span className="table-empty">–</span>}
+              </td>
+
+              <td>
+                <label className="table-split-toggle" title="Split print in- of uitschakelen" onClick={(event) => event.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(p.splitPrint)}
+                    aria-label={`${p.naam} als split print markeren`}
+                    onChange={(event) => toggleSplitPrint(p, event.target.checked)}
+                  />
+                  <Layers3 size={15} />
+                </label>
+              </td>
 
               <td>
                 €{Number(p.kostprijs || 0).toFixed(2)}

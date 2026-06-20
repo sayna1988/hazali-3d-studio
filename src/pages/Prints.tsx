@@ -38,6 +38,19 @@ export default function Prints() {
     await laden();
   }
 
+  async function toggleSplitPrint(printData: Print, checked: boolean) {
+    const filamenten = printData.filamenten?.length
+      ? printData.filamenten
+      : (printData.filamentKleuren ?? []).map((kleur) => ({ kleur, gewicht: 0, uren: 0, minuten: 0 }));
+    await savePrint({
+      ...printData,
+      filamenten,
+      splitPrint: checked,
+      splitPrintBron: checked ? "handmatig" : undefined
+    });
+    await laden();
+  }
+
   async function verwijderen(id: number) {
     if (!window.confirm("Weet je zeker dat je deze print wilt verwijderen?")) return;
     await deletePrint(id);
@@ -143,7 +156,7 @@ export default function Prints() {
         geselecteerdeTag={geselecteerdeTag}
         setGeselecteerdeTag={setGeselecteerdeTag}
       />
-      <PrintsTable prints={gefilterdePrints} navigate={navigate} verwijderen={verwijderen} setSelectedPrint={setSelectedPrint} setShowEditModal={setShowEditModal} />
+      <PrintsTable prints={gefilterdePrints} navigate={navigate} verwijderen={verwijderen} setSelectedPrint={setSelectedPrint} setShowEditModal={setShowEditModal} toggleSplitPrint={(printData, checked) => void toggleSplitPrint(printData, checked)} />
       <EditPrintModal open={showEditModal} print={selectedPrint} setPrint={setSelectedPrint} onSave={savePrintChanges} onCancel={() => setShowEditModal(false)} />
     </div>
   );

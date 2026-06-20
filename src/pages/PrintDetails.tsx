@@ -39,6 +39,8 @@ export default function PrintDetails() {
   const [filamentVoorraad, setFilamentVoorraad] = useState<Filament[]>([]);
   const [opmerkingOpslaan, setOpmerkingOpslaan] = useState(false);
   const [opmerkingOpgeslagen, setOpmerkingOpgeslagen] = useState(false);
+  const [filamentOpslaan, setFilamentOpslaan] = useState(false);
+  const [filamentOpgeslagen, setFilamentOpgeslagen] = useState(false);
 
   useEffect(() => {
 
@@ -89,6 +91,37 @@ export default function PrintDetails() {
       setOpmerkingOpgeslagen(true);
     } finally {
       setOpmerkingOpslaan(false);
+    }
+  }
+
+  function updateFilament(index: number, field: "gewicht" | "uren" | "minuten", value: number) {
+    if (!printData) return;
+    const filamenten = [...(printData.filamenten ?? filamentKleuren.map((kleur) => ({ kleur, gewicht: 0, uren: 0, minuten: 0 })))] ;
+    filamenten[index] = { ...filamenten[index], [field]: Math.max(0, value) };
+    setPrintData({ ...printData, filamenten });
+    setFilamentOpgeslagen(false);
+  }
+
+  async function slaFilamentenOp() {
+    if (!printData?.id) return;
+    setFilamentOpslaan(true);
+    try {
+      const filamenten = printData.filamenten ?? [];
+      const gewicht = filamenten.reduce((sum, item) => sum + Number(item.gewicht || 0), 0);
+      const minutenTotaal = filamenten.reduce((sum, item) => sum + Number(item.uren || 0) * 60 + Number(item.minuten || 0), 0);
+      const bijgewerkt = {
+        ...printData,
+        filamenten,
+        gewicht: gewicht > 0 ? gewicht : printData.gewicht,
+        filamentGewicht: gewicht > 0 ? gewicht : printData.filamentGewicht,
+        uren: minutenTotaal > 0 ? Math.floor(minutenTotaal / 60) : printData.uren,
+        minuten: minutenTotaal > 0 ? minutenTotaal % 60 : printData.minuten
+      };
+      await savePrint(bijgewerkt);
+      setPrintData(bijgewerkt);
+      setFilamentOpgeslagen(true);
+    } finally {
+      setFilamentOpslaan(false);
     }
   }
 
@@ -613,9 +646,13 @@ export default function PrintDetails() {
                             {opVoorraad ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
                             {opVoorraad ? `Op voorraad · ${voorraadGram.toLocaleString("nl-NL")} g` : "Niet op voorraad"}
                           </div>
-                          {printData.splitPrint && (() => {
-                            const detail = printData.filamenten?.find((item) => item.kleur === kleur);
-                            return detail ? <div className="split-color-stats"><span>{Number(detail.gewicht || 0).toLocaleString("nl-NL", { maximumFractionDigits: 2 })} g</span><span>{detail.uren || 0}u {detail.minuten || 0}m</span></div> : null;
+                          {(() => {
+                            const detail = printData.filamenten?.find((item) => item.kleur === kleur) ?? { kleur, gewicht: 0, uren: 0, minuten: 0 };
+                            return <div className="split-color-editor">
+                              <label>Gram<input type="number" min="0" step="0.01" value={detail.gewicht || 0} onChange={(event) => updateFilament(index, "gewicht", Number(event.target.value))} /></label>
+                              <label>Uren<input type="number" min="0" value={detail.uren || 0} onChange={(event) => updateFilament(index, "uren", Number(event.target.value))} /></label>
+                              <label>Min.<input type="number" min="0" max="59" value={detail.minuten || 0} onChange={(event) => updateFilament(index, "minuten", Number(event.target.value))} /></label>
+                            </div>;
                           })()}
 
                         </div>
@@ -643,6 +680,15 @@ export default function PrintDetails() {
               )
 
           }
+
+          {filamentKleuren.length > 0 && (
+            <div className="filament-save-row">
+              <span>{filamentOpgeslagen ? "Gewicht en printtijd opgeslagen" : "Pas gewicht en printtijd direct per kleur aan"}</span>
+              <button className="save-button" type="button" disabled={filamentOpslaan} onClick={slaFilamentenOp}>
+                <Save size={15} /> {filamentOpslaan ? "Opslaan…" : "Kleurgegevens opslaan"}
+              </button>
+            </div>
+          )}
 
           <div
             style={{
