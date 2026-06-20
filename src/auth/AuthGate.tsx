@@ -3,6 +3,8 @@ import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { useAuth } from "./AuthProvider";
 import "./AuthGate.css";
 
+const OTP_LENGTH = 8;
+
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, loading, syncError } = useAuth();
   const [email, setEmail] = useState("");
@@ -29,7 +31,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       if (error) setMessage(error.message);
       else {
         setCodeSent(true);
-        setMessage("Vul de 6-cijferige code uit de e-mail hieronder in.");
+        setMessage(`Vul de ${OTP_LENGTH}-cijferige code uit de e-mail hieronder in.`);
       }
       setSending(false);
     }
@@ -62,8 +64,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           ) : (
             <form onSubmit={verifyCode}>
               <label htmlFor="auth-code">Inlogcode voor {email}</label>
-              <input id="auth-code" className="auth-code" type="text" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} required minLength={6} maxLength={6} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" placeholder="000000" autoFocus />
-              <button disabled={sending || code.length !== 6}>{sending ? "Controleren…" : "Log in"}</button>
+              <input id="auth-code" className="auth-code" type="text" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH))} required minLength={OTP_LENGTH} maxLength={OTP_LENGTH} inputMode="numeric" autoComplete="one-time-code" pattern={`[0-9]{${OTP_LENGTH}}`} placeholder="00000000" autoFocus />
+              <button disabled={sending || code.length !== OTP_LENGTH}>{sending ? "Controleren…" : "Log in"}</button>
               <button className="auth-secondary" type="button" disabled={sending} onClick={() => { setCodeSent(false); setCode(""); setMessage(""); }}>Ander e-mailadres</button>
             </form>
           )}
