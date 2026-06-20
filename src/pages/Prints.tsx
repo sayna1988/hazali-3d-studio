@@ -9,6 +9,12 @@ import PrintHeader from "../components/PrintHeader/PrintHeader";
 import type { Print } from "../types/Print";
 import { loadPrints, deletePrint, savePrint } from "../services/PrintService";
 
+interface ImportMessage {
+  type: "success" | "error";
+  text: string;
+  aandachtspunten?: Array<{ bestandsnaam: string; meldingen: string[] }>;
+}
+
 export default function Prints() {
   const [selectedPrint, setSelectedPrint] = useState<Print | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -18,7 +24,7 @@ export default function Prints() {
   const [geselecteerdeTag, setGeselecteerdeTag] = useState("");
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
-  const [importMessage, setImportMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [importMessage, setImportMessage] = useState<ImportMessage | null>(null);
   const navigate = useNavigate();
 
   async function laden() {
@@ -51,13 +57,13 @@ export default function Prints() {
     setImporting(true);
     setImportMessage(null);
     setImportProgress({ current: 0, total: geldigeBestanden.length });
-    const results = [];
+    const results: Array<{ bestandsnaam: string; result: Awaited<ReturnType<typeof import3MF>> }> = [];
     const mislukt: string[] = [];
 
     try {
       for (const [index, file] of geldigeBestanden.entries()) {
         try {
-          results.push(await import3MF(file));
+          results.push({ bestandsnaam: file.name, result: await import3MF(file) });
         } catch (error) {
           console.error(error);
           mislukt.push(file.name);
@@ -66,10 +72,14 @@ export default function Prints() {
       }
 
       await laden();
-      const warnings = results.reduce((sum, result) => sum + result.waarschuwingen.length, 0);
+      const aandachtspunten = results
+        .filter(({ result }) => result.waarschuwingen.length > 0)
+        .map(({ bestandsnaam, result }) => ({ bestandsnaam, meldingen: result.waarschuwingen }));
+      const warnings = aandachtspunten.reduce((sum, item) => sum + item.meldingen.length, 0);
       setImportMessage({
         type: mislukt.length ? "error" : "success",
-        text: `${results.length} van ${geldigeBestanden.length} ${geldigeBestanden.length === 1 ? "3MF-bestand" : "3MF-bestanden"} geïmporteerd${warnings ? ` · ${warnings} aandachtspunt${warnings === 1 ? "" : "en"}` : ""}${overgeslagen ? ` · ${overgeslagen} ongeldig bestand overgeslagen` : ""}${mislukt.length ? ` · mislukt: ${mislukt.join(", ")}` : ""}.`
+        text: `${results.length} van ${geldigeBestanden.length} ${geldigeBestanden.length === 1 ? "3MF-bestand" : "3MF-bestanden"} geïmporteerd${warnings ? ` · ${warnings} aandachtspunt${warnings === 1 ? "" : "en"}` : ""}${overgeslagen ? ` · ${overgeslagen} ongeldig bestand overgeslagen` : ""}${mislukt.length ? ` · mislukt: ${mislukt.join(", ")}` : ""}.`,
+        aandachtspunten
       });
     } finally {
       setImporting(false);
@@ -105,7 +115,22 @@ export default function Prints() {
       <PrintHeader onFiles={(files) => void importeer3MF(files)} importing={importing} importProgress={importProgress} />
       {importMessage && (
         <div className={`import-message ${importMessage.type}`} role="status">
-          <span>{importMessage.text}</span>
+          <div className="import-message-content">
+            <span>{importMessage.text}</span>
+            {!!importMessage.aandachtspunten?.length && (
+              <div className="import-warnings">
+                <strong>Aandachtspunten</strong>
+                {importMessage.aandachtspunten.map(({ bestandsnaam, meldingen }) => (
+                  <div className="import-warning-file" key={bestandsnaam}>
+                    <span>{bestandsnaam}</span>
+                    <ul>
+                      {meldingen.map((melding, index) => <li key={`${bestandsnaam}-${index}`}>{melding.trim()}</li>)}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <button aria-label="Melding sluiten" onClick={() => setImportMessage(null)}>×</button>
         </div>
       )}
