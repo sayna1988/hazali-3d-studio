@@ -85,16 +85,37 @@ function decodeHtml(value = "") {
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
 }
 
+function decodeJsString(value = "") {
+  try { return JSON.parse(`"${value}"`); } catch { return value; }
+}
+
 async function searchWeb(code) {
   const results = [];
   const query = `"${code}"`;
-  const [mojeek, duck] = await Promise.allSettled([
+  const [brave, mojeek, duck] = await Promise.allSettled([
+    fetchText(`https://search.brave.com/search?q=${encodeURIComponent(query)}&source=web`),
     fetchText(`https://www.mojeek.com/search?q=${encodeURIComponent(query)}`),
     fetchText(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`),
   ]);
 
+  const braveHtml = brave.status === "fulfilled" ? brave.value : null;
+  if (braveHtml) {
+    const pattern = /\{title:"((?:\\.|[^"\\])*)",url:"((?:\\.|[^"\\])*)",full_title:[\s\S]*?description:"((?:\\.|[^"\\])*)",page_age:/g;
+    for (const match of braveHtml.matchAll(pattern)) {
+      try {
+        const title = decodeHtml(decodeJsString(match[1]));
+        const url = decodeJsString(match[2]);
+        const snippet = decodeHtml(decodeJsString(match[3]));
+        const parsed = new URL(url);
+        if (!/^https?:$/.test(parsed.protocol) || ![url, title, snippet].some((value) => value.includes(code))) continue;
+        results.push({ kind: "web", title, source: parsed.hostname.replace(/^www\./, ""), url, snippet });
+      } catch { continue; }
+      if (results.length === 6) break;
+    }
+  }
+
   const mojeekHtml = mojeek.status === "fulfilled" ? mojeek.value : null;
-  if (mojeekHtml) {
+  if (mojeekHtml && results.length < 6) {
     for (const match of mojeekHtml.matchAll(/<h2><a[^>]+class="title"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a><\/h2><p class="s">([\s\S]*?)<\/p>/gi)) {
       try {
         const url = decodeHtml(match[1]);
