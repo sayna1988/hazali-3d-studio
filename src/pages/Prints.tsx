@@ -8,6 +8,7 @@ import PrintToolbar from "../components/PrintToolbar/PrintToolbar";
 import PrintHeader from "../components/PrintHeader/PrintHeader";
 import type { Print } from "../types/Print";
 import { loadPrints, deletePrint, savePrint } from "../services/PrintService";
+import { db } from "../database/db";
 
 interface ImportMessage {
   type: "success" | "error";
@@ -25,10 +26,50 @@ export default function Prints() {
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
   const [importMessage, setImportMessage] = useState<ImportMessage | null>(null);
+  const [catalogusVoorraad, setCatalogusVoorraad] = useState<Record<number, number>>({});
   const navigate = useNavigate();
 
   async function laden() {
     setPrints(await loadPrints());
+  }
+
+  async function laadCatalogusVoorraad() {
+    const producten = await db.inventory.toArray();
+    setCatalogusVoorraad(Object.fromEntries(
+      producten
+        .filter((product) => product.printId !== undefined)
+        .map((product) => [product.printId!, product.voorraad])
+    ));
+  }
+
+  async function voegUitgeprinteExemplarenToe(print: Print, aantal: number) {
+    if (print.id === undefined || aantal < 1) return;
+
+    await db.transaction("rw", db.inventory, async () => {
+      const bestaand = await db.inventory
+        .filter((product) => product.printId === print.id)
+        .first();
+
+      if (bestaand?.id !== undefined) {
+        await db.inventory.update(bestaand.id, { voorraad: bestaand.voorraad + aantal });
+        return;
+      }
+
+      await db.inventory.add({
+        printId: print.id,
+        naam: print.naam,
+        foto: print.foto ?? "",
+        sku: `PRINT-${String(print.id).padStart(4, "0")}`,
+        voorraad: aantal,
+        minimumVoorraad: 0,
+        kostprijs: Math.max(0, Number(print.kostprijs || 0)),
+        verkoopprijs: Math.max(0, Number(print.verkoopprijs || 0)),
+        locatie: "",
+        aangemaaktOp: new Date().toISOString()
+      });
+    });
+
+    await laadCatalogusVoorraad();
   }
 
   async function savePrintChanges(tags: string[]) {
@@ -103,6 +144,14 @@ export default function Prints() {
   useEffect(() => {
     let actief = true;
     loadPrints().then((data) => { if (actief) setPrints(data); });
+    db.inventory.toArray().then((producten) => {
+      if (!actief) return;
+      setCatalogusVoorraad(Object.fromEntries(
+        producten
+          .filter((product) => product.printId !== undefined)
+          .map((product) => [product.printId!, product.voorraad])
+      ));
+    });
     return () => { actief = false; };
   }, []);
 
@@ -165,7 +214,7 @@ export default function Prints() {
         geselecteerdeTag={geselecteerdeTag}
         setGeselecteerdeTag={setGeselecteerdeTag}
       />
-      <PrintsTable prints={gefilterdePrints} navigate={navigate} verwijderen={verwijderen} setSelectedPrint={setSelectedPrint} setShowEditModal={setShowEditModal} toggleSplitPrint={(printData, checked) => void toggleSplitPrint(printData, checked)} />
+      <PrintsTable prints={gefilterdePrints} catalogusVoorraad={catalogusVoorraad} navigate={navigate} verwijderen={verwijderen} setSelectedPrint={setSelectedPrint} setShowEditModal={setShowEditModal} toggleSplitPrint={(printData, checked) => void toggleSplitPrint(printData, checked)} voegUitgeprinteExemplarenToe={voegUitgeprinteExemplarenToe} />
       <EditPrintModal key={`${showEditModal}-${selectedPrint?.id ?? "new"}`} open={showEditModal} print={selectedPrint} setPrint={setSelectedPrint} onSave={savePrintChanges} onCancel={() => setShowEditModal(false)} />
     </div>
   );

@@ -1,25 +1,50 @@
-import { Layers3, Pencil, Tag, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Check, Layers3, Minus, PackagePlus, Pencil, Plus, Tag, Trash2 } from "lucide-react";
 import "./PrintsTable.css";
 import type { Print } from "../../types/Print";
 import { colorName, safeColor } from "../../utils/colorNames";
 
 interface Props {
   prints: Print[];
+  catalogusVoorraad: Record<number, number>;
   navigate: (path: string) => void;
   verwijderen: (id: number) => void;
   setSelectedPrint: (printData: Print) => void;
   setShowEditModal: (value: boolean) => void;
   toggleSplitPrint: (printData: Print, checked: boolean) => void;
+  voegUitgeprinteExemplarenToe: (printData: Print, aantal: number) => Promise<void>;
 }
 
 export default function PrintsTable({
   prints,
+  catalogusVoorraad,
   navigate,
   verwijderen,
   setSelectedPrint,
   setShowEditModal,
-  toggleSplitPrint
+  toggleSplitPrint,
+  voegUitgeprinteExemplarenToe
 }: Props) {
+  const [aantallen, setAantallen] = useState<Record<number, number>>({});
+  const [bezigMet, setBezigMet] = useState<number | null>(null);
+  const [toegevoegd, setToegevoegd] = useState<number | null>(null);
+
+  function wijzigAantal(id: number, verschil: number) {
+    setAantallen((huidig) => ({ ...huidig, [id]: Math.max(1, (huidig[id] ?? 1) + verschil) }));
+  }
+
+  async function voegToe(print: Print) {
+    if (print.id === undefined) return;
+    setBezigMet(print.id);
+    try {
+      await voegUitgeprinteExemplarenToe(print, aantallen[print.id] ?? 1);
+      setAantallen((huidig) => ({ ...huidig, [print.id!]: 1 }));
+      setToegevoegd(print.id);
+      window.setTimeout(() => setToegevoegd((id) => id === print.id ? null : id), 1800);
+    } finally {
+      setBezigMet(null);
+    }
+  }
 
   return (
 
@@ -38,6 +63,7 @@ export default function PrintsTable({
             <th>Verkoopprijs</th>
             <th>Winstmarge</th>
             <th>Winst</th>
+            <th>Uitgeprint</th>
             <th>Acties</th>
           </tr>
         </thead>
@@ -47,7 +73,7 @@ export default function PrintsTable({
           {prints.length === 0 && (
 
             <tr>
-              <td colSpan={10}>
+              <td colSpan={11}>
                 Geen prints gevonden.
               </td>
             </tr>
@@ -153,6 +179,25 @@ export default function PrintsTable({
 
               <td className="profit-cell">
                 €{Number(p.winst || 0).toFixed(2)}
+              </td>
+
+              <td>
+                {p.id !== undefined && (
+                  <div className="printed-quantity" onClick={(event) => event.stopPropagation()}>
+                    <span className="catalog-stock">{catalogusVoorraad[p.id] ?? 0} in catalogus</span>
+                    <div className="printed-quantity-actions">
+                      <div className="quantity-stepper">
+                        <button type="button" onClick={() => wijzigAantal(p.id!, -1)} aria-label="Aantal verlagen"><Minus size={13} /></button>
+                        <input type="number" min="1" value={aantallen[p.id] ?? 1} onChange={(event) => setAantallen((huidig) => ({ ...huidig, [p.id!]: Math.max(1, Number(event.target.value) || 1) }))} aria-label={`Aantal uitgeprinte exemplaren van ${p.naam}`} />
+                        <button type="button" onClick={() => wijzigAantal(p.id!, 1)} aria-label="Aantal verhogen"><Plus size={13} /></button>
+                      </div>
+                      <button className={`add-to-catalog ${toegevoegd === p.id ? "added" : ""}`} type="button" disabled={bezigMet === p.id} onClick={() => void voegToe(p)}>
+                        {toegevoegd === p.id ? <Check size={15} /> : <PackagePlus size={15} />}
+                        {toegevoegd === p.id ? "Toegevoegd" : "Toevoegen"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </td>
 
               <td>
