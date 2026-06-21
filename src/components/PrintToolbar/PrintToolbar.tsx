@@ -1,4 +1,4 @@
-import { ArrowUpDown, ChevronDown, Search, Tag } from "lucide-react";
+import { ArrowUpDown, ChevronDown, Grid2X2, List, Search, Tag } from "lucide-react";
 import "./PrintToolbar.css";
 
 interface Props {
@@ -11,6 +11,8 @@ interface Props {
   tagRanking: Array<{ tag: string; aantal: number }>;
   geselecteerdeTag: string;
   setGeselecteerdeTag: (value: string) => void;
+  weergave: "tabel" | "grid";
+  setWeergave: (value: "tabel" | "grid") => void;
 
 }
 
@@ -22,7 +24,9 @@ export default function PrintToolbar({
   setSortering,
   tagRanking,
   geselecteerdeTag,
-  setGeselecteerdeTag
+  setGeselecteerdeTag,
+  weergave,
+  setWeergave
 
 }: Props) {
 
@@ -93,6 +97,17 @@ export default function PrintToolbar({
         </select>
         <ChevronDown size={16} aria-hidden="true" />
       </label>
+
+      <div className="view-switcher" role="group" aria-label="Catalogusweergave">
+        <button type="button" className={weergave === "tabel" ? "active" : ""} aria-pressed={weergave === "tabel"} onClick={() => setWeergave("tabel")} title="Tabelweergave">
+          <List size={17} />
+          <span>Tabel</span>
+        </button>
+        <button type="button" className={weergave === "grid" ? "active" : ""} aria-pressed={weergave === "grid"} onClick={() => setWeergave("grid")} title="Gridweergave">
+          <Grid2X2 size={16} />
+          <span>Grid</span>
+        </button>
+      </div>
 
     </div>
 

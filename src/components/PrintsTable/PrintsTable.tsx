@@ -5,6 +5,7 @@ import type { Print } from "../../types/Print";
 import { colorName, safeColor } from "../../utils/colorNames";
 
 interface Props {
+  weergave: "tabel" | "grid";
   prints: Print[];
   catalogusVoorraad: Record<number, number>;
   navigate: (path: string) => void;
@@ -27,6 +28,7 @@ function printFilamenten(print: Print) {
 }
 
 export default function PrintsTable({
+  weergave,
   prints,
   catalogusVoorraad,
   navigate,
@@ -67,6 +69,90 @@ export default function PrintsTable({
     } finally {
       setBezigMet(null);
     }
+  }
+
+  function openBewerken(print: Print) {
+    setSelectedPrint({ ...print });
+    setShowEditModal(true);
+  }
+
+  if (weergave === "grid") {
+    return (
+      <section className="catalog-grid-section" aria-label="Prints in gridweergave">
+        <div className="catalog-grid-heading">
+          <label>
+            <input
+              ref={selectAllRef}
+              type="checkbox"
+              checked={alleZichtbarePrintsGeselecteerd}
+              onChange={(event) => toggleZichtbarePrints(event.target.checked)}
+            />
+            Alle zichtbare prints selecteren
+          </label>
+          <span>{prints.length} {prints.length === 1 ? "print" : "prints"}</span>
+        </div>
+
+        {prints.length === 0 ? <div className="catalog-grid-empty">Geen prints gevonden.</div> : (
+          <div className="catalog-grid">
+            {prints.map((p) => (
+              <article className="catalog-card" key={p.id} onClick={() => p.id !== undefined && navigate(`/prints/${p.id}`)}>
+                <div className="catalog-card-image">
+                  {p.foto ? <img src={p.foto} alt={p.naam} loading="lazy" /> : <PackagePlus size={36} aria-hidden="true" />}
+                  {p.id !== undefined && (
+                    <label className="catalog-card-select" onClick={(event) => event.stopPropagation()}>
+                      <input type="checkbox" checked={geselecteerdePrintIds.includes(p.id)} onChange={(event) => togglePrintSelectie(p.id!, event.target.checked)} aria-label={`${p.naam} selecteren`} />
+                    </label>
+                  )}
+                  <span className="catalog-card-stock">{p.id === undefined ? 0 : catalogusVoorraad[p.id] ?? 0} op voorraad</span>
+                </div>
+
+                <div className="catalog-card-body">
+                  <div className="catalog-card-title">
+                    <div>
+                      <h2>{p.naam}</h2>
+                      <span>{Number(p.gewicht || 0).toLocaleString("nl-NL", { maximumFractionDigits: 2 })} g · {p.uren}u {p.minuten}m</span>
+                    </div>
+                    {p.splitPrint && <span className="split-print-badge"><Layers3 size={12} /> Split</span>}
+                  </div>
+
+                  {printFilamenten(p).length > 0 && (
+                    <div className="catalog-card-colors" aria-label="Filamentkleuren">
+                      {printFilamenten(p).map((filament, index) => <i key={`${filament.kleur}-${index}`} style={{ background: safeColor(filament.kleur) }} title={colorName(filament.kleur)} />)}
+                    </div>
+                  )}
+
+                  {(p.tags?.length ?? 0) > 0 && <div className="print-tags">{p.tags!.slice(0, 4).map((tag) => <span key={tag}>{tag}</span>)}</div>}
+
+                  <div className="catalog-card-prices">
+                    <span><small>Verkoopprijs</small>€{Number(p.verkoopprijs || 0).toFixed(2)}</span>
+                    <span className="profit-cell"><small>Winst</small>€{Number(p.winst || 0).toFixed(2)}</span>
+                  </div>
+
+                  {p.id !== undefined && (
+                    <div className="catalog-card-add" onClick={(event) => event.stopPropagation()}>
+                      <div className="quantity-stepper">
+                        <button type="button" onClick={() => wijzigAantal(p.id!, -1)} aria-label="Aantal verlagen"><Minus size={13} /></button>
+                        <input type="number" min="1" value={aantallen[p.id] ?? 1} onChange={(event) => setAantallen((huidig) => ({ ...huidig, [p.id!]: Math.max(1, Number(event.target.value) || 1) }))} aria-label={`Aantal uitgeprinte exemplaren van ${p.naam}`} />
+                        <button type="button" onClick={() => wijzigAantal(p.id!, 1)} aria-label="Aantal verhogen"><Plus size={13} /></button>
+                      </div>
+                      <button className={`add-to-catalog ${toegevoegd === p.id ? "added" : ""}`} type="button" disabled={bezigMet === p.id} onClick={() => void voegToe(p)}>
+                        {toegevoegd === p.id ? <Check size={15} /> : <PackagePlus size={15} />}
+                        {toegevoegd === p.id ? "Toegevoegd" : "Toevoegen"}
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="catalog-card-actions" onClick={(event) => event.stopPropagation()}>
+                    <button type="button" onClick={() => openBewerken(p)}><Pencil size={15} /> Bewerken</button>
+                    <button type="button" className="danger" onClick={() => p.id !== undefined && verwijderen(p.id)} aria-label={`${p.naam} verwijderen`}><Trash2 size={15} /></button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    );
   }
 
   return (
@@ -152,8 +238,7 @@ export default function PrintsTable({
                       className="manage-tags-button"
                       onClick={(event) => {
                         event.stopPropagation();
-                        setSelectedPrint({ ...p });
-                        setShowEditModal(true);
+                        openBewerken(p);
                       }}
                     >
                       <Tag size={12} />
@@ -233,8 +318,7 @@ export default function PrintsTable({
                     title="Print bewerken"
                     onClick={(event) => {
                       event.stopPropagation();
-                      setSelectedPrint({ ...p });
-                      setShowEditModal(true);
+                      openBewerken(p);
                     }}
                   >
                     <Pencil size={16} />

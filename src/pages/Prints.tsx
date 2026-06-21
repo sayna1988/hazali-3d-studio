@@ -27,6 +27,9 @@ export default function Prints() {
   const [zoekterm, setZoekterm] = useState("");
   const [sortering, setSortering] = useState("nieuwste");
   const [geselecteerdeTag, setGeselecteerdeTag] = useState("");
+  const [weergave, setWeergave] = useState<"tabel" | "grid">(() =>
+    window.localStorage.getItem("catalogus-weergave") === "grid" ? "grid" : "tabel"
+  );
   const [importing, setImporting] = useState(false);
   const [makerWorldImporting, setMakerWorldImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
@@ -250,6 +253,10 @@ export default function Prints() {
     setGeselecteerdePrintIds((huidig) => huidig.filter((id) => geldigeIds.has(id)));
   }, [prints]);
 
+  useEffect(() => {
+    window.localStorage.setItem("catalogus-weergave", weergave);
+  }, [weergave]);
+
   const tagRanking = useMemo(() => {
     const aantallen = new Map<string, number>();
 
@@ -334,6 +341,8 @@ export default function Prints() {
         tagRanking={tagRanking}
         geselecteerdeTag={geselecteerdeTag}
         setGeselecteerdeTag={setGeselecteerdeTag}
+        weergave={weergave}
+        setWeergave={setWeergave}
       />
       <section className="bulk-actions" aria-label="Bulkacties voor de catalogus">
         <div className="bulk-actions__summary">
@@ -363,6 +372,7 @@ export default function Prints() {
         </div>
       </section>
       <PrintsTable
+        weergave={weergave}
         prints={gefilterdePrints}
         catalogusVoorraad={catalogusVoorraad}
         navigate={navigate}
