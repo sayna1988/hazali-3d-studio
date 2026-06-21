@@ -27,7 +27,7 @@ export default function BottomNavigation() {
 
         <Package size={22} />
 
-        <span>Prints</span>
+        <span>Catalogus</span>
 
       </NavLink>
 
@@ -43,7 +43,7 @@ export default function BottomNavigation() {
 
         <BookOpen size={22} />
 
-        <span>Catalogus</span>
+        <span>Inventaris</span>
 
       </NavLink>
 
