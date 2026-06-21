@@ -2,9 +2,23 @@ import { db } from "../database/db";
 import type { Print } from "../types/Print";
 import { deleteCloudPrint, syncPrints, uploadPrint } from "./PrintSyncService";
 
+export function withoutSourceFile(print: Print): Print {
+  const summary = { ...print };
+  delete summary.bronBestand;
+  return summary;
+}
+
+export async function loadPrintSummaries() {
+  const summaries: Print[] = [];
+  // `each` materialiseert steeds maar één record. Een `toArray()` zou alle grote
+  // 3MF-Blobs tegelijk naar het browsergeheugen kopiëren.
+  await db.prints.toCollection().each((print) => summaries.push(withoutSourceFile(print)));
+  return summaries;
+}
+
 export async function loadPrints() {
   await syncPrints();
-  return db.prints.toArray();
+  return loadPrintSummaries();
 }
 
 export async function createPrint(print: Print) {

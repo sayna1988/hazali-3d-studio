@@ -33,7 +33,7 @@ export default function PrintHeader({ onFiles, onMakerWorld, importing = false, 
   return (
     <div className="prints-header">
       <div>
-        <h1>Mijn Prints</h1>
+        <h1>Catalogus</h1>
         <p className="page-subtitle">Overzicht van al je opgeslagen prints.</p>
       </div>
 

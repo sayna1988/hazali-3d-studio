@@ -24,8 +24,10 @@ export async function syncPrints() {
   const userId = await currentUserId();
   if (!supabase || !userId) return;
 
-  const localPrints = await db.prints.toArray();
-  for (const print of localPrints.filter((item) => !item.cloudId)) {
+  const localPrintIds = await db.prints.toCollection().primaryKeys();
+  for (const id of localPrintIds) {
+    const print = await db.prints.get(id);
+    if (!print || print.cloudId) continue;
     const syncKey = print.syncKey || crypto.randomUUID();
     if (!print.syncKey) await db.prints.update(print.id!, { syncKey });
     const prepared = { ...print, syncKey };

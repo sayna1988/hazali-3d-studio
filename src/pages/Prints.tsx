@@ -113,24 +113,27 @@ export default function Prints() {
     setImporting(true);
     setImportMessage(null);
     setImportProgress({ current: 0, total: geldigeBestanden.length });
-    const results: Array<{ bestandsnaam: string; result: Awaited<ReturnType<typeof import3MF>> }> = [];
+    const results: Array<{ bestandsnaam: string; waarschuwingen: string[] }> = [];
     const mislukt: string[] = [];
 
     try {
       for (const [index, file] of geldigeBestanden.entries()) {
         try {
-          results.push({ bestandsnaam: file.name, result: await import3MF(file) });
+          const result = await import3MF(file);
+          results.push({ bestandsnaam: file.name, waarschuwingen: result.waarschuwingen });
         } catch (error) {
           console.error(error);
           mislukt.push(file.name);
         }
         setImportProgress({ current: index + 1, total: geldigeBestanden.length });
+        // Geef de browser tussen ZIP-bestanden ruimte om tijdelijke parse-data op te ruimen.
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
       }
 
       await laden();
       const aandachtspunten = results
-        .filter(({ result }) => result.waarschuwingen.length > 0)
-        .map(({ bestandsnaam, result }) => ({ bestandsnaam, meldingen: result.waarschuwingen }));
+        .filter(({ waarschuwingen }) => waarschuwingen.length > 0)
+        .map(({ bestandsnaam, waarschuwingen }) => ({ bestandsnaam, meldingen: waarschuwingen }));
       const warnings = aandachtspunten.reduce((sum, item) => sum + item.meldingen.length, 0);
       setImportMessage({
         type: mislukt.length ? "error" : "success",

@@ -6,6 +6,7 @@ import "./RecentPrints.css";
 
 import { db } from "../../database/db";
 import type { Print } from "../../types/Print";
+import { withoutSourceFile } from "../../services/PrintService";
 
 export default function RecentPrints() {
 
@@ -26,7 +27,7 @@ export default function RecentPrints() {
           .limit(5)
           .toArray();
 
-      setPrints(data);
+      setPrints(data.map(withoutSourceFile));
 
     }
 

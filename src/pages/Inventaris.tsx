@@ -88,7 +88,7 @@ export default function Inventaris() {
   }, [producten, zoeken, filter, sortering]);
 
   return <div className="inventory-page">
-    <header className="inventory-hero"><div><span className="inventory-eyebrow">Productbeheer</span><h1>Catalogus</h1><p>Alles wat klaarstaat om verkocht te worden, helder op één plek.</p></div></header>
+    <header className="inventory-hero"><div><span className="inventory-eyebrow">Productbeheer</span><h1>Inventaris</h1><p>Alles wat klaarstaat om verkocht te worden, helder op één plek.</p></div></header>
 
     <section className="inventory-stats" aria-label="Inventarisoverzicht">
       <article className="inventory-stat-card"><span className="inventory-stat-icon blue"><Boxes size={20} /></span><div><span>Producten</span><strong>{producten.length}</strong></div><small>{stats.totaleStuks} stuks op voorraad</small></article>

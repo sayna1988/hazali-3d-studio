@@ -14,10 +14,10 @@ import {
   TrendingUp,
   TriangleAlert,
 } from "lucide-react";
-import { db } from "../database/db";
 import type { Print } from "../types/Print";
 import type { Filament } from "../types/Filament";
 import { loadFilaments } from "../services/FilamentService";
+import { loadPrintSummaries } from "../services/PrintService";
 import { rolGegevens, totaalGewicht } from "../utils/filamentInventory";
 
 type DashboardData = {
@@ -38,9 +38,10 @@ export default function Dashboard() {
   useEffect(() => {
     async function loadDashboard() {
       const [prints, filamenten] = await Promise.all([
-        db.prints.orderBy("aangemaaktOp").reverse().toArray(),
+        loadPrintSummaries(),
         loadFilaments(),
       ]);
+      prints.sort((a, b) => b.aangemaaktOp.localeCompare(a.aangemaaktOp));
       setData({ prints, filamenten });
       setLoading(false);
     }

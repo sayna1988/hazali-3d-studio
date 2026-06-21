@@ -40,6 +40,17 @@ const attributes = (tag: string) => Object.fromEntries(
   [...tag.matchAll(/([\w:-]+)\s*=\s*["']([^"']*)["']/g)].map((match) => [match[1].toLowerCase(), match[2]])
 );
 
+// Mesh XML expands many times beyond the compressed 3MF size. Keeping very large
+// model files as strings (and then copying them into `combined`) can exhaust the
+// browser tab before the next file in a batch is reached.
+const MAX_MODEL_XML_BYTES = 16 * 1024 * 1024;
+const MAX_METADATA_FILE_BYTES = 16 * 1024 * 1024;
+const MAX_METADATA_TOTAL_BYTES = 48 * 1024 * 1024;
+
+function uncompressedSize(file: JSZip.JSZipObject) {
+  return (file as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize;
+}
+
 function splitPlateFilaments(documents: Array<{ name: string; text: string }>) {
   const perColor = new Map<string, { gewicht: number; lengteMeter: number; seconds: number; materiaal?: string }>();
   let usablePlates = 0;
@@ -214,9 +225,8 @@ const secondsFromText = (value?: string) => {
   return days * 86400 + hours * 3600 + minutes * 60 + seconds;
 };
 
-async function asDataUrl(file?: JSZip.JSZipObject | null) {
-  if (!file) return "";
-  const blob = await file.async("blob");
+async function asDataUrl(blob?: Blob) {
+  if (!blob) return "";
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
@@ -273,14 +283,41 @@ export async function parse3MF(file: File): Promise<Parsed3MF> {
   if (!/\.3mf$/i.test(file.name)) throw new Error("Selecteer een geldig .3mf-bestand.");
   const zip = await JSZip.loadAsync(file);
   const names = Object.keys(zip.files);
-  const textNames = names.filter((name) => /\.(?:xml|model|config|json|txt)$/i.test(name));
-  const documents = await Promise.all(textNames.map(async (name) => ({ name, text: await zip.files[name].async("text") })));
+  const textNames = names.filter((name) => /\.(?:xml|config|json|txt)$/i.test(name));
+  const documents: Array<{ name: string; text: string }> = [];
+  let metadataBytes = 0;
+  let overgeslagenMetadata = 0;
+  for (const name of textNames) {
+    const entry = zip.files[name];
+    const size = uncompressedSize(entry);
+    if ((size !== undefined && size > MAX_METADATA_FILE_BYTES) || metadataBytes + (size ?? 0) > MAX_METADATA_TOTAL_BYTES) {
+      overgeslagenMetadata += 1;
+      continue;
+    }
+    const text = await entry.async("text");
+    metadataBytes += text.length * 2;
+    if (metadataBytes > MAX_METADATA_TOTAL_BYTES) {
+      overgeslagenMetadata += 1;
+      break;
+    }
+    documents.push({ name, text });
+  }
   const combined = documents.map((doc) => doc.text).join("\n");
-  const models = documents.filter((doc) => /\.model$/i.test(doc.name)).map((doc) => doc.text);
+  const models: string[] = [];
+  let geometrieOvergeslagen = false;
+  for (const name of names.filter((entryName) => /\.model$/i.test(entryName))) {
+    const entry = zip.files[name];
+    const size = uncompressedSize(entry);
+    if (size === undefined || size > MAX_MODEL_XML_BYTES) {
+      geometrieOvergeslagen = true;
+      continue;
+    }
+    models.push(await entry.async("text"));
+  }
   const geometry = geometryFromModels(models);
   const splitFilaments = splitPlateFilaments(documents);
   const usedColors = usedFilamentColors(documents);
-  const sources = documents.filter((doc) => /Metadata|Auxiliaries|\.model$/i.test(doc.name)).map((doc) => doc.name);
+  const sources = names.filter((name) => /Metadata|Auxiliaries|\.model$/i.test(name));
 
   const weights = valuesForKeys(combined, ["total_weight", "total filament weight [g]", "filament used [g]", "filament_weight", "used_filament", "weight"])
     .map(numberValue).filter((v): v is number => v !== undefined && v > 0);
@@ -312,7 +349,7 @@ export async function parse3MF(file: File): Promise<Parsed3MF> {
     ?? plateImages[0];
   const thumbnailFile = thumbnailName ? zip.file(thumbnailName) : null;
   const thumbnailBlob = thumbnailFile ? await thumbnailFile.async("blob") : undefined;
-  const thumbnail = await asDataUrl(thumbnailFile);
+  const thumbnail = await asDataUrl(thumbnailBlob);
   const uniqueMetadataColors = metadataColors.filter((color, index, list) => list.indexOf(color) === index);
   const fallbackColors = usedColors.length || uniqueMetadataColors.length ? [] : await previewColors(thumbnailBlob);
   const colors = usedColors.length ? usedColors : uniqueMetadataColors.length ? uniqueMetadataColors : fallbackColors;
@@ -320,6 +357,8 @@ export async function parse3MF(file: File): Promise<Parsed3MF> {
 
   let weight = weights[0] ?? 0;
   const warnings: string[] = [];
+  if (geometrieOvergeslagen) warnings.push("De geometrieberekening is overgeslagen om te voorkomen dat dit grote 3MF-bestand het browsergeheugen uitput.");
+  if (overgeslagenMetadata) warnings.push(`${overgeslagenMetadata} uitzonderlijk groot metadatabestand is overgeslagen om het browsergeheugen te beschermen.`);
   if (!weight && geometry.volumeCm3 > 0) {
     weight = geometry.volumeCm3 * 1.24;
     warnings.push("Gewicht is geschat uit het modelvolume (PLA-dichtheid, zonder rekening met infill). ");

@@ -204,6 +204,7 @@ export default function Filamenten() {
   const invoiceInputRef = useRef<HTMLInputElement | null>(null);
   const [invoiceDragging, setInvoiceDragging] = useState(false);
   const [invoiceBusy, setInvoiceBusy] = useState(false);
+  const [invoiceProgress, setInvoiceProgress] = useState("");
   const [invoiceError, setInvoiceError] = useState("");
   const [invoiceFileName, setInvoiceFileName] = useState("");
   const [invoiceResult, setInvoiceResult] = useState<InvoiceExtraction | null>(null);
@@ -385,8 +386,9 @@ export default function Filamenten() {
     setInvoiceBusy(true);
     setInvoiceError("");
     setInvoiceFileName(file.name);
+    setInvoiceProgress("Factuur voorbereiden…");
     try {
-      const result = await extractInvoice(file, session?.access_token);
+      const result = await extractInvoice(file, setInvoiceProgress);
       if (!result.filaments.length) {
         setInvoiceError("Er zijn geen filamenten op deze factuur herkend.");
         return;
@@ -396,6 +398,7 @@ export default function Filamenten() {
       setInvoiceError(error instanceof Error ? error.message : "De factuur kon niet worden geanalyseerd.");
     } finally {
       setInvoiceBusy(false);
+      setInvoiceProgress("");
     }
   }
 
@@ -525,7 +528,7 @@ export default function Filamenten() {
                   <div className="invoice-item__grid">
                     <label><span>Naam *</span><input value={item.name} onChange={(e) => wijzigInvoiceRegel(item.id, { name: e.target.value })} /></label>
                     <label><span>Merk *</span><input value={item.brand} onChange={(e) => wijzigInvoiceRegel(item.id, { brand: e.target.value })} /></label>
-                    <label><span>Materiaal</span><select value={item.material} onChange={(e) => wijzigInvoiceRegel(item.id, { material: e.target.value })}>{MATERIAAL_TYPES.map((value) => <option key={value}>{value}</option>)}</select></label>
+                    <label><span>Materiaal</span><select value={item.material} onChange={(e) => wijzigInvoiceRegel(item.id, { material: e.target.value as InvoiceFilament["material"] })}>{MATERIAAL_TYPES.map((value) => <option key={value}>{value}</option>)}</select></label>
                     <label><span>Kleur *</span><input value={item.color} onChange={(e) => wijzigInvoiceRegel(item.id, { color: e.target.value })} /></label>
                     <label><span>Aantal rollen</span><input type="number" min="1" step="1" value={item.quantity} onChange={(e) => wijzigInvoiceRegel(item.id, { quantity: Number(e.target.value) })} /></label>
                     <label><span>Gram per rol</span><input type="number" min="1" step="1" value={item.gramsPerSpool} onChange={(e) => wijzigInvoiceRegel(item.id, { gramsPerSpool: Number(e.target.value) })} /></label>
@@ -597,7 +600,7 @@ export default function Filamenten() {
           onDrop={(event) => { event.preventDefault(); setInvoiceDragging(false); if (!invoiceBusy) void analyseerFactuur(event.dataTransfer.files[0]); }}
         >
           <span className="invoice-dropzone__icon">{invoiceBusy ? <LoaderCircle className="invoice-spinner" size={24} /> : <FileText size={24} />}</span>
-          <span className="invoice-dropzone__copy"><strong>{invoiceBusy ? `Factuur analyseren: ${invoiceFileName}` : "Importeer filamenten uit een factuur"}</strong><small>{invoiceBusy ? "Filamentregels, aantallen en prijzen worden herkend…" : "Sleep een PDF of afbeelding hierheen, of klik om een bestand te kiezen"}</small></span>
+          <span className="invoice-dropzone__copy"><strong>{invoiceBusy ? `Factuur analyseren: ${invoiceFileName}` : "Importeer filamenten uit een factuur"}</strong><small>{invoiceBusy ? invoiceProgress || "Filamentregels worden lokaal herkend…" : "Gratis en lokaal · sleep een PDF of afbeelding hierheen, of klik om een bestand te kiezen"}</small></span>
           <span className="invoice-dropzone__action"><CloudUpload size={17} /> Factuur kiezen</span>
           <input ref={invoiceInputRef} type="file" hidden accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" disabled={invoiceBusy} onChange={(event) => { void analyseerFactuur(event.target.files?.[0]); event.target.value = ""; }} />
         </div>
