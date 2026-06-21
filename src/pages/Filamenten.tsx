@@ -23,6 +23,7 @@ import { scrapeEanCandidate, searchEan, type EanCandidate, type EanProduct } fro
 import { createFilament, deleteFilament, loadFilaments, updateFilament } from "../services/FilamentService";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../auth/AuthProvider";
+import { rolGegevens, totaalGewicht } from "../utils/filamentInventory";
 import type { Filament } from "../types/Filament";
 import Page from "../components/Page/Page";
 import "./Filamenten.css";
@@ -168,9 +169,9 @@ function filamentKleur(kleur: string) {
   return KLEUREN[value] ?? "#159cff";
 }
 
-function voorraadStatus(gram: number) {
-  if (gram <= 0) return { label: "Leeg", className: "empty" };
-  if (gram < 200) return { label: "Bijna op", className: "low" };
+function voorraadStatus(aantal: number) {
+  if (aantal <= 0) return { label: "Leeg", className: "empty" };
+  if (aantal === 1) return { label: "Laatste rol", className: "low" };
   return { label: "Op voorraad", className: "good" };
 }
 
@@ -181,7 +182,8 @@ export default function Filamenten() {
   const [kleur, setKleur] = useState("");
   const [type, setType] = useState("PLA");
   const [prijsPerKg, setPrijsPerKg] = useState(24.95);
-  const [voorraadGram, setVoorraadGram] = useState(1000);
+  const [aantalRollen, setAantalRollen] = useState(1);
+  const [gramPerRol, setGramPerRol] = useState(1000);
   const [filamenten, setFilamenten] = useState<Filament[]>([]);
   const [zoekterm, setZoekterm] = useState("");
   const [typeFilter, setTypeFilter] = useState("Alle");
@@ -202,7 +204,8 @@ export default function Filamenten() {
     setKleur("");
     setType("PLA");
     setPrijsPerKg(24.95);
-    setVoorraadGram(1000);
+    setAantalRollen(1);
+    setGramPerRol(1000);
     setEan("");
     setFoutmelding("");
     setBewerkenId(null);
@@ -220,7 +223,9 @@ export default function Filamenten() {
     setKleur(filament.kleur);
     setType(filament.type);
     setPrijsPerKg(filament.prijsPerKg);
-    setVoorraadGram(filament.voorraadGram);
+    const rollen = rolGegevens(filament);
+    setAantalRollen(rollen.aantal);
+    setGramPerRol(rollen.gram);
     setEan(filament.ean ?? "");
     setFoutmelding("");
     setBewerkenId(filament.id);
@@ -250,7 +255,9 @@ export default function Filamenten() {
       kleur: kleur.trim(),
       type,
       prijsPerKg: Math.max(0, prijsPerKg),
-      voorraadGram: Math.max(0, voorraadGram),
+      aantalRollen: Math.max(0, Math.round(aantalRollen)),
+      gramPerRol: Math.max(1, gramPerRol),
+      voorraadGram: Math.max(0, Math.round(aantalRollen)) * Math.max(1, gramPerRol),
       ean: ean || undefined,
     };
 
@@ -271,10 +278,14 @@ export default function Filamenten() {
     await laden();
   }
 
-  async function wijzigVoorraad(filament: Filament, verschil: number) {
+  async function wijzigAantalRollen(filament: Filament, verschil: number) {
     if (filament.id === undefined) return;
+    const rollen = rolGegevens(filament);
+    const nieuwAantal = Math.max(0, rollen.aantal + verschil);
     await updateFilament(filament.id, {
-      voorraadGram: Math.max(0, filament.voorraadGram + verschil),
+      aantalRollen: nieuwAantal,
+      gramPerRol: rollen.gram,
+      voorraadGram: nieuwAantal * rollen.gram,
     });
     await laden();
   }
@@ -285,9 +296,14 @@ export default function Filamenten() {
 
     const bekend = await db.filamenten.where("ean").equals(code).first();
     if (bekend?.id !== undefined) {
-      await updateFilament(bekend.id, { voorraadGram: bekend.voorraadGram + 1000 });
+      const rollen = rolGegevens(bekend);
+      await updateFilament(bekend.id, {
+        aantalRollen: rollen.aantal + 1,
+        gramPerRol: rollen.gram,
+        voorraadGram: (rollen.aantal + 1) * rollen.gram,
+      });
       await laden();
-      setMelding(`${bekend.naam} herkend — 1.000 gram aan de voorraad toegevoegd.`);
+      setMelding(`${bekend.naam} herkend — één rol aan de voorraad toegevoegd.`);
       window.setTimeout(() => setMelding(""), 4500);
       return;
     }
@@ -316,7 +332,8 @@ export default function Filamenten() {
     setKleur(herkend.kleur === "Onbekend" ? "" : herkend.kleur);
     setType(herkend.materiaal);
     setPrijsPerKg(product.price && product.price > 0 ? product.price / Math.max(gram / 1000, 0.001) : 24.95);
-    setVoorraadGram(gram);
+    setAantalRollen(1);
+    setGramPerRol(gram);
     setEanOpties(null);
     setEanFout("");
     setToonFormulier(true);
@@ -341,6 +358,8 @@ export default function Filamenten() {
     setNaam("");
     setMerk("");
     setKleur("");
+    setAantalRollen(1);
+    setGramPerRol(1000);
     setToonFormulier(true);
   }
 
@@ -379,21 +398,25 @@ export default function Filamenten() {
         (typeFilter === "Alle" || f.type === typeFilter),
       )
       .sort((a, b) => {
-        if (sortering === "voorraad") return a.voorraadGram - b.voorraadGram;
+        if (sortering === "voorraad") return rolGegevens(a).aantal - rolGegevens(b).aantal;
         if (sortering === "prijs") return b.prijsPerKg - a.prijsPerKg;
         return a.naam.localeCompare(b.naam, "nl");
       });
   }, [filamenten, zoekterm, typeFilter, sortering]);
 
-  const totaalGram = filamenten.reduce((som, f) => som + f.voorraadGram, 0);
-  const lageVoorraad = filamenten.filter((f) => f.voorraadGram < 200).length;
+  const totaalRollen = filamenten.reduce((som, f) => som + rolGegevens(f).aantal, 0);
+  const totaalGram = filamenten.reduce((som, f) => som + totaalGewicht(f), 0);
+  const lageVoorraad = filamenten.filter((f) => rolGegevens(f).aantal <= 1).length;
   const voorraadWaarde = filamenten.reduce(
-    (som, f) => som + (f.voorraadGram / 1000) * f.prijsPerKg,
+    (som, f) => {
+      const rollen = rolGegevens(f);
+      return som + ((rollen.aantal * rollen.gram) / 1000) * f.prijsPerKg;
+    },
     0,
   );
 
   return (
-    <Page title="Filamenten" subtitle="Beheer je materialen, voorraad en kosten op één plek.">
+    <Page title="Filamenten" subtitle="Beheer het aantal rollen, het gewicht per rol en je materiaalkosten.">
       {scannerOpen && <BarcodeScanner onScan={verwerkBarcode} onClose={() => setScannerOpen(false)} />}
       {eanOpties && (
         <div className="ean-results-overlay" role="dialog" aria-modal="true" aria-labelledby="ean-results-title">
@@ -420,8 +443,8 @@ export default function Filamenten() {
       <section className="filament-stats" aria-label="Filament overzicht">
         <div className="filament-stat filament-stat--primary">
           <span className="filament-stat__icon"><Layers3 size={21} /></span>
-          <div><span>Rollen</span><strong>{filamenten.length}</strong></div>
-          <small>{new Set(filamenten.map((f) => f.type)).size} materiaalsoorten</small>
+          <div><span>Rollen</span><strong>{totaalRollen}</strong></div>
+          <small>verdeeld over {filamenten.length} filamentsoorten</small>
         </div>
         <div className="filament-stat">
           <span className="filament-stat__icon"><Box size={21} /></span>
@@ -431,7 +454,7 @@ export default function Filamenten() {
         <div className="filament-stat">
           <span className="filament-stat__icon filament-stat__icon--warning"><AlertTriangle size={21} /></span>
           <div><span>Aandacht nodig</span><strong>{lageVoorraad}</strong></div>
-          <small>{lageVoorraad === 1 ? "rol is bijna op" : "rollen zijn bijna op"}</small>
+          <small>{lageVoorraad === 1 ? "filamentsoort heeft maximaal één rol" : "filamentsoorten hebben maximaal één rol"}</small>
         </div>
         <div className="filament-stat">
           <span className="filament-stat__icon filament-stat__icon--success"><CircleDollarSign size={21} /></span>
@@ -444,7 +467,7 @@ export default function Filamenten() {
         <div className="filament-toolbar">
           <div className="filament-toolbar__title">
             <h2>Jouw filamenten</h2>
-            <span>{gefilterd.length} van {filamenten.length} rollen</span>
+            <span>{gefilterd.length} van {filamenten.length} filamentsoorten</span>
           </div>
           <div className="filament-toolbar__actions">
             <label className="filament-search">
@@ -490,7 +513,8 @@ export default function Filamenten() {
               <label><span>Kleur of hexcode *</span><input value={kleur} onChange={(e) => setKleur(e.target.value)} placeholder="Zwart of #191b20" /></label>
               <label><span>Materiaal</span><select value={type} onChange={(e) => setType(e.target.value)}>{MATERIAAL_TYPES.map((item) => <option key={item}>{item}</option>)}</select></label>
               <label><span>Prijs per kg</span><div className="filament-input-prefix"><b>€</b><input type="number" min="0" step="0.01" value={prijsPerKg} onChange={(e) => setPrijsPerKg(Number(e.target.value))} /></div></label>
-              <label><span>Huidige voorraad</span><div className="filament-input-suffix"><input type="number" min="0" step="1" value={voorraadGram} onChange={(e) => setVoorraadGram(Number(e.target.value))} /><b>gram</b></div></label>
+              <label><span>Aantal rollen</span><div className="filament-input-suffix"><input type="number" min="0" step="1" value={aantalRollen} onChange={(e) => setAantalRollen(Number(e.target.value))} /><b>rollen</b></div></label>
+              <label><span>Gewicht per rol</span><div className="filament-input-suffix"><input type="number" min="1" step="1" value={gramPerRol} onChange={(e) => setGramPerRol(Number(e.target.value))} /><b>gram</b></div></label>
             </div>
             <div className="filament-form__footer">
               <span className={foutmelding ? "filament-form__error" : "filament-form__hint"}>{foutmelding || "Velden met een * zijn verplicht."}</span>
@@ -502,8 +526,9 @@ export default function Filamenten() {
         {gefilterd.length > 0 ? (
           <div className="filament-grid">
             {gefilterd.map((f) => {
-              const status = voorraadStatus(f.voorraadGram);
-              const percentage = Math.min((f.voorraadGram / 1000) * 100, 100);
+              const rollen = rolGegevens(f);
+              const totaalGramFilament = totaalGewicht(f);
+              const status = voorraadStatus(rollen.aantal);
               return (
                 <article key={f.id} className="filament-card" style={{ "--filament-color": filamentKleur(f.kleur) } as React.CSSProperties}>
                   <div className="filament-card__topline" />
@@ -518,16 +543,19 @@ export default function Filamenten() {
                   <div className="filament-card__tags"><span>{f.type}</span><span><i style={{ background: filamentKleur(f.kleur) }} />{f.kleur || "Geen kleur"}</span></div>
                   {f.ean && <div className="filament-card__ean"><Barcode size={14} /> {f.ean}</div>}
                   <div className="filament-card__stock">
-                    <div className="filament-card__stock-head"><span>Voorraad</span><strong>{f.voorraadGram.toLocaleString("nl-NL")} g</strong></div>
-                    <div className="filament-progress"><span style={{ width: `${percentage}%` }} /></div>
-                    <div className="filament-card__stock-foot"><span className={`filament-status filament-status--${status.className}`}><i />{status.label}</span><span>{Math.round(percentage)}% van een rol</span></div>
+                    <div className="filament-card__stock-head"><span>Voorraad</span><strong>{rollen.aantal} {rollen.aantal === 1 ? "rol" : "rollen"}</strong></div>
+                    <div className={`filament-rolls ${rollen.aantal === 0 ? "filament-rolls--empty" : ""}`} aria-label={`${rollen.aantal} rollen`}>
+                      {rollen.aantal === 0 ? <i /> : Array.from({ length: Math.min(rollen.aantal, 8) }, (_, index) => <i key={index} />)}
+                      {rollen.aantal > 8 && <b>+{rollen.aantal - 8}</b>}
+                    </div>
+                    <div className="filament-card__stock-foot"><span className={`filament-status filament-status--${status.className}`}><i />{status.label}</span><span>{rollen.aantal} × {rollen.gram.toLocaleString("nl-NL")} g · {totaalGramFilament.toLocaleString("nl-NL")} g totaal</span></div>
                   </div>
                   <div className="filament-card__footer">
                     <div><span>Prijs per kg</span><strong>€ {f.prijsPerKg.toLocaleString("nl-NL", { minimumFractionDigits: 2 })}</strong></div>
                     <div className="filament-stepper" aria-label="Voorraad aanpassen">
-                      <button type="button" onClick={() => wijzigVoorraad(f, -50)} title="50 gram afboeken"><Minus size={16} /></button>
-                      <span>50 g</span>
-                      <button type="button" onClick={() => wijzigVoorraad(f, 50)} title="50 gram toevoegen"><Plus size={16} /></button>
+                      <button type="button" onClick={() => wijzigAantalRollen(f, -1)} title="Eén rol afboeken"><Minus size={16} /></button>
+                      <span>1 rol</span>
+                      <button type="button" onClick={() => wijzigAantalRollen(f, 1)} title="Eén rol toevoegen"><Plus size={16} /></button>
                     </div>
                   </div>
                 </article>

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../database/db";
 import { savePrint } from "../services/PrintService";
 import { loadFilaments } from "../services/FilamentService";
+import { totaalGewicht } from "../utils/filamentInventory";
 import type { Print } from "../types/Print";
 import type { Filament } from "../types/Filament";
 import { colorName, colorsMatch, safeColor } from "../utils/colorNames";
@@ -647,7 +648,7 @@ export default function PrintDetails() {
                       ) => {
                         const voorraadGram = filamentVoorraad
                           .filter((filament) => colorsMatch(kleur, filament.kleur))
-                          .reduce((totaal, filament) => totaal + filament.voorraadGram, 0);
+                          .reduce((totaal, filament) => totaal + totaalGewicht(filament), 0);
                         const opVoorraad = voorraadGram > 0;
                         return (
 

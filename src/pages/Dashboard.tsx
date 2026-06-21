@@ -18,6 +18,7 @@ import { db } from "../database/db";
 import type { Print } from "../types/Print";
 import type { Filament } from "../types/Filament";
 import { loadFilaments } from "../services/FilamentService";
+import { rolGegevens, totaalGewicht } from "../utils/filamentInventory";
 
 type DashboardData = {
   prints: Print[];
@@ -60,10 +61,11 @@ export default function Dashboard() {
   }, [data.prints]);
 
   const voorraadGram = data.filamenten.reduce(
-    (sum, filament) => sum + Number(filament.voorraadGram || 0),
+    (sum, filament) => sum + totaalGewicht(filament),
     0,
   );
-  const lageVoorraad = data.filamenten.filter((filament) => filament.voorraadGram < 250);
+  const aantalRollen = data.filamenten.reduce((sum, filament) => sum + rolGegevens(filament).aantal, 0);
+  const lageVoorraad = data.filamenten.filter((filament) => rolGegevens(filament).aantal <= 1);
   const recentePrints = data.prints.slice(0, 4);
   const datum = new Intl.DateTimeFormat("nl-NL", {
     weekday: "long",
@@ -161,11 +163,11 @@ export default function Dashboard() {
             </div>
             <div className="dashboard-stock__total">
               <strong>{(voorraadGram / 1000).toLocaleString("nl-NL", { maximumFractionDigits: 1 })} kg</strong>
-              <span>verdeeld over {data.filamenten.length} rollen</span>
+              <span>verdeeld over {aantalRollen} rollen</span>
             </div>
-            <div className="dashboard-stock__bar"><span style={{ width: `${Math.min(100, (voorraadGram / Math.max(data.filamenten.length * 1000, 1)) * 100)}%` }} /></div>
+            <div className="dashboard-stock__bar"><span style={{ width: `${aantalRollen > 0 ? 100 : 0}%` }} /></div>
             {lageVoorraad.length > 0 ? (
-              <div className="dashboard-warning"><TriangleAlert size={17} /> {lageVoorraad.length} {lageVoorraad.length === 1 ? "rol raakt" : "rollen raken"} bijna op</div>
+              <div className="dashboard-warning"><TriangleAlert size={17} /> {lageVoorraad.length} {lageVoorraad.length === 1 ? "filamentsoort heeft" : "filamentsoorten hebben"} maximaal één rol</div>
             ) : (
               <div className="dashboard-stock__healthy"><span /> Voorraad ziet er goed uit</div>
             )}

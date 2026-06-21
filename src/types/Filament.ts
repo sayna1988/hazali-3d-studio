@@ -20,6 +20,10 @@ export interface Filament {
 
   voorraadGram: number;
 
+  aantalRollen?: number;
+
+  gramPerRol?: number;
+
   ean?: string;
 
 }
