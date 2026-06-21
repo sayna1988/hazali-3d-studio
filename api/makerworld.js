@@ -34,7 +34,7 @@ function modelIdFromUrl(value) {
   try {
     const url = new URL(value);
     if (!['makerworld.com', 'www.makerworld.com'].includes(url.hostname.toLowerCase())) return null;
-    return url.pathname.match(/^\/models\/(\d+)(?:-|\/|$)/)?.[1] || null;
+    return url.pathname.match(/\/models\/(\d+)(?:-|\/|$)/)?.[1] || null;
   } catch {
     return null;
   }
