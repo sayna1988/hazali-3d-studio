@@ -6,8 +6,11 @@ import {
   Check,
   ChevronDown,
   CircleDollarSign,
+  CloudUpload,
   ExternalLink,
+  FileText,
   Layers3,
+  LoaderCircle,
   Minus,
   PackageOpen,
   Pencil,
@@ -20,6 +23,7 @@ import {
 import { db } from "../database/db";
 import { scrapeEanCandidate, searchEan, type EanCandidate, type EanProduct } from "../services/EanLookupService";
 import { createFilament, deleteFilament, loadFilaments, updateFilament } from "../services/FilamentService";
+import { extractInvoice, type InvoiceExtraction, type InvoiceFilament } from "../services/InvoiceImportService";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../auth/AuthProvider";
 import { rolGegevens, totaalGewicht } from "../utils/filamentInventory";
@@ -197,6 +201,13 @@ export default function Filamenten() {
   const [eanOpties, setEanOpties] = useState<EanCandidate[] | null>(null);
   const [eanBezig, setEanBezig] = useState(false);
   const [eanFout, setEanFout] = useState("");
+  const invoiceInputRef = useRef<HTMLInputElement | null>(null);
+  const [invoiceDragging, setInvoiceDragging] = useState(false);
+  const [invoiceBusy, setInvoiceBusy] = useState(false);
+  const [invoiceError, setInvoiceError] = useState("");
+  const [invoiceFileName, setInvoiceFileName] = useState("");
+  const [invoiceResult, setInvoiceResult] = useState<InvoiceExtraction | null>(null);
+  const [invoiceSaving, setInvoiceSaving] = useState(false);
 
   function resetFormulier() {
     setNaam("");
@@ -367,6 +378,72 @@ export default function Filamenten() {
     setToonFormulier(true);
   }
 
+  async function analyseerFactuur(file: File | undefined) {
+    if (!file || invoiceBusy) return;
+    setInvoiceBusy(true);
+    setInvoiceError("");
+    setInvoiceFileName(file.name);
+    try {
+      const result = await extractInvoice(file, session?.access_token);
+      if (!result.filaments.length) {
+        setInvoiceError("Er zijn geen filamenten op deze factuur herkend.");
+        return;
+      }
+      setInvoiceResult(result);
+    } catch (error) {
+      setInvoiceError(error instanceof Error ? error.message : "De factuur kon niet worden geanalyseerd.");
+    } finally {
+      setInvoiceBusy(false);
+    }
+  }
+
+  function wijzigInvoiceRegel(id: string, changes: Partial<InvoiceFilament>) {
+    setInvoiceResult((current) => current ? {
+      ...current,
+      filaments: current.filaments.map((item) => item.id === id ? { ...item, ...changes } : item),
+    } : current);
+  }
+
+  async function slaInvoiceFilamentenOp() {
+    if (!invoiceResult || invoiceSaving) return;
+    const geselecteerd = invoiceResult.filaments.filter((item) => item.selected);
+    if (!geselecteerd.length) {
+      setInvoiceError("Selecteer minimaal één filament om toe te voegen.");
+      return;
+    }
+    if (geselecteerd.some((item) => !item.name.trim() || !item.brand.trim() || !item.color.trim() || item.quantity < 1 || item.gramsPerSpool < 1)) {
+      setInvoiceError("Controleer naam, merk, kleur, aantal en gewicht van de geselecteerde regels.");
+      return;
+    }
+    setInvoiceSaving(true);
+    setInvoiceError("");
+    try {
+      for (const item of geselecteerd) {
+        const quantity = Math.max(1, Math.round(item.quantity));
+        const grams = Math.max(1, Math.round(item.gramsPerSpool));
+        await createFilament({
+          naam: item.name.trim(),
+          merk: item.brand.trim(),
+          kleur: item.color.trim(),
+          type: item.material,
+          prijsPerKg: Math.max(0, item.pricePerKg),
+          aantalRollen: quantity,
+          gramPerRol: grams,
+          voorraadGram: quantity * grams,
+        });
+      }
+      await laden();
+      setInvoiceResult(null);
+      setInvoiceFileName("");
+      setMelding(`${geselecteerd.length} ${geselecteerd.length === 1 ? "filamentsoort is" : "filamentsoorten zijn"} uit de factuur toegevoegd.`);
+      window.setTimeout(() => setMelding(""), 4500);
+    } catch (error) {
+      setInvoiceError(error instanceof Error ? error.message : "De filamenten konden niet worden opgeslagen.");
+    } finally {
+      setInvoiceSaving(false);
+    }
+  }
+
   useEffect(() => {
     let actief = true;
     loadFilaments().then((data) => {
@@ -422,6 +499,48 @@ export default function Filamenten() {
   return (
     <Page title="Filamenten" subtitle="Beheer het aantal rollen, het gewicht per rol en je materiaalkosten.">
       {scannerOpen && <BarcodeScanner onScan={verwerkBarcode} onClose={() => setScannerOpen(false)} />}
+      {invoiceResult && (
+        <div className="invoice-review-overlay" role="dialog" aria-modal="true" aria-labelledby="invoice-review-title">
+          <section className="invoice-review">
+            <header className="invoice-review__header">
+              <div><span><FileText size={16} /> Geanalyseerde factuur</span><h2 id="invoice-review-title">Controleer de filamenten</h2><p>Wijzig onjuiste gegevens en selecteer wat je aan de voorraad wilt toevoegen.</p></div>
+              <button type="button" onClick={() => { setInvoiceResult(null); setInvoiceError(""); }} aria-label="Factuurcontrole sluiten"><X size={20} /></button>
+            </header>
+            <div className="invoice-review__meta">
+              <span><small>Bestand</small><strong>{invoiceFileName}</strong></span>
+              <span><small>Leverancier</small><strong>{invoiceResult.supplier || "Onbekend"}</strong></span>
+              <span><small>Factuurnummer</small><strong>{invoiceResult.invoiceNumber || "—"}</strong></span>
+              <span><small>Datum</small><strong>{invoiceResult.invoiceDate || "—"}</strong></span>
+            </div>
+            {(invoiceResult.warnings.length > 0 || invoiceError) && <div className="invoice-review__warnings"><AlertTriangle size={17} /><div>{invoiceError && <p>{invoiceError}</p>}{invoiceResult.warnings.map((warning) => <p key={warning}>{warning}</p>)}</div></div>}
+            <div className="invoice-review__items">
+              {invoiceResult.filaments.map((item, index) => (
+                <article key={item.id} className={`invoice-item${item.selected ? "" : " is-disabled"}`}>
+                  <div className="invoice-item__top">
+                    <label className="invoice-item__select"><input type="checkbox" checked={item.selected} onChange={(e) => wijzigInvoiceRegel(item.id, { selected: e.target.checked })} /><span>Regel {index + 1} toevoegen</span></label>
+                    <span className={`invoice-confidence${item.confidence < .7 ? " is-low" : ""}`}>{Math.round(item.confidence * 100)}% zeker</span>
+                  </div>
+                  <div className="invoice-item__grid">
+                    <label><span>Naam *</span><input value={item.name} onChange={(e) => wijzigInvoiceRegel(item.id, { name: e.target.value })} /></label>
+                    <label><span>Merk *</span><input value={item.brand} onChange={(e) => wijzigInvoiceRegel(item.id, { brand: e.target.value })} /></label>
+                    <label><span>Materiaal</span><select value={item.material} onChange={(e) => wijzigInvoiceRegel(item.id, { material: e.target.value })}>{MATERIAAL_TYPES.map((value) => <option key={value}>{value}</option>)}</select></label>
+                    <label><span>Kleur *</span><input value={item.color} onChange={(e) => wijzigInvoiceRegel(item.id, { color: e.target.value })} /></label>
+                    <label><span>Aantal rollen</span><input type="number" min="1" step="1" value={item.quantity} onChange={(e) => wijzigInvoiceRegel(item.id, { quantity: Number(e.target.value) })} /></label>
+                    <label><span>Gram per rol</span><input type="number" min="1" step="1" value={item.gramsPerSpool} onChange={(e) => wijzigInvoiceRegel(item.id, { gramsPerSpool: Number(e.target.value) })} /></label>
+                    <label><span>Prijs per rol</span><div className="filament-input-prefix"><b>€</b><input type="number" min="0" step="0.01" value={item.pricePerSpool} onChange={(e) => wijzigInvoiceRegel(item.id, { pricePerSpool: Number(e.target.value), pricePerKg: Number(e.target.value) / Math.max(item.gramsPerSpool / 1000, .001) })} /></div></label>
+                    <label><span>Prijs per kg</span><div className="filament-input-prefix"><b>€</b><input type="number" min="0" step="0.01" value={item.pricePerKg} onChange={(e) => wijzigInvoiceRegel(item.id, { pricePerKg: Number(e.target.value) })} /></div></label>
+                  </div>
+                  {item.notes && <p className="invoice-item__notes">{item.notes}</p>}
+                </article>
+              ))}
+            </div>
+            <footer className="invoice-review__footer">
+              <span>{invoiceResult.filaments.filter((item) => item.selected).length} van {invoiceResult.filaments.length} regels geselecteerd</span>
+              <div><button type="button" className="invoice-cancel" onClick={() => setInvoiceResult(null)}>Annuleren</button><button type="button" className="invoice-save" disabled={invoiceSaving} onClick={() => void slaInvoiceFilamentenOp()}>{invoiceSaving ? <LoaderCircle className="invoice-spinner" size={18} /> : <Check size={18} />} {invoiceSaving ? "Toevoegen…" : "Toevoegen aan voorraad"}</button></div>
+            </footer>
+          </section>
+        </div>
+      )}
       {eanOpties && (
         <div className="ean-results-overlay" role="dialog" aria-modal="true" aria-labelledby="ean-results-title">
           <section className="ean-results">
@@ -463,6 +582,24 @@ export default function Filamenten() {
       </section>
 
       <section className="filament-workspace">
+        <div
+          className={`invoice-dropzone${invoiceDragging ? " is-dragging" : ""}${invoiceBusy ? " is-busy" : ""}`}
+          role="button"
+          tabIndex={0}
+          aria-disabled={invoiceBusy}
+          onClick={() => !invoiceBusy && invoiceInputRef.current?.click()}
+          onKeyDown={(event) => { if (!invoiceBusy && (event.key === "Enter" || event.key === " ")) invoiceInputRef.current?.click(); }}
+          onDragEnter={(event) => { event.preventDefault(); if (!invoiceBusy) setInvoiceDragging(true); }}
+          onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = invoiceBusy ? "none" : "copy"; }}
+          onDragLeave={(event) => { event.preventDefault(); if (!event.currentTarget.contains(event.relatedTarget as Node)) setInvoiceDragging(false); }}
+          onDrop={(event) => { event.preventDefault(); setInvoiceDragging(false); if (!invoiceBusy) void analyseerFactuur(event.dataTransfer.files[0]); }}
+        >
+          <span className="invoice-dropzone__icon">{invoiceBusy ? <LoaderCircle className="invoice-spinner" size={24} /> : <FileText size={24} />}</span>
+          <span className="invoice-dropzone__copy"><strong>{invoiceBusy ? `Factuur analyseren: ${invoiceFileName}` : "Importeer filamenten uit een factuur"}</strong><small>{invoiceBusy ? "Filamentregels, aantallen en prijzen worden herkend…" : "Sleep een PDF of afbeelding hierheen, of klik om een bestand te kiezen"}</small></span>
+          <span className="invoice-dropzone__action"><CloudUpload size={17} /> Factuur kiezen</span>
+          <input ref={invoiceInputRef} type="file" hidden accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" disabled={invoiceBusy} onChange={(event) => { void analyseerFactuur(event.target.files?.[0]); event.target.value = ""; }} />
+        </div>
+        {invoiceError && !invoiceResult && <div className="invoice-dropzone-error"><AlertTriangle size={16} />{invoiceError}</div>}
         <div className="filament-toolbar">
           <div className="filament-toolbar__title">
             <h2>Jouw filamenten</h2>
