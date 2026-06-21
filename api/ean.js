@@ -242,6 +242,11 @@ export default async function handler(request, response) {
     if (result.status !== "fulfilled" || !result.value) return [];
     return Array.isArray(result.value) ? result.value : [result.value];
   });
+  candidates.push(
+    { kind: "web", title: `Productgegevens voor EAN ${code}`, source: "Go-UPC", url: `https://go-upc.com/search?q=${code}`, snippet: "Open productindex; kies deze bron om naam, merk en overige metadata uit te lezen." },
+    { kind: "web", title: `Productgegevens voor EAN ${code}`, source: "UPCitemdb productpagina", url: `https://www.upcitemdb.com/upc/${code}`, snippet: "Open barcode-index met producttitel, merk en beschrijving." },
+    { kind: "web", title: `Productgegevens voor EAN ${code}`, source: "Buycott", url: `https://www.buycott.com/upc/${code}`, snippet: "Alternatieve productindex voor deze barcode." },
+  );
   const unique = [...new Map(candidates.map((candidate) => [candidate.url || `${candidate.source}:${candidate.title}`, candidate])).values()];
   response.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
   return response.status(200).json({ code, candidates: unique.slice(0, 10) });
