@@ -20,6 +20,9 @@ import {
   Image as ImageIcon,
   Download,
   Link2,
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
   Save,
   CheckCircle2,
   XCircle,
@@ -46,6 +49,8 @@ export default function PrintDetails() {
   const [opmerkingOpgeslagen, setOpmerkingOpgeslagen] = useState(false);
   const [filamentOpslaan, setFilamentOpslaan] = useState(false);
   const [filamentOpgeslagen, setFilamentOpgeslagen] = useState(false);
+  const [actieveFoto, setActieveFoto] = useState("");
+  const [hoofdfotoOpslaan, setHoofdfotoOpslaan] = useState(false);
 
   useEffect(() => {
 
@@ -73,6 +78,7 @@ export default function PrintDetails() {
         setPrintData(
           data || null
         );
+        setActieveFoto(data?.foto || data?.fotos?.[0] || "");
 
       }
 
@@ -151,6 +157,18 @@ export default function PrintDetails() {
       setFilamentOpgeslagen(true);
     } finally {
       setFilamentOpslaan(false);
+    }
+  }
+
+  async function maakHoofdfoto(foto: string) {
+    if (!printData?.id || !foto || foto === printData.foto) return;
+    setHoofdfotoOpslaan(true);
+    try {
+      const bijgewerkt = { ...printData, foto };
+      await savePrint(bijgewerkt);
+      setPrintData(bijgewerkt);
+    } finally {
+      setHoofdfotoOpslaan(false);
     }
   }
 
@@ -286,6 +304,12 @@ export default function PrintDetails() {
  const filamentKleuren: string[] = printData?.filamenten?.length
   ? printData.filamenten.map((item) => item.kleur)
   : Array.isArray(printData?.filamentKleuren) ? printData.filamentKleuren : [];
+ const fotoOpties = [...new Set([printData.foto, ...(printData.fotos ?? [])].filter((foto): foto is string => Boolean(foto)))];
+ const actieveFotoIndex = Math.max(0, fotoOpties.indexOf(actieveFoto));
+ function bladerFoto(richting: number) {
+   if (fotoOpties.length < 2) return;
+   setActieveFoto(fotoOpties[(actieveFotoIndex + richting + fotoOpties.length) % fotoOpties.length]);
+ }
   return (
 
     <div className="print-details-page">
@@ -312,42 +336,29 @@ export default function PrintDetails() {
 
         <div className="print-details-hero-grid">
 
-          <div className="print-details-image">
-
-            {
-
-              printData.foto
-
-                ? (
-
-                  <img
-                    src={
-                      printData.foto
-                    }
-                    alt={
-                      printData.naam
-                    }
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit:
-                        "cover"
-                    }}
-                  />
-
-                )
-
-                : (
-
-                  <ImageIcon
-                    size={72}
-                    color="#8CA0BD"
-                  />
-
-                )
-
-            }
-
+          <div className="print-photo-carousel">
+            <div className="print-details-image">
+              {actieveFoto ? <img src={actieveFoto} alt={printData.naam} /> : <ImageIcon size={72} color="#8CA0BD" />}
+              {fotoOpties.length > 1 && <>
+                <button type="button" className="carousel-arrow previous" aria-label="Vorige foto" onClick={() => bladerFoto(-1)}><ChevronLeft size={20} /></button>
+                <button type="button" className="carousel-arrow next" aria-label="Volgende foto" onClick={() => bladerFoto(1)}><ChevronRight size={20} /></button>
+                <span className="carousel-counter">{actieveFotoIndex + 1} / {fotoOpties.length}</span>
+              </>}
+            </div>
+            {fotoOpties.length > 1 && (
+              <div className="carousel-thumbnails" aria-label="Printfoto's">
+                {fotoOpties.map((foto, index) => (
+                  <button type="button" className={foto === actieveFoto ? "active" : ""} onClick={() => setActieveFoto(foto)} aria-label={`Foto ${index + 1} bekijken`} key={foto}>
+                    <img src={foto} alt="" loading="lazy" />
+                  </button>
+                ))}
+              </div>
+            )}
+            {actieveFoto && actieveFoto !== printData.foto ? (
+              <button type="button" className="set-cover-photo" disabled={hoofdfotoOpslaan} onClick={() => void maakHoofdfoto(actieveFoto)}>
+                <ImagePlus size={15} /> {hoofdfotoOpslaan ? "Opslaan…" : "Als hoofdafbeelding"}
+              </button>
+            ) : actieveFoto ? <span className="current-cover-photo">Hoofdafbeelding</span> : null}
           </div>
 
           <div>
@@ -527,25 +538,6 @@ export default function PrintDetails() {
         </div>
 
       </div>
-
-      {(printData.fotos?.length ?? 0) > 1 && (
-        <section className="dashboard-panel print-photo-panel">
-          <div className="print-photo-heading">
-            <div>
-              <h2>Printfoto’s</h2>
-              <p className="page-subtitle">Geïmporteerd vanuit MakerWorld</p>
-            </div>
-            <span>{printData.fotos!.length} foto’s</span>
-          </div>
-          <div className="print-photo-grid">
-            {printData.fotos!.map((foto, index) => (
-              <a href={foto} target="_blank" rel="noreferrer" key={foto} aria-label={`Printfoto ${index + 1} openen`}>
-                <img src={foto} alt={`${printData.naam} – foto ${index + 1}`} loading="lazy" />
-              </a>
-            ))}
-          </div>
-        </section>
-      )}
 
       <div className="print-details-columns">
 

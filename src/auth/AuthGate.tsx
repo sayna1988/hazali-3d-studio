@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { useAuth } from "./AuthProvider";
+import { DeviceLock } from "./DeviceLock";
 import "./AuthGate.css";
 
 const OTP_LENGTH = 8;
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
-  const { session, loading, syncError } = useAuth();
+  const { session, loading, syncError, signOut } = useAuth();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -26,7 +27,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       setMessage("");
       const { error } = await supabase!.auth.signInWithOtp({
         email: email.trim(),
-        options: { shouldCreateUser: true }
+        options: { shouldCreateUser: false }
       });
       if (error) setMessage(error.message);
       else {
@@ -75,7 +76,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{syncError && <div className="sync-warning">Cloudsync: {syncError}</div>}{children}</>;
+  return <DeviceLock userId={session.user.id} signOut={signOut}>{syncError && <div className="sync-warning">Cloudsync: {syncError}</div>}{children}</DeviceLock>;
 }
 
 function AuthShell({ title, text }: { title: string; text: string }) {

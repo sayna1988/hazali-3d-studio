@@ -11,6 +11,7 @@
 }
 
 .print-details-image {
+  position: relative;
   width: 220px;
   height: 220px;
   overflow: hidden;
@@ -21,6 +22,8 @@
   border-radius: 22px;
   background: linear-gradient(145deg, #0d1a2b, #09111d);
 }
+.print-details-image>img{width:100%;height:100%;object-fit:cover}
+.print-photo-carousel{display:flex;flex-direction:column;width:220px;gap:10px;align-items:stretch}.carousel-arrow{position:absolute;z-index:2;top:50%;display:grid;place-items:center;width:34px;height:34px;padding:0;transform:translateY(-50%);border:1px solid rgba(255,255,255,.2);border-radius:50%;background:rgba(3,12,24,.72);color:#fff;cursor:pointer;backdrop-filter:blur(8px)}.carousel-arrow.previous{left:9px}.carousel-arrow.next{right:9px}.carousel-counter{position:absolute;right:10px;bottom:9px;padding:4px 7px;border-radius:999px;background:rgba(3,12,24,.75);color:#fff;font-size:10px;font-weight:700}.carousel-thumbnails{display:flex;gap:7px;overflow-x:auto;padding:1px 1px 4px}.carousel-thumbnails button{width:44px;height:44px;flex:0 0 auto;overflow:hidden;padding:0;border:2px solid transparent;border-radius:9px;background:#071426;cursor:pointer}.carousel-thumbnails button.active{border-color:#20a7ff}.carousel-thumbnails img{width:100%;height:100%;object-fit:cover}.set-cover-photo{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:7px 10px;border:1px solid rgba(0,148,255,.3);border-radius:9px;background:rgba(0,148,255,.1);color:#8fd3ff;font-size:11px;font-weight:700;cursor:pointer}.set-cover-photo:disabled{opacity:.6}.current-cover-photo{align-self:center;color:#6ee7b7;font-size:10px;font-weight:700}
 
 .print-details-stats {
   display: grid;
@@ -84,6 +87,7 @@
     aspect-ratio: 1 / 1;
     max-height: 360px;
   }
+  .print-photo-carousel{width:100%}
 
   .print-details-stats {
     gap: 18px 12px;
@@ -124,6 +128,4 @@
 .detail-color-heading{display:grid;grid-template-columns:34px minmax(95px,1fr) 30px;align-items:center;gap:8px}.detail-color-heading>input[type=color]{width:32px;height:32px;padding:2px;border:1px solid rgba(255,255,255,.2);border-radius:8px;background:transparent;cursor:pointer}.detail-color-heading>div{display:grid;gap:3px}.detail-color-heading>div input{width:90px;padding:3px 6px;border:1px solid rgba(0,148,255,.25);border-radius:6px;background:rgba(5,15,30,.7);color:#fff;font:11px monospace;text-transform:uppercase}.detail-color-heading>button{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:7px;background:rgba(255,77,77,.1);color:#ff6262;cursor:pointer}.detail-add-color{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:9px 12px;border:1px dashed rgba(0,148,255,.4);border-radius:10px;background:rgba(0,148,255,.07);color:#7dd3fc;cursor:pointer}
 @media(max-width:560px){.filament-save-row{align-items:stretch;flex-direction:column}.filament-save-row .save-button{justify-content:center}}
  .makerworld-source-link{display:inline-flex;align-items:center;gap:7px;margin:16px 0 0 10px;padding:10px 13px;border:1px solid rgba(0,148,255,.28);border-radius:10px;background:rgba(0,148,255,.09);color:#8fd3ff;text-decoration:none;font-size:13px;font-weight:600}
-.print-photo-panel{margin:24px 0}.print-photo-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}.print-photo-heading h2,.print-photo-heading p{margin:0}.print-photo-heading p{margin-top:4px}.print-photo-heading>span{padding:6px 9px;border-radius:999px;background:rgba(0,148,255,.12);color:#8fd3ff;font-size:12px}
-.print-photo-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.print-photo-grid a{overflow:hidden;aspect-ratio:1;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:#071426}.print-photo-grid img{width:100%;height:100%;object-fit:cover;transition:transform .2s}.print-photo-grid a:hover img{transform:scale(1.035)}
-@media(max-width:850px){.print-photo-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:560px){.print-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.makerworld-source-link{margin-left:0}}
+@media(max-width:560px){.makerworld-source-link{margin-left:0}}

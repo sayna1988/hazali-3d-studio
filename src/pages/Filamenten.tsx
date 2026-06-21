@@ -288,8 +288,10 @@ export default function Filamenten() {
     }
   }
 
-  async function verwijderen(id: number) {
-    await deleteFilament(id);
+  async function verwijderen(filament: Filament) {
+    if (filament.id === undefined) return;
+    if (!window.confirm(`Weet je zeker dat je “${filament.naam}” en alle bijbehorende rollen wilt verwijderen?`)) return;
+    await deleteFilament(filament.id);
     await laden();
   }
 
@@ -673,7 +675,7 @@ export default function Filamenten() {
                     <div className="filament-card__identity"><span>{f.merk || "Onbekend merk"}</span><h3>{f.naam}</h3></div>
                     <div className="filament-card__actions">
                       <button className="filament-edit" type="button" onClick={() => openBewerken(f)} aria-label={`${f.naam} bewerken`} title="Filament bewerken"><Pencil size={16} /></button>
-                      <button className="filament-delete" type="button" onClick={() => f.id !== undefined && verwijderen(f.id)} aria-label={`${f.naam} verwijderen`} title="Filament verwijderen"><Trash2 size={17} /></button>
+                      <button className="filament-delete" type="button" onClick={() => void verwijderen(f)} aria-label={`${f.naam} verwijderen`} title="Filament verwijderen"><Trash2 size={17} /></button>
                     </div>
                   </div>
                   <div className="filament-card__tags"><span>{f.type}</span><span title={f.kleur}><i style={{ background: filamentKleur(f.kleur) }} />{colorName(filamentKleur(f.kleur))}</span></div>

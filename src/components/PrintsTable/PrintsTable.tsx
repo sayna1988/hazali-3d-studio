@@ -15,6 +15,12 @@ interface Props {
   voegUitgeprinteExemplarenToe: (printData: Print, aantal: number) => Promise<void>;
 }
 
+function printFilamenten(print: Print) {
+  return print.filamenten?.length
+    ? print.filamenten
+    : (print.filamentKleuren ?? []).map((kleur) => ({ kleur, gewicht: 0, uren: 0, minuten: 0 }));
+}
+
 export default function PrintsTable({
   prints,
   catalogusVoorraad,
@@ -57,7 +63,7 @@ export default function PrintsTable({
             <th>Naam</th>
             <th>Gewicht</th>
             <th>Tijd</th>
-            <th>Tijd per kleur</th>
+            <th>Kleuren / tijd</th>
             <th>Split</th>
             <th>Kostprijs</th>
             <th>Verkoopprijs</th>
@@ -138,12 +144,12 @@ export default function PrintsTable({
               <td>{p.uren}u {p.minuten}m</td>
 
               <td>
-                {p.splitPrint && (p.filamenten?.length ?? 0) > 0 ? (
+                {printFilamenten(p).length > 0 ? (
                   <div className="color-time-list">
-                    {p.filamenten!.map((filament, index) => (
+                    {printFilamenten(p).map((filament, index) => (
                       <span key={`${filament.kleur}-${index}`} title={colorName(filament.kleur)}>
                         <i style={{ background: safeColor(filament.kleur) }} />
-                        {filament.uren || 0}u {filament.minuten || 0}m
+                        {p.splitPrint && <>{filament.uren || 0}u {filament.minuten || 0}m</>}
                       </span>
                     ))}
                   </div>
