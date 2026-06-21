@@ -1,19 +1,13 @@
 import { db } from "../database/db";
 import { supabase } from "../lib/supabase";
 import type { Filament } from "../types/Filament";
+import { filamentKey } from "../utils/filamentIdentity";
 
 type CloudFilament = {
   id: string;
   client_key: string;
   data: Omit<Filament, "id" | "cloudId">;
 };
-
-function fingerprint(filament: Pick<Filament, "ean" | "naam" | "merk" | "kleur" | "type">) {
-  if (filament.ean) return `ean:${filament.ean}`;
-  return [filament.naam, filament.merk, filament.kleur, filament.type]
-    .map((value) => value.trim().toLowerCase())
-    .join("|");
-}
 
 function cloudData(filament: Filament): CloudFilament["data"] {
   return Object.fromEntries(
@@ -38,11 +32,11 @@ export async function syncFilaments() {
   if (existingError) throw existingError;
 
   const remoteByFingerprint = new Map(
-    ((existingRemote ?? []) as CloudFilament[]).map((remote) => [fingerprint(remote.data as Filament), remote]),
+    ((existingRemote ?? []) as CloudFilament[]).map((remote) => [filamentKey(remote.data as Filament), remote]),
   );
   const claimedCloudIds = new Set((await db.filamenten.toArray()).flatMap((item) => item.cloudId ? [item.cloudId] : []));
   for (const local of (await db.filamenten.toArray()).filter((item) => !item.cloudId)) {
-    const matching = remoteByFingerprint.get(fingerprint(local));
+    const matching = remoteByFingerprint.get(filamentKey(local));
     if (!matching) continue;
     if (claimedCloudIds.has(matching.id)) {
       await db.filamenten.delete(local.id!);

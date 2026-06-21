@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
-  Box,
   Barcode,
   Camera,
   Check,
@@ -24,6 +23,7 @@ import { createFilament, deleteFilament, loadFilaments, updateFilament } from ".
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../auth/AuthProvider";
 import { rolGegevens, totaalGewicht } from "../utils/filamentInventory";
+import { colorName } from "../utils/colorNames";
 import type { Filament } from "../types/Filament";
 import Page from "../components/Page/Page";
 import "./Filamenten.css";
@@ -261,13 +261,17 @@ export default function Filamenten() {
       ean: ean || undefined,
     };
 
-    if (bewerkenId === null) await createFilament(gegevens);
-    else await updateFilament(bewerkenId, gegevens);
+    const resultaat = bewerkenId === null
+      ? await createFilament(gegevens)
+      : await updateFilament(bewerkenId, gegevens);
 
     const wasBewerking = bewerkenId !== null;
     sluitFormulier();
     await laden();
-    if (wasBewerking) {
+    if (resultaat.merged) {
+      setMelding(`${gegevens.naam} bestond al — de rollen zijn samengevoegd.`);
+      window.setTimeout(() => setMelding(""), 4500);
+    } else if (wasBewerking) {
       setMelding(`${gegevens.naam} is bijgewerkt.`);
       window.setTimeout(() => setMelding(""), 3500);
     }
@@ -394,7 +398,7 @@ export default function Filamenten() {
     const query = zoekterm.toLowerCase().trim();
     return filamenten
       .filter((f) =>
-        (!query || [f.naam, f.merk, f.kleur, f.type].some((v) => v.toLowerCase().includes(query))) &&
+        (!query || [f.naam, f.merk, f.kleur, f.type, colorName(filamentKleur(f.kleur))].some((v) => v.toLowerCase().includes(query))) &&
         (typeFilter === "Alle" || f.type === typeFilter),
       )
       .sort((a, b) => {
@@ -443,13 +447,8 @@ export default function Filamenten() {
       <section className="filament-stats" aria-label="Filament overzicht">
         <div className="filament-stat filament-stat--primary">
           <span className="filament-stat__icon"><Layers3 size={21} /></span>
-          <div><span>Rollen</span><strong>{totaalRollen}</strong></div>
-          <small>verdeeld over {filamenten.length} filamentsoorten</small>
-        </div>
-        <div className="filament-stat">
-          <span className="filament-stat__icon"><Box size={21} /></span>
-          <div><span>Totale voorraad</span><strong>{(totaalGram / 1000).toLocaleString("nl-NL", { maximumFractionDigits: 2 })} kg</strong></div>
-          <small>{totaalGram.toLocaleString("nl-NL")} gram beschikbaar</small>
+          <div><span>Rollen & totale voorraad</span><strong>{totaalRollen} rollen</strong></div>
+          <small>{(totaalGram / 1000).toLocaleString("nl-NL", { maximumFractionDigits: 2 })} kg · {totaalGram.toLocaleString("nl-NL")} gram verdeeld over {filamenten.length} filamentsoorten</small>
         </div>
         <div className="filament-stat">
           <span className="filament-stat__icon filament-stat__icon--warning"><AlertTriangle size={21} /></span>
@@ -540,7 +539,7 @@ export default function Filamenten() {
                       <button className="filament-delete" type="button" onClick={() => f.id !== undefined && verwijderen(f.id)} aria-label={`${f.naam} verwijderen`} title="Filament verwijderen"><Trash2 size={17} /></button>
                     </div>
                   </div>
-                  <div className="filament-card__tags"><span>{f.type}</span><span><i style={{ background: filamentKleur(f.kleur) }} />{f.kleur || "Geen kleur"}</span></div>
+                  <div className="filament-card__tags"><span>{f.type}</span><span title={f.kleur}><i style={{ background: filamentKleur(f.kleur) }} />{colorName(filamentKleur(f.kleur))}</span></div>
                   {f.ean && <div className="filament-card__ean"><Barcode size={14} /> {f.ean}</div>}
                   <div className="filament-card__stock">
                     <div className="filament-card__stock-head"><span>Voorraad</span><strong>{rollen.aantal} {rollen.aantal === 1 ? "rol" : "rollen"}</strong></div>
