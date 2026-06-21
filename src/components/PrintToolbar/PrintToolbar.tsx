@@ -1,4 +1,4 @@
-import { Search, Tag } from "lucide-react";
+import { ArrowUpDown, ChevronDown, Search, Tag } from "lucide-react";
 import "./PrintToolbar.css";
 
 interface Props {
@@ -58,49 +58,41 @@ export default function PrintToolbar({
 
       </div>
 
-      <select
+      <label className="toolbar-select toolbar-select--sort">
+        <ArrowUpDown size={16} aria-hidden="true" />
+        <select
+          className="sort-select"
+          value={sortering}
+          onChange={(e)=>
+            setSortering(
+              e.target.value
+            )
+          }
+          aria-label="Sorteer prints"
+        >
+          <option value="nieuwste">
+            Nieuwste eerst
+          </option>
 
-        className="sort-select"
+          <option value="winst">
+            Hoogste winst
+          </option>
 
-        value={sortering}
+          <option value="verkoopprijs">
+            Hoogste verkoopprijs
+          </option>
+        </select>
+        <ChevronDown size={16} aria-hidden="true" />
+      </label>
 
-        onChange={(e)=>
-
-          setSortering(
-            e.target.value
-          )
-
-        }
-
-      >
-
-        <option value="nieuwste">
-
-          Nieuwste eerst
-
-        </option>
-
-        <option value="winst">
-
-          Hoogste winst
-
-        </option>
-
-        <option value="verkoopprijs">
-
-          Hoogste verkoopprijs
-
-        </option>
-
-      </select>
-
-      <div className="tag-filter-wrapper">
+      <label className="toolbar-select toolbar-select--tag">
         <Tag size={16} aria-hidden="true" />
         <select className="sort-select tag-filter" value={geselecteerdeTag} onChange={(event) => setGeselecteerdeTag(event.target.value)} aria-label="Filter op tag">
           <option value="">Alle tags</option>
           {tagRanking.map(({ tag, aantal }) => <option key={tag} value={tag}>{tag} ({aantal})</option>)}
         </select>
-      </div>
+        <ChevronDown size={16} aria-hidden="true" />
+      </label>
 
     </div>
 

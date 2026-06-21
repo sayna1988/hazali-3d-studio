@@ -21,6 +21,9 @@ export default function Prints() {
   const [selectedPrint, setSelectedPrint] = useState<Print | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [prints, setPrints] = useState<Print[]>([]);
+  const [geselecteerdePrintIds, setGeselecteerdePrintIds] = useState<number[]>([]);
+  const [bulkTagsInput, setBulkTagsInput] = useState("");
+  const [bulkBezig, setBulkBezig] = useState(false);
   const [zoekterm, setZoekterm] = useState("");
   const [sortering, setSortering] = useState("nieuwste");
   const [geselecteerdeTag, setGeselecteerdeTag] = useState("");
@@ -97,7 +100,65 @@ export default function Prints() {
   async function verwijderen(id: number) {
     if (!window.confirm("Weet je zeker dat je deze print wilt verwijderen?")) return;
     await deletePrint(id);
+    setGeselecteerdePrintIds((huidig) => huidig.filter((printId) => printId !== id));
     await laden();
+  }
+
+  function parseBulkTags() {
+    return Array.from(new Set(
+      bulkTagsInput
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+    ));
+  }
+
+  async function bulkTagsToepassen() {
+    const tags = parseBulkTags();
+    const geselecteerdePrints = prints.filter((print) => print.id !== undefined && geselecteerdePrintIds.includes(print.id));
+
+    if (!geselecteerdePrints.length) return;
+    if (!tags.length) {
+      setImportMessage({ type: "error", text: "Voer minimaal een tag in om in bulk toe te passen." });
+      return;
+    }
+
+    setBulkBezig(true);
+    setImportMessage(null);
+    try {
+      await Promise.all(geselecteerdePrints.map((print) => savePrint({
+        ...print,
+        tags: Array.from(new Set([...(print.tags ?? []), ...tags]))
+      })));
+      await laden();
+      setBulkTagsInput("");
+      setImportMessage({
+        type: "success",
+        text: `${tags.length} ${tags.length === 1 ? "tag is" : "tags zijn"} toegevoegd aan ${geselecteerdePrints.length} ${geselecteerdePrints.length === 1 ? "print" : "prints"}.`
+      });
+    } finally {
+      setBulkBezig(false);
+    }
+  }
+
+  async function bulkVerwijderen() {
+    const ids = [...geselecteerdePrintIds];
+    if (!ids.length) return;
+    if (!window.confirm(`Weet je zeker dat je ${ids.length} ${ids.length === 1 ? "geselecteerde print" : "geselecteerde prints"} wilt verwijderen?`)) return;
+
+    setBulkBezig(true);
+    setImportMessage(null);
+    try {
+      await Promise.all(ids.map((id) => deletePrint(id)));
+      setGeselecteerdePrintIds([]);
+      await laden();
+      setImportMessage({
+        type: "success",
+        text: `${ids.length} ${ids.length === 1 ? "print is" : "prints zijn"} verwijderd.`
+      });
+    } finally {
+      setBulkBezig(false);
+    }
   }
 
   async function importeer3MF(files: File[]) {
@@ -184,6 +245,11 @@ export default function Prints() {
     return () => { actief = false; };
   }, []);
 
+  useEffect(() => {
+    const geldigeIds = new Set(prints.map((print) => print.id).filter((id): id is number => id !== undefined));
+    setGeselecteerdePrintIds((huidig) => huidig.filter((id) => geldigeIds.has(id)));
+  }, [prints]);
+
   const tagRanking = useMemo(() => {
     const aantallen = new Map<string, number>();
 
@@ -209,6 +275,26 @@ export default function Prints() {
       if (sortering === "verkoopprijs") return b.verkoopprijs - a.verkoopprijs;
       return (b.id || 0) - (a.id || 0);
     });
+
+  const zichtbarePrintIds = gefilterdePrints
+    .map((print) => print.id)
+    .filter((id): id is number => id !== undefined);
+  const alleZichtbarePrintsGeselecteerd = zichtbarePrintIds.length > 0 && zichtbarePrintIds.every((id) => geselecteerdePrintIds.includes(id));
+  const enkeleZichtbarePrintsGeselecteerd = zichtbarePrintIds.some((id) => geselecteerdePrintIds.includes(id));
+
+  function togglePrintSelectie(id: number, checked: boolean) {
+    setGeselecteerdePrintIds((huidig) => checked
+      ? [...new Set([...huidig, id])]
+      : huidig.filter((printId) => printId !== id)
+    );
+  }
+
+  function toggleZichtbarePrints(checked: boolean) {
+    setGeselecteerdePrintIds((huidig) => checked
+      ? [...new Set([...huidig, ...zichtbarePrintIds])]
+      : huidig.filter((id) => !zichtbarePrintIds.includes(id))
+    );
+  }
 
   return (
     <div>
@@ -249,7 +335,48 @@ export default function Prints() {
         geselecteerdeTag={geselecteerdeTag}
         setGeselecteerdeTag={setGeselecteerdeTag}
       />
-      <PrintsTable prints={gefilterdePrints} catalogusVoorraad={catalogusVoorraad} navigate={navigate} verwijderen={verwijderen} setSelectedPrint={setSelectedPrint} setShowEditModal={setShowEditModal} toggleSplitPrint={(printData, checked) => void toggleSplitPrint(printData, checked)} voegUitgeprinteExemplarenToe={voegUitgeprinteExemplarenToe} />
+      <section className="bulk-actions" aria-label="Bulkacties voor de catalogus">
+        <div className="bulk-actions__summary">
+          <strong>{geselecteerdePrintIds.length}</strong>
+          <span>{geselecteerdePrintIds.length === 1 ? "print geselecteerd" : "prints geselecteerd"}</span>
+          {geselecteerdePrintIds.length > 0 && (
+            <button type="button" className="bulk-actions__clear" onClick={() => setGeselecteerdePrintIds([])}>
+              Selectie wissen
+            </button>
+          )}
+        </div>
+        <div className="bulk-actions__controls">
+          <input
+            type="text"
+            value={bulkTagsInput}
+            onChange={(event) => setBulkTagsInput(event.target.value)}
+            placeholder="Tags toevoegen, gescheiden door komma's"
+            aria-label="Tags in bulk toevoegen"
+            disabled={bulkBezig || geselecteerdePrintIds.length === 0}
+          />
+          <button type="button" className="save-button" onClick={() => void bulkTagsToepassen()} disabled={bulkBezig || geselecteerdePrintIds.length === 0}>
+            Tags toepassen
+          </button>
+          <button type="button" className="cancel-button bulk-actions__delete" onClick={() => void bulkVerwijderen()} disabled={bulkBezig || geselecteerdePrintIds.length === 0}>
+            Verwijderen
+          </button>
+        </div>
+      </section>
+      <PrintsTable
+        prints={gefilterdePrints}
+        catalogusVoorraad={catalogusVoorraad}
+        navigate={navigate}
+        verwijderen={verwijderen}
+        setSelectedPrint={setSelectedPrint}
+        setShowEditModal={setShowEditModal}
+        toggleSplitPrint={(printData, checked) => void toggleSplitPrint(printData, checked)}
+        voegUitgeprinteExemplarenToe={voegUitgeprinteExemplarenToe}
+        geselecteerdePrintIds={geselecteerdePrintIds}
+        alleZichtbarePrintsGeselecteerd={alleZichtbarePrintsGeselecteerd}
+        enkeleZichtbarePrintsGeselecteerd={enkeleZichtbarePrintsGeselecteerd}
+        togglePrintSelectie={togglePrintSelectie}
+        toggleZichtbarePrints={toggleZichtbarePrints}
+      />
       <EditPrintModal key={`${showEditModal}-${selectedPrint?.id ?? "new"}`} open={showEditModal} print={selectedPrint} setPrint={setSelectedPrint} onSave={savePrintChanges} onCancel={() => setShowEditModal(false)} />
     </div>
   );

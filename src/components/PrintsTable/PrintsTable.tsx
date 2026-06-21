@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Layers3, Minus, PackagePlus, Pencil, Plus, Tag, Trash2 } from "lucide-react";
 import "./PrintsTable.css";
 import type { Print } from "../../types/Print";
@@ -13,6 +13,11 @@ interface Props {
   setShowEditModal: (value: boolean) => void;
   toggleSplitPrint: (printData: Print, checked: boolean) => void;
   voegUitgeprinteExemplarenToe: (printData: Print, aantal: number) => Promise<void>;
+  geselecteerdePrintIds: number[];
+  alleZichtbarePrintsGeselecteerd: boolean;
+  enkeleZichtbarePrintsGeselecteerd: boolean;
+  togglePrintSelectie: (id: number, checked: boolean) => void;
+  toggleZichtbarePrints: (checked: boolean) => void;
 }
 
 function printFilamenten(print: Print) {
@@ -29,11 +34,23 @@ export default function PrintsTable({
   setSelectedPrint,
   setShowEditModal,
   toggleSplitPrint,
-  voegUitgeprinteExemplarenToe
+  voegUitgeprinteExemplarenToe,
+  geselecteerdePrintIds,
+  alleZichtbarePrintsGeselecteerd,
+  enkeleZichtbarePrintsGeselecteerd,
+  togglePrintSelectie,
+  toggleZichtbarePrints
 }: Props) {
   const [aantallen, setAantallen] = useState<Record<number, number>>({});
   const [bezigMet, setBezigMet] = useState<number | null>(null);
   const [toegevoegd, setToegevoegd] = useState<number | null>(null);
+  const selectAllRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = !alleZichtbarePrintsGeselecteerd && enkeleZichtbarePrintsGeselecteerd;
+    }
+  }, [alleZichtbarePrintsGeselecteerd, enkeleZichtbarePrintsGeselecteerd]);
 
   function wijzigAantal(id: number, verschil: number) {
     setAantallen((huidig) => ({ ...huidig, [id]: Math.max(1, (huidig[id] ?? 1) + verschil) }));
@@ -53,13 +70,19 @@ export default function PrintsTable({
   }
 
   return (
-
     <div className="prints-table-container">
-
       <table className="prints-table">
-
         <thead>
           <tr>
+            <th className="select-column">
+              <input
+                ref={selectAllRef}
+                type="checkbox"
+                checked={alleZichtbarePrintsGeselecteerd}
+                onChange={(event) => toggleZichtbarePrints(event.target.checked)}
+                aria-label="Alle zichtbare prints selecteren"
+              />
+            </th>
             <th>Naam</th>
             <th>Gewicht</th>
             <th>Tijd</th>
@@ -67,7 +90,6 @@ export default function PrintsTable({
             <th>Split</th>
             <th>Kostprijs</th>
             <th>Verkoopprijs</th>
-            <th>Winstmarge</th>
             <th>Winst</th>
             <th>Uitgeprint</th>
             <th>Acties</th>
@@ -75,19 +97,15 @@ export default function PrintsTable({
         </thead>
 
         <tbody>
-
           {prints.length === 0 && (
-
             <tr>
               <td colSpan={11}>
                 Geen prints gevonden.
               </td>
             </tr>
-
           )}
 
           {prints.map((p) => (
-
             <tr
               key={p.id}
               className="clickable-row"
@@ -97,10 +115,19 @@ export default function PrintsTable({
                 }
               }}
             >
+              <td className="select-column" onClick={(event) => event.stopPropagation()}>
+                {p.id !== undefined && (
+                  <input
+                    type="checkbox"
+                    checked={geselecteerdePrintIds.includes(p.id)}
+                    onChange={(event) => togglePrintSelectie(p.id!, event.target.checked)}
+                    aria-label={`${p.naam} selecteren`}
+                  />
+                )}
+              </td>
 
               <td>
                 <div className="print-name-cell">
-
                   <div className="print-thumb">
                     {p.foto ? (
                       <img
@@ -133,7 +160,6 @@ export default function PrintsTable({
                       {(p.tags?.length ?? 0) > 0 ? "Tags beheren" : "Tag toevoegen"}
                     </button>
                   </div>
-
                 </div>
               </td>
 
@@ -153,7 +179,7 @@ export default function PrintsTable({
                       </span>
                     ))}
                   </div>
-                ) : <span className="table-empty">–</span>}
+                ) : <span className="table-empty">-</span>}
               </td>
 
               <td>
@@ -174,13 +200,6 @@ export default function PrintsTable({
 
               <td>
                 €{Number(p.verkoopprijs || 0).toFixed(2)}
-              </td>
-
-              <td className="margin-cell">
-                {p.verkoopprijs > 0
-                  ? Math.round((p.winst / p.verkoopprijs) * 100)
-                  : 0
-                }%
               </td>
 
               <td className="profit-cell">
@@ -208,13 +227,12 @@ export default function PrintsTable({
 
               <td>
                 <div className="action-buttons">
-
                   <button
                     className="icon-button"
                     aria-label={`${p.naam} bewerken`}
                     title="Print bewerken"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={(event) => {
+                      event.stopPropagation();
                       setSelectedPrint({ ...p });
                       setShowEditModal(true);
                     }}
@@ -226,8 +244,8 @@ export default function PrintsTable({
                     className="delete-icon"
                     aria-label={`${p.naam} verwijderen`}
                     title="Print verwijderen"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={(event) => {
+                      event.stopPropagation();
 
                       if (p.id !== undefined) {
                         verwijderen(p.id);
@@ -236,20 +254,12 @@ export default function PrintsTable({
                   >
                     <Trash2 size={16} />
                   </button>
-
                 </div>
               </td>
-
             </tr>
-
           ))}
-
         </tbody>
-
       </table>
-
     </div>
-
   );
-
 }
