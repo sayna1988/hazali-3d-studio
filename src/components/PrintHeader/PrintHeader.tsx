@@ -27,10 +27,6 @@ export default function PrintHeader({ onFiles, importing = false, importProgress
         <p className="page-subtitle">Overzicht van al je opgeslagen prints.</p>
       </div>
 
-      <div className="print-header-actions">
-        <button className="new-print-button">+ Nieuwe print</button>
-      </div>
-
       <div
         className={`three-mf-dropzone${dragging ? " is-dragging" : ""}${importing ? " is-importing" : ""}`}
         onDragEnter={(event) => { event.preventDefault(); if (!importing) setDragging(true); }}
