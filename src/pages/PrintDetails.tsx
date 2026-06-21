@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../database/db";
-import { savePrint } from "../services/PrintService";
+import { savePrint, withoutSourceFile } from "../services/PrintService";
 import { loadFilaments } from "../services/FilamentService";
 import { totaalGewicht } from "../utils/filamentInventory";
 import type { Print } from "../types/Print";
@@ -41,6 +41,8 @@ export default function PrintDetails() {
   const [printData, setPrintData] =
     useState<Print | null>(null);
 
+  const [bronBestand, setBronBestand] = useState<Blob | null>(null);
+
   const [loading, setLoading] =
     useState(true);
 
@@ -68,16 +70,16 @@ export default function PrintDetails() {
 
         }
 
-        const [data, voorraad] = await Promise.all([
+        const [data, opgeslagenBestand, voorraad] = await Promise.all([
           db.prints.get(Number(id)),
+          db.printBestanden.get(Number(id)),
           loadFilaments()
         ]);
 
         setFilamentVoorraad(voorraad);
+        setBronBestand(opgeslagenBestand?.bestand ?? data?.bronBestand ?? null);
 
-        setPrintData(
-          data || null
-        );
+        setPrintData(data ? withoutSourceFile(data) : null);
         setActieveFoto(data?.foto || data?.fotos?.[0] || "");
 
       }
@@ -393,12 +395,12 @@ export default function PrintDetails() {
               </div>
             )}
 
-            {printData.bronBestand && (
+            {bronBestand && (
               <button
                 className="filter-button"
                 style={{ marginTop: "16px" }}
                 onClick={() => {
-                  const bestand = printData.bronBestand;
+                  const bestand = bronBestand;
                   if (!bestand) return;
                   const url = URL.createObjectURL(bestand);
                   const link = document.createElement("a");

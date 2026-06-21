@@ -2,6 +2,26 @@ import { db } from "../database/db";
 import type { Print } from "../types/Print";
 import { deleteCloudPrint, syncPrints, uploadPrint } from "./PrintSyncService";
 
+let legacyFileMigration: Promise<void> | null = null;
+
+function migrateLegacySourceFiles() {
+  if (legacyFileMigration) return legacyFileMigration;
+  legacyFileMigration = (async () => {
+    const ids = await db.prints.toCollection().primaryKeys();
+    for (const id of ids) {
+      const print = await db.prints.get(id);
+      if (!print?.bronBestand || print.id === undefined) continue;
+      const bestand = print.bronBestand;
+      delete print.bronBestand;
+      await db.transaction("rw", db.prints, db.printBestanden, async () => {
+        await db.printBestanden.put({ printId: print.id!, bestand });
+        await db.prints.put(print);
+      });
+    }
+  })();
+  return legacyFileMigration;
+}
+
 export function withoutSourceFile(print: Print): Print {
   const summary = { ...print };
   delete summary.bronBestand;
@@ -9,6 +29,7 @@ export function withoutSourceFile(print: Print): Print {
 }
 
 export async function loadPrintSummaries() {
+  await migrateLegacySourceFiles();
   const summaries: Print[] = [];
   // `each` materialiseert steeds maar één record. Een `toArray()` zou alle grote
   // 3MF-Blobs tegelijk naar het browsergeheugen kopiëren.
@@ -17,6 +38,7 @@ export async function loadPrintSummaries() {
 }
 
 export async function loadPrints() {
+  await migrateLegacySourceFiles();
   await syncPrints();
   return loadPrintSummaries();
 }
@@ -31,7 +53,10 @@ export async function createPrint(print: Print) {
 export async function deletePrint(id: number) {
   const print = await db.prints.get(id);
   await deleteCloudPrint(print?.cloudId);
-  return db.prints.delete(id);
+  await db.transaction("rw", db.prints, db.printBestanden, async () => {
+    await db.printBestanden.delete(id);
+    await db.prints.delete(id);
+  });
 }
 
 export async function savePrint(print: Print) {

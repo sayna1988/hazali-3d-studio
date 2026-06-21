@@ -1,12 +1,12 @@
 import { db } from "../database/db";
-import { parse3MF } from "./ThreeMFParser";
+import { parse3MFInWorker } from "./ThreeMFWorkerClient";
 import { createPrint } from "./PrintService";
 import { loadFilaments } from "./FilamentService";
 
 export async function import3MF(file: File) {
 
   const result =
-    await parse3MF(file);
+    await parse3MFInWorker(file);
 
   const [filamenten, settings] = await Promise.all([
     loadFilaments(),
@@ -30,7 +30,6 @@ export async function import3MF(file: File) {
   foto: result.thumbnail || "",
 
   bron3mf: file.name,
-  bronBestand: file,
   bestandsGrootte: result.bestandsGrootte,
 
   aangemaaktOp:
@@ -98,6 +97,10 @@ export async function import3MF(file: File) {
   winst: 0
 
 });
+
+  // Bewaar het zware bronbestand los van de metadata, zodat overzichten en sync
+  // nooit per ongeluk alle 3MF-Blobs naar het tabgeheugen kopiëren.
+  await db.printBestanden.put({ printId: id, bestand: file });
 
   return { id, ...result, materiaalKosten, stroomKosten, kostprijs };
 
