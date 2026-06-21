@@ -86,29 +86,45 @@ function decodeHtml(value = "") {
 }
 
 async function searchWeb(code) {
-  const html = await fetchText(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(`"${code}" filament`)}`);
-  if (!html) return [];
   const results = [];
-  const pattern = /<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?(?:class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/[^>]+>)?/gi;
-  for (const match of html.matchAll(pattern)) {
-    let url;
-    try {
-      const raw = decodeHtml(match[1]);
-      const redirect = new URL(raw, "https://html.duckduckgo.com");
-      url = redirect.searchParams.get("uddg") || redirect.href;
-      const parsed = new URL(url);
-      if (!/^https?:$/.test(parsed.protocol) || parsed.hostname.includes("duckduckgo.com")) continue;
-      results.push({
-        kind: "web",
-        title: decodeHtml(match[2]),
-        source: parsed.hostname.replace(/^www\./, ""),
-        url,
-        snippet: decodeHtml(match[3]),
-      });
-    } catch { continue; }
-    if (results.length === 6) break;
+  const query = `"${code}"`;
+  const [mojeek, duck] = await Promise.allSettled([
+    fetchText(`https://www.mojeek.com/search?q=${encodeURIComponent(query)}`),
+    fetchText(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`),
+  ]);
+
+  const mojeekHtml = mojeek.status === "fulfilled" ? mojeek.value : null;
+  if (mojeekHtml) {
+    for (const match of mojeekHtml.matchAll(/<h2><a[^>]+class="title"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a><\/h2><p class="s">([\s\S]*?)<\/p>/gi)) {
+      try {
+        const url = decodeHtml(match[1]);
+        const parsed = new URL(url);
+        if (!/^https?:$/.test(parsed.protocol)) continue;
+        const title = decodeHtml(match[2]);
+        const snippet = decodeHtml(match[3]);
+        if (![url, title, snippet].some((value) => value.includes(code))) continue;
+        results.push({ kind: "web", title, source: parsed.hostname.replace(/^www\./, ""), url, snippet });
+      } catch { continue; }
+      if (results.length === 6) break;
+    }
   }
-  return results;
+
+  const html = duck.status === "fulfilled" ? duck.value : null;
+  if (html && results.length < 6) {
+    const pattern = /<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?(?:class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/[^>]+>)?/gi;
+    for (const match of html.matchAll(pattern)) {
+      try {
+        const raw = decodeHtml(match[1]);
+        const redirect = new URL(raw, "https://html.duckduckgo.com");
+        const url = redirect.searchParams.get("uddg") || redirect.href;
+        const parsed = new URL(url);
+        if (!/^https?:$/.test(parsed.protocol) || parsed.hostname.includes("duckduckgo.com")) continue;
+        results.push({ kind: "web", title: decodeHtml(match[2]), source: parsed.hostname.replace(/^www\./, ""), url, snippet: decodeHtml(match[3]) });
+      } catch { continue; }
+      if (results.length === 6) break;
+    }
+  }
+  return [...new Map(results.map((result) => [result.url, result])).values()];
 }
 
 function isPrivateIp(address) {
