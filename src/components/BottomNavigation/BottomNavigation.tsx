@@ -6,7 +6,7 @@ import {
   House,
   Package,
   Boxes,
-  Printer
+  BookOpen
 } from "lucide-react";
 
 export default function BottomNavigation() {
@@ -39,11 +39,11 @@ export default function BottomNavigation() {
 
       </NavLink>
 
-      <NavLink to="/mijn-printer">
+      <NavLink to="/inventaris">
 
-        <Printer size={22} />
+        <BookOpen size={22} />
 
-        <span>Printer</span>
+        <span>Catalogus</span>
 
       </NavLink>
 
