@@ -9,6 +9,7 @@ import PrintHeader from "../components/PrintHeader/PrintHeader";
 import type { Print } from "../types/Print";
 import { loadPrints, deletePrint, savePrint } from "../services/PrintService";
 import { db } from "../database/db";
+import { importMakerWorldUrl } from "../services/MakerWorldImportService";
 
 interface ImportMessage {
   type: "success" | "error";
@@ -24,6 +25,7 @@ export default function Prints() {
   const [sortering, setSortering] = useState("nieuwste");
   const [geselecteerdeTag, setGeselecteerdeTag] = useState("");
   const [importing, setImporting] = useState(false);
+  const [makerWorldImporting, setMakerWorldImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
   const [importMessage, setImportMessage] = useState<ImportMessage | null>(null);
   const [catalogusVoorraad, setCatalogusVoorraad] = useState<Record<number, number>>({});
@@ -141,6 +143,30 @@ export default function Prints() {
     }
   }
 
+  async function importeerMakerWorld(url: string) {
+    setMakerWorldImporting(true);
+    setImportMessage(null);
+    try {
+      const result = await importMakerWorldUrl(url);
+      await laden();
+      setImportMessage({
+        type: "success",
+        text: `“${result.print.naam}” is vanuit MakerWorld geïmporteerd met het 3MF-bestand en ${result.print.fotos?.length ?? 0} foto’s.`,
+        aandachtspunten: result.waarschuwingen.length
+          ? [{ bestandsnaam: result.print.bron3mf || "MakerWorld 3MF", meldingen: result.waarschuwingen }]
+          : undefined,
+      });
+    } catch (error) {
+      console.error(error);
+      setImportMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "MakerWorld-import is mislukt.",
+      });
+    } finally {
+      setMakerWorldImporting(false);
+    }
+  }
+
   useEffect(() => {
     let actief = true;
     loadPrints().then((data) => { if (actief) setPrints(data); });
@@ -183,7 +209,13 @@ export default function Prints() {
 
   return (
     <div>
-      <PrintHeader onFiles={(files) => void importeer3MF(files)} importing={importing} importProgress={importProgress} />
+      <PrintHeader
+        onFiles={(files) => void importeer3MF(files)}
+        onMakerWorld={(url) => void importeerMakerWorld(url)}
+        importing={importing}
+        makerWorldImporting={makerWorldImporting}
+        importProgress={importProgress}
+      />
       {importMessage && (
         <div className={`import-message ${importMessage.type}`} role="status">
           <div className="import-message-content">

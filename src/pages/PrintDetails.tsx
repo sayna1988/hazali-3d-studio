@@ -19,6 +19,7 @@ import {
   TrendingUp,
   Image as ImageIcon,
   Download,
+  Link2,
   Save,
   CheckCircle2,
   XCircle,
@@ -400,6 +401,12 @@ export default function PrintDetails() {
               </button>
             )}
 
+            {printData.bronUrl && (
+              <a className="makerworld-source-link" href={printData.bronUrl} target="_blank" rel="noreferrer">
+                <Link2 size={16} /> Bekijk op MakerWorld
+              </a>
+            )}
+
             <div className="print-details-stats">
 
               <div>
@@ -520,6 +527,25 @@ export default function PrintDetails() {
         </div>
 
       </div>
+
+      {(printData.fotos?.length ?? 0) > 1 && (
+        <section className="dashboard-panel print-photo-panel">
+          <div className="print-photo-heading">
+            <div>
+              <h2>Printfoto’s</h2>
+              <p className="page-subtitle">Geïmporteerd vanuit MakerWorld</p>
+            </div>
+            <span>{printData.fotos!.length} foto’s</span>
+          </div>
+          <div className="print-photo-grid">
+            {printData.fotos!.map((foto, index) => (
+              <a href={foto} target="_blank" rel="noreferrer" key={foto} aria-label={`Printfoto ${index + 1} openen`}>
+                <img src={foto} alt={`${printData.naam} – foto ${index + 1}`} loading="lazy" />
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="print-details-columns">
 

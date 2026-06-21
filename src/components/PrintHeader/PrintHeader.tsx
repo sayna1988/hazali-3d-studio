@@ -1,16 +1,20 @@
 import { useRef, useState } from "react";
-import { FileUp, Upload } from "lucide-react";
+import type { FormEvent } from "react";
+import { FileUp, Link2, Upload } from "lucide-react";
 import "./PrintHeader.css";
 
 interface Props {
   onFiles: (files: File[]) => void;
+  onMakerWorld: (url: string) => void;
   importing?: boolean;
+  makerWorldImporting?: boolean;
   importProgress?: { current: number; total: number } | null;
 }
 
-export default function PrintHeader({ onFiles, importing = false, importProgress = null }: Props) {
+export default function PrintHeader({ onFiles, onMakerWorld, importing = false, makerWorldImporting = false, importProgress = null }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const [makerWorldUrl, setMakerWorldUrl] = useState("");
   const progressPercentage = importProgress?.total
     ? Math.min(100, Math.max(0, (importProgress.current / importProgress.total) * 100))
     : 0;
@@ -18,6 +22,12 @@ export default function PrintHeader({ onFiles, importing = false, importProgress
   function selectFiles(files: FileList | null) {
     const selected = Array.from(files ?? []);
     if (selected.length) onFiles(selected);
+  }
+
+  function submitMakerWorld(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const value = makerWorldUrl.trim();
+    if (value && !makerWorldImporting && !importing) onMakerWorld(value);
   }
 
   return (
@@ -77,6 +87,30 @@ export default function PrintHeader({ onFiles, importing = false, importProgress
           onChange={(event) => { selectFiles(event.target.files); event.target.value = ""; }}
         />
       </div>
+
+      <form className="makerworld-import" onSubmit={submitMakerWorld}>
+        <span className="makerworld-import-icon"><Link2 size={21} /></span>
+        <label htmlFor="makerworld-url">
+          <strong>Importeer vanuit MakerWorld</strong>
+          <small>De 3MF, modelnaam, tags en printfoto’s worden toegevoegd.</small>
+        </label>
+        <div className="makerworld-import-controls">
+          <input
+            id="makerworld-url"
+            type="url"
+            inputMode="url"
+            value={makerWorldUrl}
+            onChange={(event) => setMakerWorldUrl(event.target.value)}
+            placeholder="https://makerworld.com/models/1423288"
+            disabled={makerWorldImporting || importing}
+            required
+          />
+          <button type="submit" disabled={!makerWorldUrl.trim() || makerWorldImporting || importing}>
+            {makerWorldImporting ? <span className="makerworld-spinner" aria-hidden="true" /> : <Link2 size={16} />}
+            {makerWorldImporting ? "Importeren…" : "Importeren"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

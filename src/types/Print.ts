@@ -8,8 +8,11 @@ export interface Print {
 
   naam: string;
   foto?: string;
+  fotos?: string[];
   bron3mf?: string;
   bronBestand?: Blob;
+  bronUrl?: string;
+  makerWorldId?: string;
   bestandsGrootte?: number;
   aangemaaktOp: string;
   opmerkingen?: string;
