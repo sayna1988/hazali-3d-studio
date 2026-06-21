@@ -1,6 +1,7 @@
 import { db } from "../database/db";
 import { parse3MF } from "./ThreeMFParser";
 import { createPrint } from "./PrintService";
+import { loadFilaments } from "./FilamentService";
 
 export async function import3MF(file: File) {
 
@@ -8,7 +9,7 @@ export async function import3MF(file: File) {
     await parse3MF(file);
 
   const [filamenten, settings] = await Promise.all([
-    db.filamenten.toArray(),
+    loadFilaments(),
     db.settings.toCollection().first()
   ]);
   const materiaal = filamenten.find((item) =>

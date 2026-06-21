@@ -17,6 +17,7 @@ import {
 import { db } from "../database/db";
 import type { Print } from "../types/Print";
 import type { Filament } from "../types/Filament";
+import { loadFilaments } from "../services/FilamentService";
 
 type DashboardData = {
   prints: Print[];
@@ -37,7 +38,7 @@ export default function Dashboard() {
     async function loadDashboard() {
       const [prints, filamenten] = await Promise.all([
         db.prints.orderBy("aangemaaktOp").reverse().toArray(),
-        db.filamenten.toArray(),
+        loadFilaments(),
       ]);
       setData({ prints, filamenten });
       setLoading(false);

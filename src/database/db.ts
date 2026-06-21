@@ -52,6 +52,13 @@ export class HazaliDatabase extends Dexie {
       inventory: "++id,naam,sku,voorraad"
     });
 
+    this.version(8).stores({
+      filamenten: "++id, &cloudId, syncKey, naam, merk, kleur, type, ean",
+      prints: "++id, &cloudId, naam, aangemaaktOp",
+      settings: "++id",
+      inventory: "++id,naam,sku,voorraad"
+    });
+
   }
 
 }

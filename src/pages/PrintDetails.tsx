@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../database/db";
 import { savePrint } from "../services/PrintService";
+import { loadFilaments } from "../services/FilamentService";
 import type { Print } from "../types/Print";
 import type { Filament } from "../types/Filament";
 import { colorName, colorsMatch, safeColor } from "../utils/colorNames";
@@ -62,7 +63,7 @@ export default function PrintDetails() {
 
         const [data, voorraad] = await Promise.all([
           db.prints.get(Number(id)),
-          db.filamenten.toArray()
+          loadFilaments()
         ]);
 
         setFilamentVoorraad(voorraad);

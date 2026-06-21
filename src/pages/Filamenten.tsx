@@ -7,6 +7,7 @@ import {
   Check,
   ChevronDown,
   CircleDollarSign,
+  ExternalLink,
   Layers3,
   Minus,
   PackageOpen,
@@ -18,7 +19,10 @@ import {
   X,
 } from "lucide-react";
 import { db } from "../database/db";
-import { lookupEan } from "../services/EanLookupService";
+import { scrapeEanCandidate, searchEan, type EanCandidate, type EanProduct } from "../services/EanLookupService";
+import { createFilament, deleteFilament, loadFilaments, updateFilament } from "../services/FilamentService";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../auth/AuthProvider";
 import type { Filament } from "../types/Filament";
 import Page from "../components/Page/Page";
 import "./Filamenten.css";
@@ -171,6 +175,7 @@ function voorraadStatus(gram: number) {
 }
 
 export default function Filamenten() {
+  const { session } = useAuth();
   const [naam, setNaam] = useState("");
   const [merk, setMerk] = useState("");
   const [kleur, setKleur] = useState("");
@@ -187,6 +192,9 @@ export default function Filamenten() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [melding, setMelding] = useState("");
   const [bewerkenId, setBewerkenId] = useState<number | null>(null);
+  const [eanOpties, setEanOpties] = useState<EanCandidate[] | null>(null);
+  const [eanBezig, setEanBezig] = useState(false);
+  const [eanFout, setEanFout] = useState("");
 
   function resetFormulier() {
     setNaam("");
@@ -226,7 +234,7 @@ export default function Filamenten() {
   }
 
   async function laden() {
-    setFilamenten(await db.filamenten.toArray());
+    setFilamenten(await loadFilaments());
   }
 
   async function opslaan(event: React.FormEvent) {
@@ -246,8 +254,8 @@ export default function Filamenten() {
       ean: ean || undefined,
     };
 
-    if (bewerkenId === null) await db.filamenten.add(gegevens);
-    else await db.filamenten.update(bewerkenId, gegevens);
+    if (bewerkenId === null) await createFilament(gegevens);
+    else await updateFilament(bewerkenId, gegevens);
 
     const wasBewerking = bewerkenId !== null;
     sluitFormulier();
@@ -259,13 +267,13 @@ export default function Filamenten() {
   }
 
   async function verwijderen(id: number) {
-    await db.filamenten.delete(id);
+    await deleteFilament(id);
     await laden();
   }
 
   async function wijzigVoorraad(filament: Filament, verschil: number) {
     if (filament.id === undefined) return;
-    await db.filamenten.update(filament.id, {
+    await updateFilament(filament.id, {
       voorraadGram: Math.max(0, filament.voorraadGram + verschil),
     });
     await laden();
@@ -273,59 +281,90 @@ export default function Filamenten() {
 
   async function verwerkBarcode(code: string) {
     setScannerOpen(false);
-    setMelding("Productgegevens worden opgezocht…");
+    setMelding("Online productopties worden gezocht…");
 
     const bekend = await db.filamenten.where("ean").equals(code).first();
     if (bekend?.id !== undefined) {
-      await db.filamenten.update(bekend.id, { voorraadGram: bekend.voorraadGram + 1000 });
+      await updateFilament(bekend.id, { voorraadGram: bekend.voorraadGram + 1000 });
       await laden();
       setMelding(`${bekend.naam} herkend — 1.000 gram aan de voorraad toegevoegd.`);
       window.setTimeout(() => setMelding(""), 4500);
       return;
     }
 
-    let zoekfout = false;
     try {
-      const product = await lookupEan(code);
-      if (product) {
-        const herkend = herkenEigenschappen(
-          [product.name, product.brand, product.description, product.category].join(" "),
-        );
-        await db.filamenten.add({
-          naam: product.name,
-          merk: product.brand,
-          kleur: herkend.kleur,
-          type: herkend.materiaal,
-          prijsPerKg: 24.95,
-          voorraadGram: 1000,
-          ean: code,
-        });
-        await laden();
-        setMelding(`${product.name} is gevonden via ${product.source} en automatisch toegevoegd.`);
-        window.setTimeout(() => setMelding(""), 4500);
-        return;
-      }
-    } catch { zoekfout = true; }
+      const opties = await searchEan(code);
+      setEan(code);
+      setEanOpties(opties);
+      setEanFout("");
+      setMelding("");
+    } catch (error) {
+      setEan(code);
+      setEanOpties([]);
+      setEanFout(error instanceof Error ? error.message : "Online zoeken is mislukt.");
+      setMelding("");
+    }
+  }
 
-    setEan(code);
+  function vulProductIn(product: EanProduct) {
+    const tekst = [product.name, product.brand, product.description, product.category].join(" ");
+    const herkend = herkenEigenschappen(tekst);
+    const gewicht = tekst.match(/(\d+(?:[.,]\d+)?)\s*(kg|g)\b/i);
+    const gram = gewicht ? Number(gewicht[1].replace(",", ".")) * (gewicht[2].toLowerCase() === "kg" ? 1000 : 1) : 1000;
+    setNaam(product.name);
+    setMerk(product.brand === "Onbekend merk" ? "" : product.brand);
+    setKleur(herkend.kleur === "Onbekend" ? "" : herkend.kleur);
+    setType(herkend.materiaal);
+    setPrijsPerKg(product.price && product.price > 0 ? product.price / Math.max(gram / 1000, 0.001) : 24.95);
+    setVoorraadGram(gram);
+    setEanOpties(null);
+    setEanFout("");
+    setToonFormulier(true);
+  }
+
+  async function kiesEanOptie(optie: EanCandidate) {
+    setEanBezig(true);
+    setEanFout("");
+    try {
+      const product = optie.product ?? await scrapeEanCandidate(ean, optie.url);
+      vulProductIn(product);
+    } catch (error) {
+      setEanFout(error instanceof Error ? error.message : "Productgegevens konden niet worden gelezen.");
+    } finally {
+      setEanBezig(false);
+    }
+  }
+
+  function handmatigAanvullen() {
+    setEanOpties(null);
+    setEanFout("");
     setNaam("");
     setMerk("");
     setKleur("");
     setToonFormulier(true);
-    setMelding(zoekfout
-      ? "De online productzoekopdracht is mislukt. Vul de gegevens hieronder handmatig aan."
-      : "Deze EAN is niet gevonden in de openbare productdatabases. Vul het product één keer aan; volgende scans worden automatisch herkend.");
   }
 
   useEffect(() => {
     let actief = true;
-    db.filamenten.toArray().then((data) => {
+    loadFilaments().then((data) => {
       if (actief) setFilamenten(data);
     });
     return () => {
       actief = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!supabase || !session?.user.id) return;
+    const client = supabase;
+    const channel = client
+      .channel(`filaments-${session.user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "filaments", filter: `user_id=eq.${session.user.id}` }, () => {
+        void loadFilaments().then(setFilamenten);
+      })
+      .subscribe();
+    return () => { void client.removeChannel(channel); };
+  }, [session?.user.id]);
 
   const materiaalTypes = useMemo(
     () => ["Alle", ...Array.from(new Set(filamenten.map((f) => f.type)))],
@@ -356,6 +395,27 @@ export default function Filamenten() {
   return (
     <Page title="Filamenten" subtitle="Beheer je materialen, voorraad en kosten op één plek.">
       {scannerOpen && <BarcodeScanner onScan={verwerkBarcode} onClose={() => setScannerOpen(false)} />}
+      {eanOpties && (
+        <div className="ean-results-overlay" role="dialog" aria-modal="true" aria-labelledby="ean-results-title">
+          <section className="ean-results">
+            <div className="ean-results__header">
+              <div><span>EAN {ean}</span><h2 id="ean-results-title">Kies het juiste product</h2><p>Selecteer een bron; Hazali leest daarna de beschikbare productgegevens uit.</p></div>
+              <button type="button" onClick={() => setEanOpties(null)} aria-label="Resultaten sluiten"><X size={20} /></button>
+            </div>
+            {eanFout && <div className="ean-results__error">{eanFout}</div>}
+            <div className="ean-results__list">
+              {eanOpties.map((optie, index) => (
+                <button key={`${optie.url}-${index}`} type="button" disabled={eanBezig} onClick={() => void kiesEanOptie(optie)}>
+                  <div><strong>{optie.title}</strong><span>{optie.source}</span>{optie.snippet && <p>{optie.snippet}</p>}</div>
+                  <ExternalLink size={17} />
+                </button>
+              ))}
+              {!eanOpties.length && !eanFout && <p className="ean-results__empty">Geen passende online resultaten gevonden.</p>}
+            </div>
+            <div className="ean-results__footer"><button type="button" onClick={handmatigAanvullen}>Handmatig aanvullen</button><span>{eanBezig ? "Productpagina wordt gelezen…" : `${eanOpties.length} opties gevonden`}</span></div>
+          </section>
+        </div>
+      )}
       {melding && <div className="filament-toast"><Barcode size={18} /><span>{melding}</span><button type="button" onClick={() => setMelding("")} aria-label="Melding sluiten"><X size={16} /></button></div>}
       <section className="filament-stats" aria-label="Filament overzicht">
         <div className="filament-stat filament-stat--primary">

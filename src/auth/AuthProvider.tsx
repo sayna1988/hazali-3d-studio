@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { syncPrints } from "../services/PrintSyncService";
+import { syncFilaments } from "../services/FilamentSyncService";
 
 type AuthContextValue = {
   session: Session | null;
@@ -24,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function synchronize() {
       try {
-        await syncPrints();
+        await Promise.all([syncPrints(), syncFilaments()]);
       } catch (error) {
         if (active) {
           setSyncError(error instanceof Error ? error.message : "Synchroniseren is mislukt.");

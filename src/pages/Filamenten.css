@@ -67,6 +67,28 @@
 .filament-toast span { font-size: 13px; }
 .filament-toast button { display: grid; place-items: center; margin-left: auto; padding: 3px; color: #7991b0; border: 0; background: none; cursor: pointer; }
 
+.ean-results-overlay { position: fixed; z-index: 4100; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(0, 7, 16, .82); backdrop-filter: blur(9px); }
+.ean-results { width: min(620px, 100%); max-height: calc(100vh - 40px); padding: 22px; overflow-y: auto; border: 1px solid rgba(83, 178, 255, .24); border-radius: 22px; background: linear-gradient(155deg, #0d2138, #071523 70%); box-shadow: 0 30px 80px rgba(0,0,0,.55); }
+.ean-results__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 17px; }
+.ean-results__header span { color: #45adfa; font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+.ean-results__header h2 { margin-top: 4px; font-size: 21px; }
+.ean-results__header p { margin-top: 6px; color: #7890b0; font-size: 12px; line-height: 1.5; }
+.ean-results__header > button { display: grid; flex: 0 0 37px; place-items: center; width: 37px; height: 37px; color: #8ba0be; border: 1px solid rgba(148,177,218,.12); border-radius: 10px; background: rgba(255,255,255,.03); cursor: pointer; }
+.ean-results__error { margin-bottom: 12px; padding: 10px 12px; color: #ff9b9b; font-size: 12px; border: 1px solid rgba(255,92,92,.2); border-radius: 10px; background: rgba(255,72,72,.07); }
+.ean-results__list { display: grid; gap: 9px; }
+.ean-results__list > button { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; padding: 13px 14px; color: #e8f3ff; text-align: left; border: 1px solid rgba(148,177,218,.13); border-radius: 12px; background: rgba(4,16,30,.65); cursor: pointer; transition: .2s; }
+.ean-results__list > button:hover { border-color: rgba(53,164,255,.48); background: rgba(21,91,145,.16); }
+.ean-results__list > button:disabled { opacity: .55; cursor: wait; }
+.ean-results__list strong, .ean-results__list span { display: block; }
+.ean-results__list strong { font-size: 13px; line-height: 1.35; }
+.ean-results__list span { margin-top: 3px; color: #4cacfa; font-size: 10px; }
+.ean-results__list p { margin-top: 5px; color: #7188a7; font-size: 11px; line-height: 1.4; }
+.ean-results__list svg { flex: 0 0 auto; color: #5baef0; }
+.ean-results__empty { padding: 25px; color: #7188a7; text-align: center; border: 1px dashed rgba(148,177,218,.15); border-radius: 12px; }
+.ean-results__footer { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: 17px; padding-top: 15px; border-top: 1px solid rgba(148,177,218,.1); }
+.ean-results__footer button { min-height: 40px; padding: 0 14px; color: #9dcbef; font-weight: 700; border: 1px solid rgba(66,166,244,.25); border-radius: 10px; background: rgba(31,156,255,.08); cursor: pointer; }
+.ean-results__footer span { color: #6f86a5; font-size: 11px; }
+
 .filament-form { margin: 0 0 22px; padding: 22px; border: 1px solid rgba(31, 156, 255, .23); border-radius: 17px; background: linear-gradient(135deg, rgba(13, 35, 61, .86), rgba(7, 20, 37, .96)); animation: filament-slide-in .24s ease-out; }
 @keyframes filament-slide-in { from { opacity: 0; transform: translateY(-8px); } }
 .filament-form__heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
@@ -195,6 +217,10 @@
   .filament-form__footer button { width: 100%; justify-content: center; }
   .filament-toast { top: 14px; right: 14px; left: 14px; max-width: none; }
   .barcode-overlay { padding: 10px; }
+  .ean-results-overlay { padding: 10px; }
+  .ean-results { max-height: calc(100vh - 20px); padding: 16px; border-radius: 18px; }
+  .ean-results__footer { align-items: stretch; flex-direction: column-reverse; }
+  .ean-results__footer button { width: 100%; }
   .barcode-modal { max-height: calc(100vh - 20px); padding: 16px; border-radius: 18px; }
   .barcode-manual { align-items: stretch; flex-direction: column; }
   .barcode-manual button { width: 100%; }
