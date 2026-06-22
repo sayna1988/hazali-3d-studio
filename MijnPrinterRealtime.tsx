@@ -6,6 +6,7 @@ import { db } from "./src/database/db";
 import { useAuth } from "./src/auth/AuthProvider";
 import { supabase } from "./src/lib/supabase";
 import { getPrinterStatus, type CloudPrinterStatus, type PrinterStatus } from "./src/services/PrinterStatusService";
+import { saveSettings as saveCloudSettings } from "./src/services/SettingsSyncService";
 
 type CloudDevice = { name: string; local_ip: string | null; remote_url: string | null; camera_url: string | null; ingest_token: string };
 const DEFAULT_IP = "192.168.68.73";
@@ -92,7 +93,7 @@ export default function MijnPrinterRealtime() {
 
   async function saveSettings() {
     const current = await db.settings.get(1);
-    await db.settings.put({
+    await saveCloudSettings({
       id: 1, printerNaam, stroomPrijs: current?.stroomPrijs ?? 0.23, printerVermogen: current?.printerVermogen ?? 180,
       btw: current?.btw ?? 21, verpakking: current?.verpakking ?? 0.3, onderhoud: current?.onderhoud ?? 0.1,
       platform: current?.platform ?? "Etsy", platformKosten: current?.platformKosten ?? 6.5,

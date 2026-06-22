@@ -1,17 +1,18 @@
 .modal-overlay{
     position:fixed;
     inset:0;
+    padding:max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px));
     background:rgba(0,0,0,.65);
     display:flex;
     justify-content:center;
     align-items:center;
-    z-index:999;
+    z-index:6000;
 }
 
 .modal{
     width:520px;
     max-width:calc(100vw - 32px);
-    max-height:calc(100vh - 32px);
+    max-height:100%;
     overflow-y:auto;
     background:#08172d;
     border:1px solid #163b6b;

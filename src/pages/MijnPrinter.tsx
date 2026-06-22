@@ -18,6 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 import { db } from "../database/db";
+import { saveSettings as saveCloudSettings } from "../services/SettingsSyncService";
 
 type PrinterStatus = {
   state?: string;
@@ -101,7 +102,7 @@ export default function MijnPrinter() {
 
   async function saveSettings() {
     const current = await db.settings.get(1);
-    await db.settings.put({
+    await saveCloudSettings({
       id: 1,
       printerNaam,
       stroomPrijs: current?.stroomPrijs ?? 0.23,

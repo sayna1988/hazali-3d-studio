@@ -2,6 +2,8 @@ export interface SettingsModel {
 
   id?: number;
 
+  syncPending?: boolean;
+
   printerNaam: string;
 
   stroomPrijs: number;

@@ -7,9 +7,10 @@ import PrintsTable from "../components/PrintsTable/PrintsTable";
 import PrintToolbar from "../components/PrintToolbar/PrintToolbar";
 import PrintHeader from "../components/PrintHeader/PrintHeader";
 import type { Print } from "../types/Print";
-import { loadPrints, deletePrint, savePrint } from "../services/PrintService";
+import { loadPrints, loadPrintSummaries, deletePrint, savePrint } from "../services/PrintService";
 import { db } from "../database/db";
 import { importMakerWorldUrl } from "../services/MakerWorldImportService";
+import { createInventory, loadInventory, updateInventory } from "../services/InventoryService";
 
 interface ImportMessage {
   type: "success" | "error";
@@ -42,7 +43,7 @@ export default function Prints() {
   }
 
   async function laadCatalogusVoorraad() {
-    const producten = await db.inventory.toArray();
+    const producten = await loadInventory();
     setCatalogusVoorraad(Object.fromEntries(
       producten
         .filter((product) => product.printId !== undefined)
@@ -53,18 +54,16 @@ export default function Prints() {
   async function voegUitgeprinteExemplarenToe(print: Print, aantal: number) {
     if (print.id === undefined || aantal < 1) return;
 
-    await db.transaction("rw", db.inventory, async () => {
-      const bestaand = await db.inventory
-        .filter((product) => product.printId === print.id)
-        .first();
+    const bestaand = await db.inventory
+      .filter((product) => product.printId === print.id)
+      .first();
 
-      if (bestaand?.id !== undefined) {
-        await db.inventory.update(bestaand.id, { voorraad: bestaand.voorraad + aantal });
-        return;
-      }
-
-      await db.inventory.add({
+    if (bestaand?.id !== undefined) {
+      await updateInventory(bestaand.id, { voorraad: bestaand.voorraad + aantal });
+    } else {
+      await createInventory({
         printId: print.id,
+        printCloudId: print.cloudId,
         naam: print.naam,
         foto: print.foto ?? "",
         sku: `PRINT-${String(print.id).padStart(4, "0")}`,
@@ -75,7 +74,7 @@ export default function Prints() {
         locatie: "",
         aangemaaktOp: new Date().toISOString()
       });
-    });
+    }
 
     await laadCatalogusVoorraad();
   }
@@ -236,6 +235,9 @@ export default function Prints() {
 
   useEffect(() => {
     let actief = true;
+    const verversNaSync = () => {
+      void loadPrintSummaries().then((data) => { if (actief) setPrints(data); });
+    };
     loadPrints().then((data) => { if (actief) setPrints(data); });
     db.inventory.toArray().then((producten) => {
       if (!actief) return;
@@ -245,12 +247,21 @@ export default function Prints() {
           .map((product) => [product.printId!, product.voorraad])
       ));
     });
-    return () => { actief = false; };
+    window.addEventListener("hazali:prints-synced", verversNaSync);
+    window.addEventListener("hazali:inventory-synced", laadCatalogusVoorraad);
+    return () => {
+      actief = false;
+      window.removeEventListener("hazali:prints-synced", verversNaSync);
+      window.removeEventListener("hazali:inventory-synced", laadCatalogusVoorraad);
+    };
   }, []);
 
   useEffect(() => {
     const geldigeIds = new Set(prints.map((print) => print.id).filter((id): id is number => id !== undefined));
-    setGeselecteerdePrintIds((huidig) => huidig.filter((id) => geldigeIds.has(id)));
+    const timer = window.setTimeout(() => {
+      setGeselecteerdePrintIds((huidig) => huidig.filter((id) => geldigeIds.has(id)));
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [prints]);
 
   useEffect(() => {

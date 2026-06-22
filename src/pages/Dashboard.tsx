@@ -36,17 +36,26 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let actief = true;
     async function loadDashboard() {
       const [prints, filamenten] = await Promise.all([
         loadPrintSummaries(),
         loadFilaments(),
       ]);
       prints.sort((a, b) => b.aangemaaktOp.localeCompare(a.aangemaaktOp));
-      setData({ prints, filamenten });
-      setLoading(false);
+      if (actief) {
+        setData({ prints, filamenten });
+        setLoading(false);
+      }
     }
 
-    loadDashboard();
+    void loadDashboard();
+    const verversNaSync = () => { void loadDashboard(); };
+    window.addEventListener("hazali:data-synced", verversNaSync);
+    return () => {
+      actief = false;
+      window.removeEventListener("hazali:data-synced", verversNaSync);
+    };
   }, []);
 
   const stats = useMemo(() => {

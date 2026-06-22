@@ -12,7 +12,7 @@
 
         left:16px;
         right:16px;
-        bottom:16px;
+        bottom:calc(16px + env(safe-area-inset-bottom, 0px));
 
         height:74px;
 
@@ -34,7 +34,7 @@
 
         z-index:5000;
 
-        padding-bottom:env(safe-area-inset-bottom);
+        padding-bottom:0;
 
     }
 

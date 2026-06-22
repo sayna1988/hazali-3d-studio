@@ -332,7 +332,9 @@ transition:.2s;
 
   .content{
 padding-top:72px;
-padding-bottom:110px;
+/* Keep the final controls scrollable above the floating navigation and
+   iOS home indicator. */
+padding-bottom:calc(110px + env(safe-area-inset-bottom, 0px));
     margin-left:0 !important;
     width:100%;
 

@@ -2,7 +2,15 @@ export interface Inventory {
 
   id?: number;
 
+  cloudId?: string;
+
+  syncKey?: string;
+
+  syncPending?: boolean;
+
   printId?: number;
+
+  printCloudId?: string;
 
   naam: string;
 

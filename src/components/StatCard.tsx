@@ -1,10 +1,12 @@
+import type { ComponentType } from "react";
+
 interface Props {
 
   title:string;
 
   value:string;
 
-  icon:any;
+  icon: ComponentType<{ size?: number }>;
 
 }
 

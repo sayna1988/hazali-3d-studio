@@ -10,7 +10,7 @@ type CloudPrint = {
 
 function cloudData(print: Print): CloudPrint["data"] {
   return Object.fromEntries(
-    Object.entries(print).filter(([key]) => !["id", "cloudId", "bronBestand"].includes(key))
+    Object.entries(print).filter(([key]) => !["id", "cloudId", "bronBestand", "syncPending"].includes(key))
   ) as CloudPrint["data"];
 }
 
@@ -24,10 +24,27 @@ export async function syncPrints() {
   const userId = await currentUserId();
   if (!supabase || !userId) return;
 
-  const localPrintIds = await db.prints.toCollection().primaryKeys();
-  for (const id of localPrintIds) {
-    const print = await db.prints.get(id);
-    if (!print || print.cloudId) continue;
+  // Verwijderingen gaan eerst. Zo kan een oude lokale kopie nooit opnieuw naar
+  // de cloud worden geupload voordat de verwijdering is verwerkt.
+  const deletions = await db.syncDeletions.where("entity").equals("print").toArray();
+  for (const deletion of deletions) {
+    if (deletion.userId && deletion.userId !== userId) continue;
+    const { error } = await supabase.from("prints").delete().eq("id", deletion.cloudId);
+    if (error) throw error;
+    await db.syncDeletions.delete(deletion.key);
+  }
+
+  const localPrints = await db.prints.toArray();
+  for (const print of localPrints.filter((item) => !item.cloudId || item.syncPending)) {
+    if (print.cloudId) {
+      const { error } = await supabase
+        .from("prints")
+        .update({ data: cloudData(print), updated_at: new Date().toISOString() })
+        .eq("id", print.cloudId);
+      if (error) throw error;
+      await db.prints.update(print.id!, { syncPending: false });
+      continue;
+    }
     const syncKey = print.syncKey || crypto.randomUUID();
     if (!print.syncKey) await db.prints.update(print.id!, { syncKey });
     const prepared = { ...print, syncKey };
@@ -37,7 +54,7 @@ export async function syncPrints() {
       .select("id")
       .single();
     if (error) throw error;
-    await db.prints.update(print.id!, { cloudId: data.id });
+    await db.prints.update(print.id!, { cloudId: data.id, syncKey, syncPending: false });
   }
 
   const { data: remotePrints, error } = await supabase
@@ -46,10 +63,22 @@ export async function syncPrints() {
     .order("created_at", { ascending: true });
   if (error) throw error;
 
+  // De cloud is leidend voor reeds gesynchroniseerde records. Wat op een ander
+  // apparaat is verwijderd, wordt hier inclusief het lokale bronbestand gewist.
+  const remoteIds = new Set((remotePrints ?? []).map((remote) => remote.id));
+  const removedLocals = (await db.prints.toArray())
+    .filter((print) => print.cloudId && !remoteIds.has(print.cloudId));
+  await db.transaction("rw", db.prints, db.printBestanden, async () => {
+    for (const print of removedLocals) {
+      await db.printBestanden.delete(print.id!);
+      await db.prints.delete(print.id!);
+    }
+  });
+
   for (const remote of (remotePrints ?? []) as CloudPrint[]) {
     const local = await db.prints.where("cloudId").equals(remote.id).first();
-    if (local) await db.prints.update(local.id!, { ...remote.data, cloudId: remote.id });
-    else await db.prints.add({ ...remote.data, syncKey: remote.client_key, cloudId: remote.id } as Print);
+    if (local) await db.prints.update(local.id!, { ...remote.data, cloudId: remote.id, syncKey: remote.client_key, syncPending: false });
+    else await db.prints.add({ ...remote.data, syncKey: remote.client_key, cloudId: remote.id, syncPending: false } as Print);
   }
 }
 
@@ -63,6 +92,7 @@ export async function uploadPrint(print: Print) {
       .update({ data: cloudData(print), updated_at: new Date().toISOString() })
       .eq("id", print.cloudId);
     if (error) throw error;
+    await db.prints.update(print.id!, { syncPending: false });
     return;
   }
 
@@ -75,11 +105,16 @@ export async function uploadPrint(print: Print) {
     .select("id")
     .single();
   if (error) throw error;
-  await db.prints.update(print.id!, { cloudId: data.id, syncKey });
+  await db.prints.update(print.id!, { cloudId: data.id, syncKey, syncPending: false });
 }
 
 export async function deleteCloudPrint(cloudId?: string) {
   if (!supabase || !cloudId) return;
   const { error } = await supabase.from("prints").delete().eq("id", cloudId);
   if (error) throw error;
+}
+
+export async function queueCloudPrintDeletion(cloudId: string) {
+  const userId = await currentUserId();
+  await db.syncDeletions.put({ key: `print:${cloudId}`, entity: "print", cloudId, userId: userId ?? undefined });
 }

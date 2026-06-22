@@ -2,7 +2,7 @@
 
 ## Supabase cloud sync en printerstatus
 
-1. Voer `supabase/migrations/202606200001_create_prints.sql` uit in de Supabase SQL Editor.
+1. Voer de migraties in `supabase/migrations` op volgorde uit in de Supabase SQL Editor.
 2. Zet in Vercel `VITE_SUPABASE_URL` en `VITE_SUPABASE_ANON_KEY`. De gebruikelijke Vercel/Supabase-aliasen worden ook ondersteund.
 3. Vervang in Supabase bij **Authentication > Email Templates > Magic Link** de inhoud door het bestand `supabase/templates/magic_link.html`. De app gebruikt de getoonde OTP-code, omdat iOS de sessie van Safari niet deelt met een geïnstalleerde webapp.
 4. Deploy opnieuw. Log op desktop en mobiel in met hetzelfde e-mailadres en vul de ontvangen code in de app in.
@@ -28,7 +28,7 @@ De statuspagina ontvangt wijzigingen direct via Supabase Realtime. Een update ou
 }
 ```
 
-Bestaande lokale prints worden bij de eerste login gemigreerd. Het originele 3MF-bestand blijft alleen lokaal; metadata en afbeeldingen worden gesynchroniseerd.
+Bestaande lokale prints en inventarisproducten worden bij de eerste login gemigreerd. Het originele 3MF-bestand blijft alleen lokaal; metadata, afbeeldingen en voorraad worden gesynchroniseerd.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

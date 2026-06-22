@@ -5,6 +5,7 @@ import { db } from "../database/db";
 import type { Inventory } from "../types/Inventory";
 import InventoryForm from "../components/inventory/InventoryProductForm";
 import InventoryCard from "../components/inventory/InventoryProductCard";
+import { createInventory, deleteInventory, loadInventory, updateInventory } from "../services/InventoryService";
 
 type Filter = "alles" | "laag" | "op";
 type Sortering = "nieuwste" | "naam" | "voorraad-laag" | "waarde-hoog";
@@ -33,8 +34,17 @@ export default function Inventaris() {
     reader.readAsDataURL(file);
   }
 
-  async function laden() { setProducten(await db.inventory.toArray()); }
-  useEffect(() => { laden(); }, []);
+  async function laden() { setProducten(await loadInventory()); }
+  useEffect(() => {
+    let actief = true;
+    void loadInventory().then((items) => { if (actief) setProducten(items); });
+    const verversNaSync = () => { void db.inventory.toArray().then(setProducten); };
+    window.addEventListener("hazali:inventory-synced", verversNaSync);
+    return () => {
+      actief = false;
+      window.removeEventListener("hazali:inventory-synced", verversNaSync);
+    };
+  }, []);
   useEffect(() => {
     if (!formulierOpen) return;
     const sluit = (event: KeyboardEvent) => event.key === "Escape" && setFormulierOpen(false);
@@ -49,20 +59,20 @@ export default function Inventaris() {
 
   async function toevoegen() {
     if (!naam.trim()) return;
-    await db.inventory.add({ naam: naam.trim(), foto, sku: sku.trim() || `HZ-${Date.now().toString().slice(-6)}`, voorraad: Math.max(0, voorraad), minimumVoorraad: Math.max(0, minimumVoorraad), kostprijs: Math.max(0, kostprijs), verkoopprijs: Math.max(0, verkoopprijs), locatie: locatie.trim(), aangemaaktOp: new Date().toISOString() });
+    await createInventory({ naam: naam.trim(), foto, sku: sku.trim() || `HZ-${Date.now().toString().slice(-6)}`, voorraad: Math.max(0, voorraad), minimumVoorraad: Math.max(0, minimumVoorraad), kostprijs: Math.max(0, kostprijs), verkoopprijs: Math.max(0, verkoopprijs), locatie: locatie.trim(), aangemaaktOp: new Date().toISOString() });
     resetFormulier(); setFormulierOpen(false); await laden();
   }
 
   async function pasVoorraadAan(id: number, verschil: number) {
     const product = await db.inventory.get(id);
     if (!product) return;
-    await db.inventory.update(id, { voorraad: Math.max(0, product.voorraad + verschil) });
+    await updateInventory(id, { voorraad: Math.max(0, product.voorraad + verschil) });
     await laden();
   }
 
   async function verwijderen(id: number) {
     if (!confirm("Weet je zeker dat je dit product wilt verwijderen?")) return;
-    await db.inventory.delete(id); await laden();
+    await deleteInventory(id); await laden();
   }
 
   const stats = useMemo(() => {

@@ -1,6 +1,6 @@
 import { db } from "../database/db";
 import type { Filament } from "../types/Filament";
-import { deleteCloudFilament, syncFilaments, uploadFilament } from "./FilamentSyncService";
+import { deleteCloudFilament, queueCloudFilamentDeletion, syncFilaments, uploadFilament } from "./FilamentSyncService";
 import { filamentKey } from "../utils/filamentIdentity";
 import { rolGegevens } from "../utils/filamentInventory";
 
@@ -79,6 +79,7 @@ export async function updateFilament(id: number, changes: Partial<Filament>) {
 
 export async function deleteFilament(id: number) {
   const filament = await db.filamenten.get(id);
-  await deleteCloudFilament(filament?.cloudId);
+  if (filament?.cloudId) await queueCloudFilamentDeletion(filament.cloudId);
   await db.filamenten.delete(id);
+  try { await syncFilaments(); } catch (error) { console.warn("Filamentverwijdering uitgesteld:", error); }
 }

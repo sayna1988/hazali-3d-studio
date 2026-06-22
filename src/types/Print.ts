@@ -3,6 +3,7 @@ export interface Print {
   id?: number;
   cloudId?: string;
   syncKey?: string;
+  syncPending?: boolean;
 
   // Algemene gegevens
 

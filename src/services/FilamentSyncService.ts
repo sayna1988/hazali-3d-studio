@@ -25,6 +25,14 @@ export async function syncFilaments() {
   const userId = await currentUserId();
   if (!supabase || !userId) return;
 
+  const deletions = await db.syncDeletions.where("entity").equals("filament").toArray();
+  for (const deletion of deletions) {
+    if (deletion.userId && deletion.userId !== userId) continue;
+    const { error } = await supabase.from("filaments").delete().eq("id", deletion.cloudId);
+    if (error) throw error;
+    await db.syncDeletions.delete(deletion.key);
+  }
+
   const { data: existingRemote, error: existingError } = await supabase
     .from("filaments")
     .select("id,client_key,data")
@@ -116,4 +124,9 @@ export async function deleteCloudFilament(cloudId?: string) {
   if (!supabase || !cloudId) return;
   const { error } = await supabase.from("filaments").delete().eq("id", cloudId);
   if (error) throw error;
+}
+
+export async function queueCloudFilamentDeletion(cloudId: string) {
+  const userId = await currentUserId();
+  await db.syncDeletions.put({ key: `filament:${cloudId}`, entity: "filament", cloudId, userId: userId ?? undefined });
 }

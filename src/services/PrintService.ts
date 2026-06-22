@@ -1,6 +1,6 @@
 import { db } from "../database/db";
 import type { Print } from "../types/Print";
-import { deleteCloudPrint, syncPrints, uploadPrint } from "./PrintSyncService";
+import { queueCloudPrintDeletion, syncPrints, uploadPrint } from "./PrintSyncService";
 
 let legacyFileMigration: Promise<void> | null = null;
 
@@ -39,24 +39,30 @@ export async function loadPrintSummaries() {
 
 export async function loadPrints() {
   await migrateLegacySourceFiles();
-  await syncPrints();
+  try { await syncPrints(); } catch (error) { console.warn("Printsync uitgesteld:", error); }
   return loadPrintSummaries();
 }
 
+async function uploadLater(print: Print | undefined) {
+  if (!print) return;
+  try { await uploadPrint(print); } catch (error) { console.warn("Printupload uitgesteld:", error); }
+}
+
 export async function createPrint(print: Print) {
-  const id = await db.prints.add(print);
+  const id = await db.prints.add({ ...print, syncPending: true });
   const saved = await db.prints.get(id);
-  if (saved) await uploadPrint(saved);
+  await uploadLater(saved);
   return id;
 }
 
 export async function deletePrint(id: number) {
   const print = await db.prints.get(id);
-  await deleteCloudPrint(print?.cloudId);
-  await db.transaction("rw", db.prints, db.printBestanden, async () => {
+  if (print?.cloudId) await queueCloudPrintDeletion(print.cloudId);
+  await db.transaction("rw", db.prints, db.printBestanden, db.syncDeletions, async () => {
     await db.printBestanden.delete(id);
     await db.prints.delete(id);
   });
+  try { await syncPrints(); } catch (error) { console.warn("Printverwijdering uitgesteld:", error); }
 }
 
 export async function savePrint(print: Print) {
@@ -68,7 +74,7 @@ export async function savePrint(print: Print) {
     Number(print.overigeKosten || 0);
   const winst = Number(print.verkoopprijs || 0) - kostprijs;
 
-  await db.prints.update(print.id!, { ...print, kostprijs, winst });
+  await db.prints.update(print.id!, { ...print, kostprijs, winst, syncPending: true });
   const saved = await db.prints.get(print.id!);
-  if (saved) await uploadPrint(saved);
+  await uploadLater(saved);
 }

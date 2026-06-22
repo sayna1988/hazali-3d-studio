@@ -13,6 +13,8 @@ export class HazaliDatabase extends Dexie {
 
   printBestanden!: Dexie.Table<{ printId: number; bestand: Blob }, number>;
 
+  syncDeletions!: Dexie.Table<{ key: string; entity: "print" | "inventory" | "filament"; cloudId: string; userId?: string }, string>;
+
   settings!: Dexie.Table<SettingsModel, number>;
 
     inventory!: Dexie.Table<Inventory, number>;
@@ -67,6 +69,33 @@ export class HazaliDatabase extends Dexie {
       printBestanden: "&printId",
       settings: "++id",
       inventory: "++id,naam,sku,voorraad"
+    });
+
+    this.version(10).stores({
+      filamenten: "++id, &cloudId, syncKey, naam, merk, kleur, type, ean",
+      prints: "++id, &cloudId, syncKey, naam, aangemaaktOp",
+      printBestanden: "&printId",
+      syncDeletions: "&key, entity, userId",
+      settings: "++id",
+      inventory: "++id,naam,sku,voorraad"
+    });
+
+    this.version(11).stores({
+      filamenten: "++id, &cloudId, syncKey, naam, merk, kleur, type, ean",
+      prints: "++id, &cloudId, syncKey, naam, aangemaaktOp",
+      printBestanden: "&printId",
+      syncDeletions: "&key, entity, userId",
+      settings: "++id",
+      inventory: "++id, &cloudId, syncKey, printId, printCloudId, naam, sku, voorraad"
+    });
+
+    this.version(12).stores({
+      filamenten: "++id, &cloudId, syncKey, naam, merk, kleur, type, ean",
+      prints: "++id, &cloudId, syncKey, naam, aangemaaktOp",
+      printBestanden: "&printId",
+      syncDeletions: "&key, entity, userId",
+      settings: "++id",
+      inventory: "++id, &cloudId, syncKey, printId, printCloudId, naam, sku, voorraad"
     });
 
   }
