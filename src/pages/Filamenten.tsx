@@ -27,7 +27,7 @@ import { extractInvoice, type InvoiceExtraction, type InvoiceFilament } from "..
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../auth/AuthProvider";
 import { rolGegevens, totaalGewicht } from "../utils/filamentInventory";
-import { colorName } from "../utils/colorNames";
+import { colorName, safeColor } from "../utils/colorNames";
 import type { Filament } from "../types/Filament";
 import Page from "../components/Page/Page";
 import "./Filamenten.css";
@@ -45,6 +45,15 @@ const KLEUREN: Record<string, string> = {
   grijs: "#8b95a5",
   roze: "#ec4899",
   naturel: "#e7dcc5",
+  beige: "#d8c39a",
+  bruin: "#7a4b2a",
+  goud: "#ffd700",
+  oudgoud: "#d4af37",
+  champagne: "#d6bd8a",
+  roségoud: "#b76e79",
+  zilver: "#c0c0c0",
+  koper: "#b87333",
+  brons: "#cd7f32",
 };
 
 const KLEUR_ALIASSEN: Record<string, string> = {
@@ -61,6 +70,14 @@ const KLEUR_ALIASSEN: Record<string, string> = {
   gray: "grijs",
   pink: "roze",
   natural: "naturel",
+  gold: "goud",
+  "old gold": "oudgoud",
+  silver: "zilver",
+  copper: "koper",
+  bronze: "brons",
+  brown: "bruin",
+  beige: "beige",
+  "rose gold": "roségoud",
 };
 
 function geldigeEan(code: string) {
@@ -168,9 +185,7 @@ function BarcodeScanner({ onScan, onClose }: { onScan: (code: string) => void; o
 }
 
 function filamentKleur(kleur: string) {
-  const value = kleur.trim().toLowerCase();
-  if (/^#[0-9a-f]{6}$/i.test(value)) return value;
-  return KLEUREN[value] ?? "#159cff";
+  return safeColor(kleur);
 }
 
 function voorraadStatus(aantal: number) {
@@ -480,7 +495,7 @@ export default function Filamenten() {
     const query = zoekterm.toLowerCase().trim();
     return filamenten
       .filter((f) =>
-        (!query || [f.naam, f.merk, f.kleur, f.type, colorName(filamentKleur(f.kleur))].some((v) => v.toLowerCase().includes(query))) &&
+        (!query || [f.naam, f.merk, f.kleur, f.type, colorName(f.kleur)].some((v) => v.toLowerCase().includes(query))) &&
         (typeFilter === "Alle" || f.type === typeFilter),
       )
       .sort((a, b) => {
@@ -681,7 +696,7 @@ export default function Filamenten() {
                       <button className="filament-delete" type="button" onClick={() => void verwijderen(f)} aria-label={`${f.naam} verwijderen`} title="Filament verwijderen"><Trash2 size={17} /></button>
                     </div>
                   </div>
-                  <div className="filament-card__tags"><span>{f.type}</span><span title={f.kleur}><i style={{ background: filamentKleur(f.kleur) }} />{colorName(filamentKleur(f.kleur))}</span></div>
+                  <div className="filament-card__tags"><span>{f.type}</span><span title={f.kleur}><i style={{ background: filamentKleur(f.kleur) }} />{colorName(f.kleur)}</span></div>
                   {f.ean && <div className="filament-card__ean"><Barcode size={14} /> {f.ean}</div>}
                   <div className="filament-card__stock">
                     <div className="filament-card__stock-head"><span>Voorraad</span><strong>{rollen.aantal} {rollen.aantal === 1 ? "rol" : "rollen"}</strong></div>
