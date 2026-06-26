@@ -15,6 +15,8 @@ import { createInventory, deleteInventory, loadInventory, updateInventory } from
 import { loadFilaments } from "../services/FilamentService";
 import type { Filament } from "../types/Filament";
 import type { Inventory } from "../types/Inventory";
+import { exportCatalogusPdf } from "../utils/catalogExportPdf";
+import { catalogPricingMap } from "../utils/printPricing";
 
 interface ImportMessage {
   type: "success" | "error";
@@ -47,6 +49,7 @@ export default function Prints() {
   );
   const [importing, setImporting] = useState(false);
   const [makerWorldImporting, setMakerWorldImporting] = useState(false);
+  const [exportBezig, setExportBezig] = useState(false);
   const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
   const [importMessage, setImportMessage] = useState<ImportMessage | null>(null);
   const [catalogusVoorraad, setCatalogusVoorraad] = useState<Record<number, number>>({});
@@ -343,6 +346,11 @@ export default function Prints() {
       .sort((a, b) => b.aantal - a.aantal || a.tag.localeCompare(b.tag, "nl"));
   }, [prints]);
 
+  const pricingByPrintId = useMemo(
+    () => catalogPricingMap(prints, filamentVoorraad),
+    [prints, filamentVoorraad]
+  );
+
   const gefilterdePrints = [...prints]
     .filter((print) => {
       const zoek = zoekterm.trim().toLowerCase();
@@ -350,7 +358,7 @@ export default function Prints() {
     })
     .filter((print) => !geselecteerdeTag || print.tags?.includes(geselecteerdeTag))
     .sort((a, b) => {
-      if (sortering === "winst") return b.winst - a.winst;
+      if (sortering === "winst") return (b.id === undefined ? b.winst : pricingByPrintId[b.id]?.winst ?? b.winst) - (a.id === undefined ? a.winst : pricingByPrintId[a.id]?.winst ?? a.winst);
       if (sortering === "verkoopprijs") return b.verkoopprijs - a.verkoopprijs;
       return (b.id || 0) - (a.id || 0);
     });
@@ -380,6 +388,25 @@ export default function Prints() {
       ? [...new Set([...huidig, ...zichtbarePrintIds])]
       : huidig.filter((id) => !zichtbarePrintIds.includes(id))
     );
+  }
+
+  async function exporteerCatalogus() {
+    setExportBezig(true);
+    try {
+      await exportCatalogusPdf(gefilterdePrints, inventarisProducten, filamentVoorraad);
+      setImportMessage({
+        type: "success",
+        text: `${gefilterdePrints.length} ${gefilterdePrints.length === 1 ? "catalogusitem is" : "catalogusitems zijn"} geexporteerd naar PDF.`
+      });
+    } catch (error) {
+      console.error(error);
+      setImportMessage({
+        type: "error",
+        text: "PDF-export is mislukt. Probeer het opnieuw."
+      });
+    } finally {
+      setExportBezig(false);
+    }
   }
 
   return (
@@ -439,6 +466,8 @@ export default function Prints() {
         setGeselecteerdeTag={setGeselecteerdeTag}
         weergave={weergave}
         setWeergave={setWeergave}
+        onExport={() => void exporteerCatalogus()}
+        exportBezig={exportBezig}
       />
       <section className="bulk-actions" aria-label="Bulkacties voor de catalogus">
         <div className="bulk-actions__summary">
@@ -471,6 +500,7 @@ export default function Prints() {
         weergave={weergave}
         prints={gefilterdePrints}
         catalogusVoorraad={catalogusVoorraad}
+        pricingByPrintId={pricingByPrintId}
         navigate={navigate}
         verwijderen={verwijderen}
         setSelectedPrint={setSelectedPrint}

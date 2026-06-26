@@ -1,6 +1,6 @@
 .prints-toolbar{
   display:grid;
-  grid-template-columns:minmax(260px,1fr) auto auto auto;
+  grid-template-columns:minmax(260px,1fr) auto auto auto auto;
   gap:12px;
   align-items:center;
   margin-bottom:18px;
@@ -36,6 +36,37 @@
 .view-switcher button:hover{color:#d8edff}
 .view-switcher button.active{background:rgba(31,156,255,.17);color:#8fd3ff;box-shadow:inset 0 0 0 1px rgba(56,182,255,.22)}
 .view-switcher button:focus-visible{outline:2px solid #38b6ff;outline-offset:2px}
+
+.catalog-export-button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:46px;
+  padding:0 15px;
+  border:1px solid rgba(56,182,255,.28);
+  border-radius:14px;
+  background:linear-gradient(135deg, rgba(31,156,255,.22), rgba(0,210,106,.14));
+  color:#dff4ff;
+  font:inherit;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:transform .16s, border-color .16s, background .16s;
+}
+
+.catalog-export-button:hover{
+  transform:translateY(-1px);
+  border-color:rgba(56,182,255,.55);
+  background:linear-gradient(135deg, rgba(31,156,255,.32), rgba(0,210,106,.2));
+}
+
+.catalog-export-button:disabled{
+  opacity:.58;
+  cursor:wait;
+  transform:none;
+}
 
 .prints-toolbar .search-wrapper{
   position:relative;
@@ -232,6 +263,7 @@
   }
 
   .view-switcher{grid-column:1 / -1}
+  .catalog-export-button{grid-column:1 / -1}
 }
 
 @media (max-width: 650px){

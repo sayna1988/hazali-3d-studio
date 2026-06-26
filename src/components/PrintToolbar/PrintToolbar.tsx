@@ -1,4 +1,4 @@
-import { ArrowUpDown, ChevronDown, Grid2X2, List, Search, Tag } from "lucide-react";
+import { ArrowUpDown, ChevronDown, FileDown, Grid2X2, List, Search, Tag } from "lucide-react";
 import "./PrintToolbar.css";
 
 interface Props {
@@ -13,6 +13,8 @@ interface Props {
   setGeselecteerdeTag: (value: string) => void;
   weergave: "tabel" | "grid";
   setWeergave: (value: "tabel" | "grid") => void;
+  onExport: () => void;
+  exportBezig: boolean;
 
 }
 
@@ -26,7 +28,9 @@ export default function PrintToolbar({
   geselecteerdeTag,
   setGeselecteerdeTag,
   weergave,
-  setWeergave
+  setWeergave,
+  onExport,
+  exportBezig
 
 }: Props) {
 
@@ -108,6 +112,11 @@ export default function PrintToolbar({
           <span>Grid</span>
         </button>
       </div>
+
+      <button type="button" className="catalog-export-button" onClick={onExport} disabled={exportBezig}>
+        <FileDown size={16} />
+        <span>{exportBezig ? "Exporteren..." : "Export PDF"}</span>
+      </button>
 
     </div>
 

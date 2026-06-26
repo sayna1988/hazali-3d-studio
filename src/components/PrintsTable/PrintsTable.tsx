@@ -3,11 +3,13 @@ import { Check, Layers3, Minus, PackagePlus, Pencil, Plus, Tag, Trash2 } from "l
 import "./PrintsTable.css";
 import type { Print } from "../../types/Print";
 import { filamentColorLabel, filamentColorValue } from "../../utils/filamentColor";
+import type { CatalogPricing } from "../../utils/printPricing";
 
 interface Props {
   weergave: "tabel" | "grid";
   prints: Print[];
   catalogusVoorraad: Record<number, number>;
+  pricingByPrintId: Record<number, CatalogPricing>;
   navigate: (path: string) => void;
   verwijderen: (id: number) => Promise<void>;
   setSelectedPrint: (printData: Print) => void;
@@ -34,6 +36,7 @@ export default function PrintsTable({
   weergave,
   prints,
   catalogusVoorraad,
+  pricingByPrintId,
   navigate,
   verwijderen,
   setSelectedPrint,
@@ -91,6 +94,10 @@ export default function PrintsTable({
     setShowEditModal(true);
   }
 
+  function pricing(print: Print) {
+    return print.id === undefined ? undefined : pricingByPrintId[print.id];
+  }
+
   if (weergave === "grid") {
     return (
       <section className="catalog-grid-section" aria-label="Prints in gridweergave">
@@ -111,7 +118,8 @@ export default function PrintsTable({
           <div className="catalog-grid">
             {prints.map((p) => {
               const voorraadAantal = p.id === undefined ? 0 : catalogusVoorraad[p.id] ?? 0;
-              const winst = Number(p.winst || 0);
+              const berekendePrijs = pricing(p);
+              const winst = berekendePrijs?.winst ?? Number(p.winst || 0);
               const voorraadBezig = voorraadBezigMet === p.id;
               return (
               <article className="catalog-card" key={p.id} onClick={() => p.id !== undefined && navigate(`/prints/${p.id}`)}>
@@ -204,7 +212,9 @@ export default function PrintsTable({
 
           {prints.map((p) => {
             const voorraadAantal = p.id === undefined ? 0 : catalogusVoorraad[p.id] ?? 0;
-            const winst = Number(p.winst || 0);
+            const berekendePrijs = pricing(p);
+            const kostprijs = berekendePrijs?.kostprijs ?? Number(p.kostprijs || 0);
+            const winst = berekendePrijs?.winst ?? Number(p.winst || 0);
             const voorraadBezig = voorraadBezigMet === p.id;
             return (
             <tr
@@ -295,7 +305,7 @@ export default function PrintsTable({
               </td>
 
               <td>
-                €{Number(p.kostprijs || 0).toFixed(2)}
+                €{kostprijs.toFixed(2)}
               </td>
 
               <td>
