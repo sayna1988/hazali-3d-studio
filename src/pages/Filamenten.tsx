@@ -27,7 +27,7 @@ import { extractInvoice, type InvoiceExtraction, type InvoiceFilament } from "..
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../auth/AuthProvider";
 import { rolGegevens, totaalGewicht } from "../utils/filamentInventory";
-import { colorName } from "../utils/colorNames";
+import { filamentColorLabel, filamentColorValue } from "../utils/filamentColor";
 import type { Filament } from "../types/Filament";
 import Page from "../components/Page/Page";
 import "./Filamenten.css";
@@ -168,9 +168,7 @@ function BarcodeScanner({ onScan, onClose }: { onScan: (code: string) => void; o
 }
 
 function filamentKleur(kleur: string) {
-  const value = kleur.trim().toLowerCase();
-  if (/^#[0-9a-f]{6}$/i.test(value)) return value;
-  return KLEUREN[value] ?? "#159cff";
+  return filamentColorValue(kleur) === "#64748b" ? "#159cff" : filamentColorValue(kleur);
 }
 
 function voorraadStatus(aantal: number) {
@@ -184,6 +182,7 @@ export default function Filamenten() {
   const [naam, setNaam] = useState("");
   const [merk, setMerk] = useState("");
   const [kleur, setKleur] = useState("");
+  const [kleurNaam, setKleurNaam] = useState("");
   const [type, setType] = useState("PLA");
   const [prijsPerKg, setPrijsPerKg] = useState(24.95);
   const [aantalRollen, setAantalRollen] = useState(1);
@@ -214,6 +213,7 @@ export default function Filamenten() {
     setNaam("");
     setMerk("");
     setKleur("");
+    setKleurNaam("");
     setType("PLA");
     setPrijsPerKg(24.95);
     setAantalRollen(1);
@@ -233,6 +233,7 @@ export default function Filamenten() {
     setNaam(filament.naam);
     setMerk(filament.merk);
     setKleur(filament.kleur);
+    setKleurNaam(filament.kleurNaam ?? "");
     setType(filament.type);
     setPrijsPerKg(filament.prijsPerKg);
     const rollen = rolGegevens(filament);
@@ -265,6 +266,7 @@ export default function Filamenten() {
       naam: naam.trim(),
       merk: merk.trim(),
       kleur: kleur.trim(),
+      kleurNaam: kleurNaam.trim() || undefined,
       type,
       prijsPerKg: Math.max(0, prijsPerKg),
       aantalRollen: Math.max(0, Math.round(aantalRollen)),
@@ -480,7 +482,7 @@ export default function Filamenten() {
     const query = zoekterm.toLowerCase().trim();
     return filamenten
       .filter((f) =>
-        (!query || [f.naam, f.merk, f.kleur, f.type, colorName(filamentKleur(f.kleur))].some((v) => v.toLowerCase().includes(query))) &&
+        (!query || [f.naam, f.merk, f.kleur, f.kleurNaam ?? "", f.type, filamentColorLabel(f.kleur, f.kleurNaam)].some((v) => v.toLowerCase().includes(query))) &&
         (typeFilter === "Alle" || f.type === typeFilter),
       )
       .sort((a, b) => {
@@ -652,6 +654,7 @@ export default function Filamenten() {
               <label><span>Naam *</span><input autoFocus value={naam} onChange={(e) => setNaam(e.target.value)} placeholder="Bijv. Matte Black" /></label>
               <label><span>Merk *</span><input value={merk} onChange={(e) => setMerk(e.target.value)} placeholder="Bijv. Bambu Lab" /></label>
               <label><span>Kleur of hexcode *</span><input value={kleur} onChange={(e) => setKleur(e.target.value)} placeholder="Zwart of #191b20" /></label>
+              <label><span>Kleurnaam</span><input value={kleurNaam} onChange={(e) => setKleurNaam(e.target.value)} placeholder="Bijv. Galaxy Black" /></label>
               <label><span>Materiaal</span><select value={type} onChange={(e) => setType(e.target.value)}>{MATERIAAL_TYPES.map((item) => <option key={item}>{item}</option>)}</select></label>
               <label><span>Prijs per kg</span><div className="filament-input-prefix"><b>€</b><input type="number" min="0" step="0.01" value={prijsPerKg} onChange={(e) => setPrijsPerKg(Number(e.target.value))} /></div></label>
               <label><span>Aantal rollen</span><div className="filament-input-suffix"><input type="number" min="0" step="1" value={aantalRollen} onChange={(e) => setAantalRollen(Number(e.target.value))} /><b>rollen</b></div></label>
@@ -681,7 +684,7 @@ export default function Filamenten() {
                       <button className="filament-delete" type="button" onClick={() => void verwijderen(f)} aria-label={`${f.naam} verwijderen`} title="Filament verwijderen"><Trash2 size={17} /></button>
                     </div>
                   </div>
-                  <div className="filament-card__tags"><span>{f.type}</span><span title={f.kleur}><i style={{ background: filamentKleur(f.kleur) }} />{colorName(filamentKleur(f.kleur))}</span></div>
+                  <div className="filament-card__tags"><span>{f.type}</span><span title={f.kleur}><i style={{ background: filamentKleur(f.kleur) }} />{filamentColorLabel(f.kleur, f.kleurNaam)}</span></div>
                   {f.ean && <div className="filament-card__ean"><Barcode size={14} /> {f.ean}</div>}
                   <div className="filament-card__stock">
                     <div className="filament-card__stock-head"><span>Voorraad</span><strong>{rollen.aantal} {rollen.aantal === 1 ? "rol" : "rollen"}</strong></div>

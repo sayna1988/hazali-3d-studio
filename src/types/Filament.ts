@@ -14,6 +14,8 @@ export interface Filament {
 
   kleur: string;
 
+  kleurNaam?: string;
+
   type: string;
 
   prijsPerKg: number;

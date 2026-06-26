@@ -41,7 +41,7 @@ export interface Print {
 
   filamentId?: number;
   filamentNaam?: string;
-  filamenten?: Array<{ kleur: string; gewicht: number; lengteMeter?: number; materiaal?: string; uren?: number; minuten?: number }>;
+  filamenten?: Array<{ kleur: string; kleurNaam?: string; filamentId?: number; filamentNaam?: string; gewicht: number; lengteMeter?: number; materiaal?: string; uren?: number; minuten?: number }>;
   filamentKleuren: string[];
   kleurBron?: "3mf-metadata" | "preview" | "geen";
   splitPrint?: boolean;

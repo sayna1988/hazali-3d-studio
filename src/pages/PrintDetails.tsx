@@ -6,7 +6,8 @@ import { loadFilaments } from "../services/FilamentService";
 import { totaalGewicht } from "../utils/filamentInventory";
 import type { Print } from "../types/Print";
 import type { Filament } from "../types/Filament";
-import { colorName, colorsMatch, safeColor } from "../utils/colorNames";
+import { colorsMatch } from "../utils/colorNames";
+import { filamentColorLabel, filamentColorValue, filamentOptionLabel } from "../utils/filamentColor";
 import "./PrintDetails.css";
 
 
@@ -118,7 +119,35 @@ export default function PrintDetails() {
   function updateFilamentColor(index: number, kleur: string) {
     if (!printData) return;
     const filamenten = [...(printData.filamenten ?? filamentKleuren.map((item) => ({ kleur: item, gewicht: 0, uren: 0, minuten: 0 })))];
-    filamenten[index] = { ...filamenten[index], kleur: kleur.toUpperCase() };
+    filamenten[index] = { ...filamenten[index], kleur: kleur.toUpperCase(), filamentId: undefined, filamentNaam: undefined };
+    setPrintData({ ...printData, filamenten, filamentKleuren: filamenten.map((item) => item.kleur), splitPrintBron: "handmatig" });
+    setFilamentOpgeslagen(false);
+  }
+
+  function updateFilamentName(index: number, kleurNaam: string) {
+    if (!printData) return;
+    const filamenten = [...(printData.filamenten ?? filamentKleuren.map((kleur) => ({ kleur, gewicht: 0, uren: 0, minuten: 0 })))];
+    filamenten[index] = { ...filamenten[index], kleurNaam };
+    setPrintData({ ...printData, filamenten, splitPrintBron: "handmatig" });
+    setFilamentOpgeslagen(false);
+  }
+
+  function linkFilament(index: number, filamentId: string) {
+    if (!printData) return;
+    const filamenten = [...(printData.filamenten ?? filamentKleuren.map((kleur) => ({ kleur, gewicht: 0, uren: 0, minuten: 0 })))];
+    const voorraadFilament = filamentVoorraad.find((item) => String(item.id) === filamentId);
+    if (!voorraadFilament) {
+      filamenten[index] = { ...filamenten[index], filamentId: undefined, filamentNaam: undefined };
+    } else {
+      filamenten[index] = {
+        ...filamenten[index],
+        filamentId: voorraadFilament.id,
+        filamentNaam: filamentOptionLabel(voorraadFilament),
+        kleur: filamentColorValue(voorraadFilament.kleur).toUpperCase(),
+        kleurNaam: filamentColorLabel(voorraadFilament.kleur, voorraadFilament.kleurNaam),
+        materiaal: voorraadFilament.type,
+      };
+    }
     setPrintData({ ...printData, filamenten, filamentKleuren: filamenten.map((item) => item.kleur), splitPrintBron: "handmatig" });
     setFilamentOpgeslagen(false);
   }
@@ -666,8 +695,9 @@ export default function PrintDetails() {
                         kleur,
                         index
                       ) => {
+                        const detail = printData.filamenten?.[index] ?? { kleur, gewicht: 0, uren: 0, minuten: 0 };
                         const voorraadGram = filamentVoorraad
-                          .filter((filament) => colorsMatch(kleur, filament.kleur))
+                          .filter((filament) => detail.filamentId !== undefined ? filament.id === detail.filamentId : colorsMatch(kleur, filament.kleur))
                           .reduce((totaal, filament) => totaal + totaalGewicht(filament), 0);
                         const opVoorraad = voorraadGram > 0;
                         return (
@@ -687,16 +717,19 @@ export default function PrintDetails() {
                         >
 
                           <div className="detail-color-heading">
-                            <input type="color" value={safeColor(kleur)} aria-label={`Kleur ${index + 1} kiezen`} onChange={(event) => updateFilamentColor(index, event.target.value)} />
-                            <div><strong>{colorName(kleur)}</strong><input value={kleur} maxLength={7} aria-label={`Hexcode kleur ${index + 1}`} onChange={(event) => updateFilamentColor(index, event.target.value)} /></div>
-                            <button type="button" aria-label={`${colorName(kleur)} verwijderen`} title="Kleur verwijderen" onClick={() => removeFilament(index)}><Trash2 size={15} /></button>
+                            <input type="color" value={filamentColorValue(kleur)} aria-label={`Kleur ${index + 1} kiezen`} onChange={(event) => updateFilamentColor(index, event.target.value)} />
+                            <div><strong>{filamentColorLabel(kleur, detail.kleurNaam)}</strong><input value={kleur} maxLength={7} aria-label={`Hexcode kleur ${index + 1}`} onChange={(event) => updateFilamentColor(index, event.target.value)} /></div>
+                            <button type="button" aria-label={`${filamentColorLabel(kleur, detail.kleurNaam)} verwijderen`} title="Kleur verwijderen" onClick={() => removeFilament(index)}><Trash2 size={15} /></button>
+                          </div>
+                          <div className="detail-color-link">
+                            <label>Kleurnaam<input value={detail.kleurNaam ?? ""} placeholder={filamentColorLabel(kleur)} onChange={(event) => updateFilamentName(index, event.target.value)} /></label>
+                            <label>Voorraadkleur<select value={detail.filamentId ?? ""} onChange={(event) => linkFilament(index, event.target.value)}><option value="">Niet gekoppeld</option>{filamentVoorraad.map((filament) => <option key={filament.id} value={filament.id}>{filamentOptionLabel(filament)}</option>)}</select></label>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 7, color: opVoorraad ? "#6ee7b7" : "#fca5a5", fontSize: 12 }}>
                             {opVoorraad ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
                             {opVoorraad ? `Op voorraad · ${voorraadGram.toLocaleString("nl-NL")} g` : "Niet op voorraad"}
                           </div>
                           {(() => {
-                            const detail = printData.filamenten?.find((item) => item.kleur === kleur) ?? { kleur, gewicht: 0, uren: 0, minuten: 0 };
                             return <div className={`split-color-editor${printData.splitPrint ? "" : " single-field"}`}>
                               <label>Gram<input type="number" min="0" step="0.01" value={detail.gewicht || 0} onChange={(event) => updateFilament(index, "gewicht", Number(event.target.value))} /></label>
                               {printData.splitPrint && <>

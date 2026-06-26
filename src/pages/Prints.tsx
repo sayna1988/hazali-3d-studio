@@ -11,6 +11,8 @@ import { loadPrints, loadPrintSummaries, deletePrint, savePrint } from "../servi
 import { db } from "../database/db";
 import { importMakerWorldUrl } from "../services/MakerWorldImportService";
 import { createInventory, loadInventory, updateInventory } from "../services/InventoryService";
+import { loadFilaments } from "../services/FilamentService";
+import type { Filament } from "../types/Filament";
 
 interface ImportMessage {
   type: "success" | "error";
@@ -36,10 +38,13 @@ export default function Prints() {
   const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
   const [importMessage, setImportMessage] = useState<ImportMessage | null>(null);
   const [catalogusVoorraad, setCatalogusVoorraad] = useState<Record<number, number>>({});
+  const [filamentVoorraad, setFilamentVoorraad] = useState<Filament[]>([]);
   const navigate = useNavigate();
 
   async function laden() {
-    setPrints(await loadPrints());
+    const [printsData, filamentenData] = await Promise.all([loadPrints(), loadFilaments()]);
+    setPrints(printsData);
+    setFilamentVoorraad(filamentenData);
   }
 
   async function laadCatalogusVoorraad() {
@@ -238,7 +243,11 @@ export default function Prints() {
     const verversNaSync = () => {
       void loadPrintSummaries().then((data) => { if (actief) setPrints(data); });
     };
-    loadPrints().then((data) => { if (actief) setPrints(data); });
+    Promise.all([loadPrints(), loadFilaments()]).then(([printData, filamentData]) => {
+      if (!actief) return;
+      setPrints(printData);
+      setFilamentVoorraad(filamentData);
+    });
     db.inventory.toArray().then((producten) => {
       if (!actief) return;
       setCatalogusVoorraad(Object.fromEntries(
@@ -398,7 +407,7 @@ export default function Prints() {
         togglePrintSelectie={togglePrintSelectie}
         toggleZichtbarePrints={toggleZichtbarePrints}
       />
-      <EditPrintModal key={`${showEditModal}-${selectedPrint?.id ?? "new"}`} open={showEditModal} print={selectedPrint} setPrint={setSelectedPrint} onSave={savePrintChanges} onCancel={() => setShowEditModal(false)} />
+      <EditPrintModal key={`${showEditModal}-${selectedPrint?.id ?? "new"}`} open={showEditModal} print={selectedPrint} filamentVoorraad={filamentVoorraad} setPrint={setSelectedPrint} onSave={savePrintChanges} onCancel={() => setShowEditModal(false)} />
     </div>
   );
 }

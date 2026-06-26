@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Layers3, Minus, PackagePlus, Pencil, Plus, Tag, Trash2 } from "lucide-react";
 import "./PrintsTable.css";
 import type { Print } from "../../types/Print";
-import { colorName, safeColor } from "../../utils/colorNames";
+import { filamentColorLabel, filamentColorValue } from "../../utils/filamentColor";
 
 interface Props {
   weergave: "tabel" | "grid";
@@ -21,7 +21,9 @@ interface Props {
   toggleZichtbarePrints: (checked: boolean) => void;
 }
 
-function printFilamenten(print: Print) {
+type PrintFilament = NonNullable<Print["filamenten"]>[number];
+
+function printFilamenten(print: Print): PrintFilament[] {
   return print.filamenten?.length
     ? print.filamenten
     : (print.filamentKleuren ?? []).map((kleur) => ({ kleur, gewicht: 0, uren: 0, minuten: 0 }));
@@ -117,7 +119,7 @@ export default function PrintsTable({
 
                   {printFilamenten(p).length > 0 && (
                     <div className="catalog-card-colors" aria-label="Filamentkleuren">
-                      {printFilamenten(p).map((filament, index) => <i key={`${filament.kleur}-${index}`} style={{ background: safeColor(filament.kleur) }} title={colorName(filament.kleur)} />)}
+                      {printFilamenten(p).map((filament, index) => <i key={`${filament.kleur}-${index}`} style={{ background: filamentColorValue(filament.kleur) }} title={filamentColorLabel(filament.kleur, filament.kleurNaam)} />)}
                     </div>
                   )}
 
@@ -258,8 +260,8 @@ export default function PrintsTable({
                 {printFilamenten(p).length > 0 ? (
                   <div className="color-time-list">
                     {printFilamenten(p).map((filament, index) => (
-                      <span key={`${filament.kleur}-${index}`} title={colorName(filament.kleur)}>
-                        <i style={{ background: safeColor(filament.kleur) }} />
+                      <span key={`${filament.kleur}-${index}`} title={filamentColorLabel(filament.kleur, filament.kleurNaam)}>
+                        <i style={{ background: filamentColorValue(filament.kleur) }} />
                         {p.splitPrint && <>{filament.uren || 0}u {filament.minuten || 0}m</>}
                       </span>
                     ))}
