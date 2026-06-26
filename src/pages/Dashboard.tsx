@@ -401,7 +401,6 @@ export default function Dashboard() {
 
           <div className="dashboard-panel dashboard-shortcuts">
             <span className="dashboard-section-label">Snel naar</span>
-            <button onClick={() => navigate("/inventaris") }><Boxes size={19} /><span><strong>Inventaris</strong><small>Producten & voorraad</small></span><ChevronRight size={17} /></button>
             <button onClick={() => navigate("/prints") }><CircleDollarSign size={19} /><span><strong>Printresultaten</strong><small>Omzet & winst</small></span><ChevronRight size={17} /></button>
           </div>
         </aside>

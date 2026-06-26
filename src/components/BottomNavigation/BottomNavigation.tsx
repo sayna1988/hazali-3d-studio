@@ -5,8 +5,7 @@ import { NavLink } from "react-router-dom";
 import {
   House,
   Package,
-  Boxes,
-  BookOpen
+  Boxes
 } from "lucide-react";
 
 export default function BottomNavigation() {
@@ -36,14 +35,6 @@ export default function BottomNavigation() {
         <Boxes size={22} />
 
         <span>Filament</span>
-
-      </NavLink>
-
-      <NavLink to="/inventaris">
-
-        <BookOpen size={22} />
-
-        <span>Inventaris</span>
 
       </NavLink>
 

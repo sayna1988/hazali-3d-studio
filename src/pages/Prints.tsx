@@ -11,7 +11,7 @@ import type { Print } from "../types/Print";
 import { loadPrints, loadPrintSummaries, deletePrint, savePrint } from "../services/PrintService";
 import { db } from "../database/db";
 import { importMakerWorldUrl } from "../services/MakerWorldImportService";
-import { createInventory, loadInventory, updateInventory } from "../services/InventoryService";
+import { createInventory, deleteInventory, loadInventory, updateInventory } from "../services/InventoryService";
 import { loadFilaments } from "../services/FilamentService";
 import type { Filament } from "../types/Filament";
 import type { Inventory } from "../types/Inventory";
@@ -96,6 +96,40 @@ export default function Prints() {
     await laadCatalogusVoorraad();
   }
 
+  async function pasCatalogusVoorraadAan(print: Print, verschil: number) {
+    if (print.id === undefined) return;
+
+    const bestaand = await db.inventory
+      .filter((product) => product.printId === print.id)
+      .first();
+
+    if (bestaand?.id !== undefined) {
+      await updateInventory(bestaand.id, {
+        naam: print.naam,
+        foto: print.foto ?? bestaand.foto,
+        voorraad: Math.max(0, bestaand.voorraad + verschil),
+        kostprijs: Math.max(0, Number(print.kostprijs || 0)),
+        verkoopprijs: Math.max(0, Number(print.verkoopprijs || 0))
+      });
+    } else if (verschil > 0) {
+      await createInventory({
+        printId: print.id,
+        printCloudId: print.cloudId,
+        naam: print.naam,
+        foto: print.foto ?? "",
+        sku: `PRINT-${String(print.id).padStart(4, "0")}`,
+        voorraad: verschil,
+        minimumVoorraad: 0,
+        kostprijs: Math.max(0, Number(print.kostprijs || 0)),
+        verkoopprijs: Math.max(0, Number(print.verkoopprijs || 0)),
+        locatie: "",
+        aangemaaktOp: new Date().toISOString()
+      });
+    }
+
+    await laadCatalogusVoorraad();
+  }
+
   async function savePrintChanges(tags: string[]) {
     if (!selectedPrint) return;
     await savePrint({ ...selectedPrint, tags });
@@ -118,6 +152,10 @@ export default function Prints() {
 
   async function verwijderen(id: number) {
     if (!window.confirm("Weet je zeker dat je deze print wilt verwijderen?")) return;
+    const gekoppeldeProducten = await db.inventory
+      .filter((product) => product.printId === id)
+      .toArray();
+    await Promise.all(gekoppeldeProducten.map((product) => product.id === undefined ? undefined : deleteInventory(product.id)));
     await deletePrint(id);
     setGeselecteerdePrintIds((huidig) => huidig.filter((printId) => printId !== id));
     await laden();
@@ -168,6 +206,10 @@ export default function Prints() {
     setBulkBezig(true);
     setImportMessage(null);
     try {
+      const gekoppeldeProducten = await db.inventory
+        .filter((product) => product.printId !== undefined && ids.includes(product.printId))
+        .toArray();
+      await Promise.all(gekoppeldeProducten.map((product) => product.id === undefined ? undefined : deleteInventory(product.id)));
       await Promise.all(ids.map((id) => deletePrint(id)));
       setGeselecteerdePrintIds([]);
       await laden();
@@ -435,6 +477,7 @@ export default function Prints() {
         setShowEditModal={setShowEditModal}
         toggleSplitPrint={(printData, checked) => void toggleSplitPrint(printData, checked)}
         voegUitgeprinteExemplarenToe={voegUitgeprinteExemplarenToe}
+        pasCatalogusVoorraadAan={pasCatalogusVoorraadAan}
         geselecteerdePrintIds={geselecteerdePrintIds}
         alleZichtbarePrintsGeselecteerd={alleZichtbarePrintsGeselecteerd}
         enkeleZichtbarePrintsGeselecteerd={enkeleZichtbarePrintsGeselecteerd}

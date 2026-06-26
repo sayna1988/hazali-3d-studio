@@ -4,7 +4,6 @@ import { NavLink } from "react-router-dom";
 
 import {
   LayoutDashboard,
-  PlusCircle,
   Package,
   Printer,
   Boxes,
@@ -31,11 +30,6 @@ export default function Sidebar() {
         <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}>
           <LayoutDashboard size={16}/>
           Dashboard
-        </NavLink>
-
-        <NavLink to="/inventaris" className={({ isActive }) => isActive ? "active" : ""}>
-          <PlusCircle size={16}/>
-          Inventaris
         </NavLink>
 
         <NavLink to="/prints" className={({ isActive }) => isActive ? "active" : ""}>

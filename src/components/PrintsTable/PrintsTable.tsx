@@ -9,11 +9,12 @@ interface Props {
   prints: Print[];
   catalogusVoorraad: Record<number, number>;
   navigate: (path: string) => void;
-  verwijderen: (id: number) => void;
+  verwijderen: (id: number) => Promise<void>;
   setSelectedPrint: (printData: Print) => void;
   setShowEditModal: (value: boolean) => void;
   toggleSplitPrint: (printData: Print, checked: boolean) => void;
   voegUitgeprinteExemplarenToe: (printData: Print, aantal: number) => Promise<void>;
+  pasCatalogusVoorraadAan: (printData: Print, verschil: number) => Promise<void>;
   geselecteerdePrintIds: number[];
   alleZichtbarePrintsGeselecteerd: boolean;
   enkeleZichtbarePrintsGeselecteerd: boolean;
@@ -39,6 +40,7 @@ export default function PrintsTable({
   setShowEditModal,
   toggleSplitPrint,
   voegUitgeprinteExemplarenToe,
+  pasCatalogusVoorraadAan,
   geselecteerdePrintIds,
   alleZichtbarePrintsGeselecteerd,
   enkeleZichtbarePrintsGeselecteerd,
@@ -47,6 +49,7 @@ export default function PrintsTable({
 }: Props) {
   const [aantallen, setAantallen] = useState<Record<number, number>>({});
   const [bezigMet, setBezigMet] = useState<number | null>(null);
+  const [voorraadBezigMet, setVoorraadBezigMet] = useState<number | null>(null);
   const [toegevoegd, setToegevoegd] = useState<number | null>(null);
   const selectAllRef = useRef<HTMLInputElement | null>(null);
 
@@ -73,6 +76,16 @@ export default function PrintsTable({
     }
   }
 
+  async function wijzigCatalogusVoorraad(print: Print, verschil: number) {
+    if (print.id === undefined) return;
+    setVoorraadBezigMet(print.id);
+    try {
+      await pasCatalogusVoorraadAan(print, verschil);
+    } finally {
+      setVoorraadBezigMet(null);
+    }
+  }
+
   function openBewerken(print: Print) {
     setSelectedPrint({ ...print });
     setShowEditModal(true);
@@ -96,7 +109,11 @@ export default function PrintsTable({
 
         {prints.length === 0 ? <div className="catalog-grid-empty">Geen prints gevonden.</div> : (
           <div className="catalog-grid">
-            {prints.map((p) => (
+            {prints.map((p) => {
+              const voorraadAantal = p.id === undefined ? 0 : catalogusVoorraad[p.id] ?? 0;
+              const winst = Number(p.winst || 0);
+              const voorraadBezig = voorraadBezigMet === p.id;
+              return (
               <article className="catalog-card" key={p.id} onClick={() => p.id !== undefined && navigate(`/prints/${p.id}`)}>
                 <div className="catalog-card-image">
                   {p.foto ? <img src={p.foto} alt={p.naam} loading="lazy" /> : <PackagePlus size={36} aria-hidden="true" />}
@@ -105,10 +122,16 @@ export default function PrintsTable({
                       <input type="checkbox" checked={geselecteerdePrintIds.includes(p.id)} onChange={(event) => togglePrintSelectie(p.id!, event.target.checked)} aria-label={`${p.naam} selecteren`} />
                     </label>
                   )}
-                  <span className="catalog-card-stock">{p.id === undefined ? 0 : catalogusVoorraad[p.id] ?? 0} op voorraad</span>
+                  {p.id !== undefined && (
+                    <div className="catalog-card-stock" onClick={(event) => event.stopPropagation()} aria-label={`Voorraad van ${p.naam} aanpassen`}>
+                      <button type="button" disabled={voorraadBezig || voorraadAantal === 0} onClick={() => void wijzigCatalogusVoorraad(p, -1)} aria-label={`Voorraad van ${p.naam} verlagen`}><Minus size={11} /></button>
+                      <span>{voorraadAantal} op voorraad</span>
+                      <button type="button" disabled={voorraadBezig} onClick={() => void wijzigCatalogusVoorraad(p, 1)} aria-label={`Voorraad van ${p.naam} verhogen`}><Plus size={11} /></button>
+                    </div>
+                  )}
                   <div className="catalog-card-image-metrics" aria-label="Prijs en winst">
                     <span className="catalog-card-price-badge"><small>VK</small>{`\u20ac${Number(p.verkoopprijs || 0).toFixed(2)}`}</span>
-                    <span className="catalog-card-price-badge profit"><small>Winst</small>{`\u20ac${Number(p.winst || 0).toFixed(2)}`}</span>
+                    <span className={`catalog-card-price-badge ${winst < 0 ? "loss" : "profit"}`}><small>Winst</small>{`\u20ac${winst.toFixed(2)}`}</span>
                   </div>
                 </div>
 
@@ -145,11 +168,12 @@ export default function PrintsTable({
 
                   <div className="catalog-card-actions" onClick={(event) => event.stopPropagation()}>
                     <button type="button" onClick={() => openBewerken(p)}><Pencil size={15} /> Bewerken</button>
-                    <button type="button" className="danger" onClick={() => p.id !== undefined && verwijderen(p.id)} aria-label={`${p.naam} verwijderen`}><Trash2 size={15} /></button>
+                    <button type="button" className="danger" onClick={(event) => { event.stopPropagation(); if (p.id !== undefined) void verwijderen(p.id); }} aria-label={`${p.naam} verwijderen`}><Trash2 size={15} /></button>
                   </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -178,7 +202,7 @@ export default function PrintsTable({
             <th>Kostprijs</th>
             <th>VK-prijs</th>
             <th>Winst</th>
-            <th>Uitgeprint</th>
+            <th>Voorraad</th>
             <th>Acties</th>
           </tr>
         </thead>
@@ -192,7 +216,11 @@ export default function PrintsTable({
             </tr>
           )}
 
-          {prints.map((p) => (
+          {prints.map((p) => {
+            const voorraadAantal = p.id === undefined ? 0 : catalogusVoorraad[p.id] ?? 0;
+            const winst = Number(p.winst || 0);
+            const voorraadBezig = voorraadBezigMet === p.id;
+            return (
             <tr
               key={p.id}
               className="clickable-row"
@@ -288,14 +316,18 @@ export default function PrintsTable({
                 €{Number(p.verkoopprijs || 0).toFixed(2)}
               </td>
 
-              <td className="profit-cell">
-                €{Number(p.winst || 0).toFixed(2)}
+              <td className={`profit-cell ${winst < 0 ? "negative" : ""}`}>
+                €{winst.toFixed(2)}
               </td>
 
               <td>
                 {p.id !== undefined && (
                   <div className="printed-quantity" onClick={(event) => event.stopPropagation()}>
-                    <span className="catalog-stock">{catalogusVoorraad[p.id] ?? 0} in catalogus</span>
+                    <div className="catalog-stock-editor" aria-label={`Voorraad van ${p.naam} aanpassen`}>
+                      <button type="button" disabled={voorraadBezig || voorraadAantal === 0} onClick={() => void wijzigCatalogusVoorraad(p, -1)} aria-label={`Voorraad van ${p.naam} verlagen`}><Minus size={13} /></button>
+                      <span className="catalog-stock">{voorraadAantal} op voorraad</span>
+                      <button type="button" disabled={voorraadBezig} onClick={() => void wijzigCatalogusVoorraad(p, 1)} aria-label={`Voorraad van ${p.naam} verhogen`}><Plus size={13} /></button>
+                    </div>
                     <div className="printed-quantity-actions">
                       <div className="quantity-stepper">
                         <button type="button" onClick={() => wijzigAantal(p.id!, -1)} aria-label="Aantal verlagen"><Minus size={13} /></button>
@@ -333,7 +365,7 @@ export default function PrintsTable({
                       event.stopPropagation();
 
                       if (p.id !== undefined) {
-                        verwijderen(p.id);
+                        void verwijderen(p.id);
                       }
                     }}
                   >
@@ -342,7 +374,8 @@ export default function PrintsTable({
                 </div>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
