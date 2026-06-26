@@ -2,13 +2,14 @@ import { import3MF } from "./PrintImportService";
 import { db } from "../database/db";
 import { savePrint } from "./PrintService";
 
-interface MakerWorldImportData {
+export interface MakerWorldImportData {
   modelId: string;
   sourceUrl: string;
   title: string;
   summary: string;
   tags: string[];
   images: string[];
+  printTimeSeconds: number;
   download: { url: string; name: string; instanceId: string };
 }
 
@@ -37,14 +38,18 @@ async function download3MF(data: MakerWorldImportData) {
   return new File([blob], fileName, { type: "application/vnd.ms-package.3dmanufacturing-3dmodel+xml" });
 }
 
-export async function importMakerWorldUrl(url: string) {
+export async function loadMakerWorldMetadata(url: string) {
   const response = await fetch("/api/makerworld", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
   });
   if (!response.ok) throw new Error(await errorMessage(response));
-  const data = await response.json() as MakerWorldImportData;
+  return response.json() as Promise<MakerWorldImportData>;
+}
+
+export async function importMakerWorldUrl(url: string, metadata?: MakerWorldImportData) {
+  const data = metadata || await loadMakerWorldMetadata(url);
   const file = await download3MF(data);
   const result = await import3MF(file);
   const print = await db.prints.get(result.id);

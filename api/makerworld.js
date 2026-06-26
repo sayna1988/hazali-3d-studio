@@ -87,6 +87,50 @@ function defaultInstance(model) {
   return instances.find((instance) => String(instance.id) === preferredId) || instances[0] || null;
 }
 
+function secondsFromDuration(value) {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) return Math.round(value);
+  if (typeof value !== "string") return 0;
+
+  const trimmed = value.trim();
+  if (/^\d+(?:\.\d+)?$/.test(trimmed)) return Math.round(Number(trimmed));
+
+  const hours = Number(trimmed.match(/(\d+(?:\.\d+)?)\s*(?:h|hr|hour|uur)/i)?.[1] || 0);
+  const minutes = Number(trimmed.match(/(\d+(?:\.\d+)?)\s*(?:m|min|minute)/i)?.[1] || 0);
+  const seconds = Number(trimmed.match(/(\d+(?:\.\d+)?)\s*(?:s|sec|second)/i)?.[1] || 0);
+  return Math.round(hours * 3600 + minutes * 60 + seconds);
+}
+
+function printTimeSeconds(...sources) {
+  const preferredKeys = /^(prediction|print_?time|printing_?time|estimated_?print_?time|duration|total_?time)$/i;
+  const seen = new Set();
+
+  function find(value, depth = 0) {
+    if (!value || typeof value !== "object" || depth > 5 || seen.has(value)) return 0;
+    seen.add(value);
+
+    for (const [key, candidate] of Object.entries(value)) {
+      if (preferredKeys.test(key)) {
+        const seconds = secondsFromDuration(candidate);
+        if (seconds > 0) return seconds;
+      }
+    }
+
+    for (const candidate of Object.values(value)) {
+      if (candidate && typeof candidate === "object") {
+        const seconds = find(candidate, depth + 1);
+        if (seconds > 0) return seconds;
+      }
+    }
+    return 0;
+  }
+
+  for (const source of sources) {
+    const seconds = find(source);
+    if (seconds > 0) return seconds;
+  }
+  return 0;
+}
+
 async function downloadDescriptor(instanceId, referer, modelId) {
   const paths = [
     `/api/v1/design-service/instance/${encodeURIComponent(instanceId)}/f3mf?type=download&fileType=`,
@@ -125,6 +169,7 @@ export default async function handler(request, response) {
         summary: model.summary || instance.summary || "",
         tags: collectTags(model),
         images: collectImages(model),
+        printTimeSeconds: printTimeSeconds(instance, download, model),
         download: {
           url: downloadUrl,
           name: download.name || download?.data?.name || `${model.title || `makerworld-${modelId}`}.3mf`,
