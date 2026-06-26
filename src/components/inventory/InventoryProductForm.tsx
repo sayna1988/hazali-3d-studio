@@ -23,7 +23,7 @@ export default function InventoryProductForm(props: Props) {
         <label><span>Startvoorraad</span><input type="number" min="0" value={voorraad} onChange={(e) => setVoorraad(Number(e.target.value))} /></label>
         <label><span>Waarschuwen bij</span><input type="number" min="0" value={minimumVoorraad} onChange={(e) => setMinimumVoorraad(Number(e.target.value))} /></label>
         <label><span>Kostprijs</span><div className="price-input"><i>€</i><input type="number" min="0" step="0.01" value={kostprijs} onChange={(e) => setKostprijs(Number(e.target.value))} /></div></label>
-        <label><span>Verkoopprijs</span><div className="price-input"><i>€</i><input type="number" min="0" step="0.01" value={verkoopprijs} onChange={(e) => setVerkoopprijs(Number(e.target.value))} /></div></label>
+        <label><span>VK-prijs</span><div className="price-input"><i>€</i><input type="number" min="0" step="0.01" value={verkoopprijs} onChange={(e) => setVerkoopprijs(Number(e.target.value))} /></div></label>
       </div>
     </div>
     <div className="inventory-form-actions"><button type="button" className="inventory-cancel" onClick={annuleren}>Annuleren</button><button type="submit" className="inventory-submit" disabled={!naam.trim()}><PackagePlus size={18} />Product toevoegen</button></div>

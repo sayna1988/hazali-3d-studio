@@ -108,7 +108,7 @@ export default function InventoryForm({
 
         <input
           type="number"
-          placeholder="Verkoopprijs"
+          placeholder="VK-prijs"
           value={verkoopprijs}
           onChange={(e)=>
             setVerkoopprijs(

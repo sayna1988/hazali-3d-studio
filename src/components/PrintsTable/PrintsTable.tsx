@@ -124,7 +124,7 @@ export default function PrintsTable({
                   {(p.tags?.length ?? 0) > 0 && <div className="print-tags">{p.tags!.slice(0, 4).map((tag) => <span key={tag}>{tag}</span>)}</div>}
 
                   <div className="catalog-card-prices">
-                    <span><small>Verkoopprijs</small>€{Number(p.verkoopprijs || 0).toFixed(2)}</span>
+                    <span><small>VK-prijs</small>€{Number(p.verkoopprijs || 0).toFixed(2)}</span>
                     <span className="profit-cell"><small>Winst</small>€{Number(p.winst || 0).toFixed(2)}</span>
                   </div>
 
@@ -175,7 +175,7 @@ export default function PrintsTable({
             <th>Kleuren / tijd</th>
             <th>Split</th>
             <th>Kostprijs</th>
-            <th>Verkoopprijs</th>
+            <th>VK-prijs</th>
             <th>Winst</th>
             <th>Uitgeprint</th>
             <th>Acties</th>

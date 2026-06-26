@@ -83,7 +83,7 @@ export default function PrintToolbar({
           </option>
 
           <option value="verkoopprijs">
-            Hoogste verkoopprijs
+            Hoogste vk-prijs
           </option>
         </select>
         <ChevronDown size={16} aria-hidden="true" />

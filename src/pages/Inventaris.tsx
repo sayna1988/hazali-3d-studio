@@ -190,7 +190,7 @@ export default function Inventaris() {
                     <th>Status</th>
                     <th>Locatie</th>
                     <th>Voorraad</th>
-                    <th>Prijs</th>
+                    <th>VK-prijs</th>
                     <th>Waarde</th>
                     <th aria-label="Acties" />
                   </tr>

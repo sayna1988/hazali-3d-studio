@@ -159,7 +159,7 @@ export default function EditPrintModal({
 
           <label>
 
-            Verkoopprijs (€)
+            VK-prijs (€)
 
           </label>
 
