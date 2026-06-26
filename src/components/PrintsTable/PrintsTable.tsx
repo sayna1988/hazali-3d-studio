@@ -152,20 +152,6 @@ export default function PrintsTable({
 
                   {(p.tags?.length ?? 0) > 0 && <div className="print-tags">{p.tags!.slice(0, 4).map((tag) => <span key={tag}>{tag}</span>)}</div>}
 
-                  {p.id !== undefined && (
-                    <div className="catalog-card-add" onClick={(event) => event.stopPropagation()}>
-                      <div className="quantity-stepper">
-                        <button type="button" onClick={() => wijzigAantal(p.id!, -1)} aria-label="Aantal verlagen"><Minus size={13} /></button>
-                        <input type="number" min="1" value={aantallen[p.id] ?? 1} onChange={(event) => setAantallen((huidig) => ({ ...huidig, [p.id!]: Math.max(1, Number(event.target.value) || 1) }))} aria-label={`Aantal uitgeprinte exemplaren van ${p.naam}`} />
-                        <button type="button" onClick={() => wijzigAantal(p.id!, 1)} aria-label="Aantal verhogen"><Plus size={13} /></button>
-                      </div>
-                      <button className={`add-to-catalog ${toegevoegd === p.id ? "added" : ""}`} type="button" disabled={bezigMet === p.id} onClick={() => void voegToe(p)}>
-                        {toegevoegd === p.id ? <Check size={15} /> : <PackagePlus size={15} />}
-                        {toegevoegd === p.id ? "Toegevoegd" : "Toevoegen"}
-                      </button>
-                    </div>
-                  )}
-
                   <div className="catalog-card-actions" onClick={(event) => event.stopPropagation()}>
                     <button type="button" onClick={() => openBewerken(p)}><Pencil size={15} /> Bewerken</button>
                     <button type="button" className="danger" onClick={(event) => { event.stopPropagation(); if (p.id !== undefined) void verwijderen(p.id); }} aria-label={`${p.naam} verwijderen`}><Trash2 size={15} /></button>
