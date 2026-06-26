@@ -393,7 +393,7 @@ export default function Prints() {
   async function exporteerCatalogus() {
     setExportBezig(true);
     try {
-      await exportCatalogusPdf(gefilterdePrints, inventarisProducten, filamentVoorraad);
+      await exportCatalogusPdf(gefilterdePrints, inventarisProducten);
       setImportMessage({
         type: "success",
         text: `${gefilterdePrints.length} ${gefilterdePrints.length === 1 ? "catalogusitem is" : "catalogusitems zijn"} geexporteerd naar PDF.`
