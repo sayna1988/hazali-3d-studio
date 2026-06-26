@@ -106,6 +106,10 @@ export default function PrintsTable({
                     </label>
                   )}
                   <span className="catalog-card-stock">{p.id === undefined ? 0 : catalogusVoorraad[p.id] ?? 0} op voorraad</span>
+                  <div className="catalog-card-image-metrics" aria-label="Prijs en winst">
+                    <span className="catalog-card-price-badge"><small>VK</small>{`\u20ac${Number(p.verkoopprijs || 0).toFixed(2)}`}</span>
+                    <span className="catalog-card-price-badge profit"><small>Winst</small>{`\u20ac${Number(p.winst || 0).toFixed(2)}`}</span>
+                  </div>
                 </div>
 
                 <div className="catalog-card-body">
@@ -124,11 +128,6 @@ export default function PrintsTable({
                   )}
 
                   {(p.tags?.length ?? 0) > 0 && <div className="print-tags">{p.tags!.slice(0, 4).map((tag) => <span key={tag}>{tag}</span>)}</div>}
-
-                  <div className="catalog-card-prices">
-                    <span><small>VK-prijs</small>€{Number(p.verkoopprijs || 0).toFixed(2)}</span>
-                    <span className="profit-cell"><small>Winst</small>€{Number(p.winst || 0).toFixed(2)}</span>
-                  </div>
 
                   {p.id !== undefined && (
                     <div className="catalog-card-add" onClick={(event) => event.stopPropagation()}>

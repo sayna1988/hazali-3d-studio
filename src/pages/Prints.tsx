@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AlertTriangle, Boxes, CircleDollarSign } from "lucide-react";
 import "./Prints.css";
 import EditPrintModal from "../components/EditPrintModal/EditPrintModal";
 import { import3MF } from "../services/PrintImportService";
@@ -13,11 +14,22 @@ import { importMakerWorldUrl } from "../services/MakerWorldImportService";
 import { createInventory, loadInventory, updateInventory } from "../services/InventoryService";
 import { loadFilaments } from "../services/FilamentService";
 import type { Filament } from "../types/Filament";
+import type { Inventory } from "../types/Inventory";
 
 interface ImportMessage {
   type: "success" | "error";
   text: string;
   aandachtspunten?: Array<{ bestandsnaam: string; meldingen: string[] }>;
+}
+
+const euro = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
+
+function catalogusVoorraadMap(producten: Inventory[]) {
+  return Object.fromEntries(
+    producten
+      .filter((product) => product.printId !== undefined)
+      .map((product) => [product.printId!, product.voorraad])
+  );
 }
 
 export default function Prints() {
@@ -38,22 +50,22 @@ export default function Prints() {
   const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
   const [importMessage, setImportMessage] = useState<ImportMessage | null>(null);
   const [catalogusVoorraad, setCatalogusVoorraad] = useState<Record<number, number>>({});
+  const [inventarisProducten, setInventarisProducten] = useState<Inventory[]>([]);
   const [filamentVoorraad, setFilamentVoorraad] = useState<Filament[]>([]);
   const navigate = useNavigate();
 
   async function laden() {
-    const [printsData, filamentenData] = await Promise.all([loadPrints(), loadFilaments()]);
+    const [printsData, filamentenData, producten] = await Promise.all([loadPrints(), loadFilaments(), loadInventory()]);
     setPrints(printsData);
     setFilamentVoorraad(filamentenData);
+    setInventarisProducten(producten);
+    setCatalogusVoorraad(catalogusVoorraadMap(producten));
   }
 
   async function laadCatalogusVoorraad() {
     const producten = await loadInventory();
-    setCatalogusVoorraad(Object.fromEntries(
-      producten
-        .filter((product) => product.printId !== undefined)
-        .map((product) => [product.printId!, product.voorraad])
-    ));
+    setInventarisProducten(producten);
+    setCatalogusVoorraad(catalogusVoorraadMap(producten));
   }
 
   async function voegUitgeprinteExemplarenToe(print: Print, aantal: number) {
@@ -243,13 +255,11 @@ export default function Prints() {
     const verversNaSync = () => {
       void loadPrintSummaries().then((data) => { if (actief) setPrints(data); });
     };
-    Promise.all([loadPrints(), loadFilaments()]).then(([printData, filamentData]) => {
+    Promise.all([loadPrints(), loadFilaments(), loadInventory()]).then(([printData, filamentData, producten]) => {
       if (!actief) return;
       setPrints(printData);
       setFilamentVoorraad(filamentData);
-    });
-    db.inventory.toArray().then((producten) => {
-      if (!actief) return;
+      setInventarisProducten(producten);
       setCatalogusVoorraad(Object.fromEntries(
         producten
           .filter((product) => product.printId !== undefined)
@@ -309,6 +319,13 @@ export default function Prints() {
   const alleZichtbarePrintsGeselecteerd = zichtbarePrintIds.length > 0 && zichtbarePrintIds.every((id) => geselecteerdePrintIds.includes(id));
   const enkeleZichtbarePrintsGeselecteerd = zichtbarePrintIds.some((id) => geselecteerdePrintIds.includes(id));
 
+  const inventarisStats = useMemo(() => {
+    const totaleStuks = inventarisProducten.reduce((totaal, item) => totaal + item.voorraad, 0);
+    const verkoopwaarde = inventarisProducten.reduce((totaal, item) => totaal + item.voorraad * item.verkoopprijs, 0);
+    const lageVoorraad = inventarisProducten.filter((item) => item.voorraad <= item.minimumVoorraad).length;
+    return { totaleStuks, verkoopwaarde, lageVoorraad };
+  }, [inventarisProducten]);
+
   function togglePrintSelectie(id: number, checked: boolean) {
     setGeselecteerdePrintIds((huidig) => checked
       ? [...new Set([...huidig, id])]
@@ -332,6 +349,23 @@ export default function Prints() {
         makerWorldImporting={makerWorldImporting}
         importProgress={importProgress}
       />
+      <section className="catalog-stats" aria-label="Catalogusoverzicht">
+        <article className="catalog-stat-card">
+          <span className="catalog-stat-icon blue"><Boxes size={20} /></span>
+          <div><span>Producten</span><strong>{inventarisProducten.length}</strong></div>
+          <small>{inventarisStats.totaleStuks} stuks op voorraad</small>
+        </article>
+        <article className="catalog-stat-card">
+          <span className="catalog-stat-icon green"><CircleDollarSign size={20} /></span>
+          <div><span>Verkoopwaarde</span><strong>{euro.format(inventarisStats.verkoopwaarde)}</strong></div>
+          <small>Potentiele omzet</small>
+        </article>
+        <article className={`catalog-stat-card ${inventarisStats.lageVoorraad > 0 ? "needs-attention" : ""}`}>
+          <span className="catalog-stat-icon orange"><AlertTriangle size={20} /></span>
+          <div><span>Aandacht nodig</span><strong>{inventarisStats.lageVoorraad}</strong></div>
+          <small>{inventarisStats.lageVoorraad ? "Onder minimumvoorraad" : "Alles is op niveau"}</small>
+        </article>
+      </section>
       {importMessage && (
         <div className={`import-message ${importMessage.type}`} role="status">
           <div className="import-message-content">
