@@ -391,9 +391,14 @@ export default function Prints() {
   }
 
   async function exporteerCatalogus() {
+    const actieveFilters = [
+      geselecteerdeTag ? `Tag: ${geselecteerdeTag}` : "",
+      zoekterm.trim() ? `Zoekterm: ${zoekterm.trim()}` : ""
+    ].filter(Boolean).join(" / ") || "Alle producten";
+
     setExportBezig(true);
     try {
-      await exportCatalogusPdf(gefilterdePrints, inventarisProducten);
+      await exportCatalogusPdf(gefilterdePrints, inventarisProducten, actieveFilters);
       setImportMessage({
         type: "success",
         text: `${gefilterdePrints.length} ${gefilterdePrints.length === 1 ? "catalogusitem is" : "catalogusitems zijn"} geexporteerd naar PDF.`

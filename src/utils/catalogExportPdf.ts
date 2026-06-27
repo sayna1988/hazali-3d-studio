@@ -27,6 +27,37 @@ async function imageAsDataUrl(url: string) {
   }
 }
 
+async function imageForPdf(url: string) {
+  const source = await imageAsDataUrl(url);
+  if (!source) return undefined;
+
+  return await new Promise<string | undefined>((resolve) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => {
+      const size = 240;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const context = canvas.getContext("2d");
+      if (!context) {
+        resolve(source);
+        return;
+      }
+
+      context.fillStyle = "#0a213a";
+      context.fillRect(0, 0, size, size);
+      const scale = Math.max(size / image.naturalWidth, size / image.naturalHeight);
+      const width = image.naturalWidth * scale;
+      const height = image.naturalHeight * scale;
+      context.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
+      resolve(canvas.toDataURL("image/jpeg", 0.88));
+    };
+    image.onerror = () => resolve(undefined);
+    image.src = source;
+  });
+}
+
 function exportDatumTijd() {
   return new Intl.DateTimeFormat("nl-NL", {
     dateStyle: "long",
@@ -46,7 +77,7 @@ function addPageBackground(pdf: PdfDocument) {
   pdf.roundedRect(10, 10, 190, 277, 4, 4, "F");
 }
 
-function addHeader(pdf: PdfDocument, logo: string | undefined, datumTijd: string) {
+function addHeader(pdf: PdfDocument, logo: string | undefined, subtitle: string) {
   pdf.setFillColor(8, 26, 48);
   pdf.roundedRect(14, 14, 182, 34, 5, 5, "F");
   if (logo) {
@@ -59,7 +90,7 @@ function addHeader(pdf: PdfDocument, logo: string | undefined, datumTijd: string
   pdf.setTextColor(126, 151, 181);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9);
-  pdf.text(datumTijd, logo ? 48 : 20, 36);
+  pdf.text(subtitle.slice(0, 86), logo ? 48 : 20, 36);
 }
 
 function addSummary(pdf: PdfDocument, prints: Print[], inventaris: Inventory[]) {
@@ -93,7 +124,7 @@ async function addProduct(pdf: PdfDocument, print: Print, index: number, y: numb
   const voorraad = voorraadVoorPrint(print, inventaris);
   const cardX = 14;
   const cardW = 182;
-  const image = print.foto ? await imageAsDataUrl(print.foto) : undefined;
+  const image = print.foto ? await imageForPdf(print.foto) : undefined;
 
   pdf.setFillColor(index % 2 === 0 ? 7 : 9, 24, index % 2 === 0 ? 43 : 48);
   pdf.roundedRect(cardX, y, cardW, 34, 4, 4, "F");
@@ -107,14 +138,10 @@ async function addProduct(pdf: PdfDocument, print: Print, index: number, y: numb
     try {
       pdf.addImage(image, "JPEG", cardX + 4, y + 5, 24, 24, undefined, "FAST");
     } catch {
-      try {
-        pdf.addImage(image, "PNG", cardX + 4, y + 5, 24, 24, undefined, "FAST");
-      } catch {
-        pdf.setTextColor(126, 151, 181);
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(10);
-        pdf.text(String(index + 1), cardX + 13, y + 19);
-      }
+      pdf.setTextColor(126, 151, 181);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.text(String(index + 1), cardX + 13, y + 19);
     }
   } else {
     pdf.setTextColor(126, 151, 181);
@@ -148,15 +175,16 @@ async function addProduct(pdf: PdfDocument, print: Print, index: number, y: numb
   });
 }
 
-export async function exportCatalogusPdf(prints: Print[], inventaris: Inventory[]) {
+export async function exportCatalogusPdf(prints: Print[], inventaris: Inventory[], actiefFilter: string) {
   const { jsPDF } = await import("jspdf");
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const logo = await imageAsDataUrl("/logo.png");
   const datumTijd = exportDatumTijd();
+  const subtitle = `${actiefFilter} - ${datumTijd}`;
   let y = 84;
 
   addPageBackground(pdf);
-  addHeader(pdf, logo, datumTijd);
+  addHeader(pdf, logo, subtitle);
   addSummary(pdf, prints, inventaris);
 
   if (!prints.length) {
@@ -169,7 +197,7 @@ export async function exportCatalogusPdf(prints: Print[], inventaris: Inventory[
     if (y > 260) {
       pdf.addPage();
       addPageBackground(pdf);
-      addHeader(pdf, logo, datumTijd);
+      addHeader(pdf, logo, subtitle);
       y = 58;
     }
     await addProduct(pdf, print, index, y, inventaris);
