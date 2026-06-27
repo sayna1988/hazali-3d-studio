@@ -6,9 +6,17 @@ type PdfDocument = InstanceType<typeof JsPDFConstructor>;
 
 const euro = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
+function inventoryVoorPrint(print: Print, inventaris: Inventory[]) {
+  if (print.id === undefined) return undefined;
+  return inventaris.find((product) => product.printId === print.id);
+}
+
 function voorraadVoorPrint(print: Print, inventaris: Inventory[]) {
-  if (print.id === undefined) return 0;
-  return inventaris.find((product) => product.printId === print.id)?.voorraad ?? 0;
+  return inventoryVoorPrint(print, inventaris)?.voorraad ?? 0;
+}
+
+function hoofdAfbeelding(print: Print, inventaris: Inventory[]) {
+  return print.foto || print.fotos?.find(Boolean) || inventoryVoorPrint(print, inventaris)?.foto;
 }
 
 async function imageAsDataUrl(url: string) {
@@ -28,7 +36,7 @@ async function imageAsDataUrl(url: string) {
 }
 
 async function imageForPdf(url: string) {
-  const source = await imageAsDataUrl(url);
+  const source = await imageAsDataUrl(url) ?? url;
   if (!source) return undefined;
 
   return await new Promise<string | undefined>((resolve) => {
@@ -51,7 +59,11 @@ async function imageForPdf(url: string) {
       const width = image.naturalWidth * scale;
       const height = image.naturalHeight * scale;
       context.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
-      resolve(canvas.toDataURL("image/jpeg", 0.88));
+      try {
+        resolve(canvas.toDataURL("image/jpeg", 0.88));
+      } catch {
+        resolve(undefined);
+      }
     };
     image.onerror = () => resolve(undefined);
     image.src = source;
@@ -77,46 +89,41 @@ function addPageBackground(pdf: PdfDocument) {
   pdf.roundedRect(10, 10, 190, 277, 4, 4, "F");
 }
 
-function addHeader(pdf: PdfDocument, logo: string | undefined, subtitle: string) {
+function addHeader(pdf: PdfDocument, logo: string | undefined, subtitle: string, prints: Print[], inventaris: Inventory[]) {
+  const voorraad = prints.reduce((som, print) => som + voorraadVoorPrint(print, inventaris), 0);
   pdf.setFillColor(8, 26, 48);
-  pdf.roundedRect(14, 14, 182, 34, 5, 5, "F");
+  pdf.roundedRect(14, 14, 182, 38, 5, 5, "F");
   if (logo) {
     pdf.addImage(logo, "PNG", 18, 18, 24, 24, undefined, "FAST");
   }
   pdf.setTextColor(240, 247, 255);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(20);
-  pdf.text("Hazali Catalogus", logo ? 48 : 20, 27);
+  pdf.text("Catalogus", logo ? 48 : 20, 27);
   pdf.setTextColor(126, 151, 181);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9);
-  pdf.text(subtitle.slice(0, 86), logo ? 48 : 20, 36);
-}
-
-function addSummary(pdf: PdfDocument, prints: Print[], inventaris: Inventory[]) {
-  const voorraad = prints.reduce((som, print) => som + voorraadVoorPrint(print, inventaris), 0);
-  const verkoopwaarde = prints.reduce((som, print) => som + voorraadVoorPrint(print, inventaris) * Number(print.verkoopprijs || 0), 0);
+  pdf.text(subtitle.slice(0, 42), logo ? 48 : 20, 36);
   const cards = [
     ["Producten", String(prints.length), "zichtbaar"],
-    ["Voorraad", String(voorraad), "stuks"],
-    ["Verkoopwaarde", euro.format(verkoopwaarde), "op voorraad"]
+    ["Voorraad", String(voorraad), "stuks"]
   ];
 
   cards.forEach(([label, value, note], index) => {
-    const x = 14 + index * 61;
+    const x = 128 + index * 32;
     pdf.setFillColor(10, 33, 58);
-    pdf.roundedRect(x, 54, 57, 23, 4, 4, "F");
+    pdf.roundedRect(x, 20, 29, 24, 4, 4, "F");
     pdf.setTextColor(140, 166, 199);
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7);
-    pdf.text(label.toUpperCase(), x + 4, 62);
+    pdf.setFontSize(6);
+    pdf.text(label.toUpperCase(), x + 3, 27);
     pdf.setTextColor(240, 247, 255);
     pdf.setFontSize(12);
-    pdf.text(value, x + 4, 69);
+    pdf.text(value, x + 3, 35);
     pdf.setTextColor(101, 126, 159);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(7);
-    pdf.text(note, x + 4, 74);
+    pdf.text(note, x + 3, 41);
   });
 }
 
@@ -124,7 +131,8 @@ async function addProduct(pdf: PdfDocument, print: Print, index: number, y: numb
   const voorraad = voorraadVoorPrint(print, inventaris);
   const cardX = 14;
   const cardW = 182;
-  const image = print.foto ? await imageForPdf(print.foto) : undefined;
+  const afbeelding = hoofdAfbeelding(print, inventaris);
+  const image = afbeelding ? await imageForPdf(afbeelding) : undefined;
 
   pdf.setFillColor(index % 2 === 0 ? 7 : 9, 24, index % 2 === 0 ? 43 : 48);
   pdf.roundedRect(cardX, y, cardW, 34, 4, 4, "F");
@@ -138,26 +146,13 @@ async function addProduct(pdf: PdfDocument, print: Print, index: number, y: numb
     try {
       pdf.addImage(image, "JPEG", cardX + 4, y + 5, 24, 24, undefined, "FAST");
     } catch {
-      pdf.setTextColor(126, 151, 181);
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(10);
-      pdf.text(String(index + 1), cardX + 13, y + 19);
     }
-  } else {
-    pdf.setTextColor(126, 151, 181);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.text(String(index + 1), cardX + 13, y + 19);
   }
 
   pdf.setTextColor(240, 247, 255);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
   pdf.text((print.naam || "Naamloos product").slice(0, 58), cardX + 34, y + 12);
-  pdf.setTextColor(113, 139, 171);
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(7);
-  pdf.text(`Catalogusitem ${String(index + 1).padStart(2, "0")}`, cardX + 34, y + 20);
 
   const values = [
     ["Voorraad", `${voorraad} stuks`],
@@ -181,11 +176,10 @@ export async function exportCatalogusPdf(prints: Print[], inventaris: Inventory[
   const logo = await imageAsDataUrl("/logo.png");
   const datumTijd = exportDatumTijd();
   const subtitle = `${actiefFilter} - ${datumTijd}`;
-  let y = 84;
+  let y = 62;
 
   addPageBackground(pdf);
-  addHeader(pdf, logo, subtitle);
-  addSummary(pdf, prints, inventaris);
+  addHeader(pdf, logo, subtitle, prints, inventaris);
 
   if (!prints.length) {
     pdf.setTextColor(140, 166, 199);
@@ -197,8 +191,8 @@ export async function exportCatalogusPdf(prints: Print[], inventaris: Inventory[
     if (y > 260) {
       pdf.addPage();
       addPageBackground(pdf);
-      addHeader(pdf, logo, subtitle);
-      y = 58;
+      addHeader(pdf, logo, subtitle, prints, inventaris);
+      y = 62;
     }
     await addProduct(pdf, print, index, y, inventaris);
     y += 38;
