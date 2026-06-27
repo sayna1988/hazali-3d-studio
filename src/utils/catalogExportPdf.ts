@@ -21,15 +21,39 @@ function hoofdAfbeelding(print: Print, inventaris: Inventory[]) {
 
 async function imageAsDataUrl(url: string) {
   if (url.startsWith("data:")) return url;
+  const blobAsDataUrl = (blob: Blob) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+  const fetchImage = async (source: string) => {
+    const response = await fetch(source);
+    if (!response.ok) throw new Error(`Image request failed: ${response.status}`);
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType && !contentType.startsWith("image/")) {
+      throw new Error("Response is not an image");
+    }
+    return await blobAsDataUrl(await response.blob());
+  };
+
   try {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+    return await fetchImage(url);
+  } catch (error) {
+    try {
+      const parsed = new URL(url, window.location.origin);
+      if (!["http:", "https:"].includes(parsed.protocol)) return undefined;
+      return await fetchImage(`/api/image-proxy?url=${encodeURIComponent(parsed.href)}`);
+    } catch {
+      return undefined;
+    }
+  }
+}
+
+function addCoverImage(pdf: PdfDocument, image: string, x: number, y: number, width: number, height: number) {
+  try {
+    pdf.addImage(image, "JPEG", x, y, width, height, undefined, "FAST");
   } catch {
     return undefined;
   }
@@ -127,46 +151,44 @@ function addHeader(pdf: PdfDocument, logo: string | undefined, subtitle: string,
   });
 }
 
-async function addProduct(pdf: PdfDocument, print: Print, index: number, y: number, inventaris: Inventory[]) {
+async function addProductCard(pdf: PdfDocument, print: Print, index: number, x: number, y: number, inventaris: Inventory[]) {
   const voorraad = voorraadVoorPrint(print, inventaris);
-  const cardX = 14;
-  const cardW = 182;
+  const cardW = 88;
+  const cardH = 68;
   const afbeelding = hoofdAfbeelding(print, inventaris);
   const image = afbeelding ? await imageForPdf(afbeelding) : undefined;
 
   pdf.setFillColor(index % 2 === 0 ? 7 : 9, 24, index % 2 === 0 ? 43 : 48);
-  pdf.roundedRect(cardX, y, cardW, 34, 4, 4, "F");
+  pdf.roundedRect(x, y, cardW, cardH, 4, 4, "F");
   pdf.setDrawColor(31, 156, 255);
   pdf.setLineWidth(0.15);
-  pdf.roundedRect(cardX, y, cardW, 34, 4, 4, "S");
+  pdf.roundedRect(x, y, cardW, cardH, 4, 4, "S");
 
   pdf.setFillColor(10, 33, 58);
-  pdf.roundedRect(cardX + 4, y + 5, 24, 24, 3, 3, "F");
+  pdf.roundedRect(x + 4, y + 4, cardW - 8, 36, 3, 3, "F");
   if (image) {
-    try {
-      pdf.addImage(image, "JPEG", cardX + 4, y + 5, 24, 24, undefined, "FAST");
-    } catch {
-    }
+    addCoverImage(pdf, image, x + 4, y + 4, cardW - 8, 36);
   }
 
   pdf.setTextColor(240, 247, 255);
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.text((print.naam || "Naamloos product").slice(0, 58), cardX + 34, y + 12);
+  pdf.setFontSize(9);
+  const nameLines = pdf.splitTextToSize(print.naam || "Naamloos product", cardW - 8).slice(0, 2);
+  pdf.text(nameLines, x + 4, y + 47);
 
   const values = [
     ["Voorraad", `${voorraad} stuks`],
     ["Verkoopprijs", euro.format(Number(print.verkoopprijs || 0))]
   ];
   values.forEach(([label, value], valueIndex) => {
-    const x = cardX + 112 + valueIndex * 33;
+    const valueX = x + 4 + valueIndex * 42;
     pdf.setTextColor(128, 160, 194);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(6);
-    pdf.text(label.toUpperCase(), x, y + 12);
+    pdf.text(label.toUpperCase(), valueX, y + 58);
     pdf.setTextColor(label === "Verkoopprijs" ? 68 : 238, label === "Verkoopprijs" ? 240 : 247, label === "Verkoopprijs" ? 160 : 255);
     pdf.setFontSize(9);
-    pdf.text(value, x, y + 20);
+    pdf.text(value, valueX, y + 65);
   });
 }
 
@@ -188,14 +210,14 @@ export async function exportCatalogusPdf(prints: Print[], inventaris: Inventory[
   }
 
   for (const [index, print] of prints.entries()) {
-    if (y > 260) {
+    const column = index % 2;
+    const row = Math.floor(index / 2) % 3;
+    if (index > 0 && column === 0 && row === 0) {
       pdf.addPage();
       addPageBackground(pdf);
       addHeader(pdf, logo, subtitle, prints, inventaris);
-      y = 62;
     }
-    await addProduct(pdf, print, index, y, inventaris);
-    y += 38;
+    await addProductCard(pdf, print, index, 14 + column * 94, 62 + row * 74, inventaris);
   }
 
   const pages = pdf.getNumberOfPages();
