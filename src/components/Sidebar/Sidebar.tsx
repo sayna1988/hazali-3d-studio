@@ -7,6 +7,7 @@ import {
   Package,
   Printer,
   Boxes,
+  BadgePercent,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../auth/AuthProvider";
@@ -40,6 +41,11 @@ export default function Sidebar() {
         <NavLink to="/filamenten" className={({ isActive }) => isActive ? "active" : ""}>
           <Boxes size={16}/>
           Filamenten
+        </NavLink>
+
+        <NavLink to="/dealtracker" className={({ isActive }) => isActive ? "active" : ""}>
+          <BadgePercent size={16}/>
+          Dealtracker
         </NavLink>
 
         <NavLink to="/mijn-printer" className={({ isActive }) => isActive ? "active" : ""}>

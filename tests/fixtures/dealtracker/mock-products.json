@@ -1,0 +1,185 @@
+{
+  "products": [
+    {
+      "sourceId": "pla-basic-1kg",
+      "productName": "Hazali PLA Basic 1 kg",
+      "brand": "Hazali",
+      "material": "PLA",
+      "productUrl": "https://mock.example/products/pla-basic-1kg",
+      "imageUrl": "https://mock.example/images/pla-basic.jpg",
+      "diameterMm": 1.75,
+      "variants": [
+        {
+          "variantSourceId": "pla-basic-black",
+          "sku": "MOCK-PLA-BLACK-1KG",
+          "color": "Zwart",
+          "spoolWeightGrams": 1000,
+          "spoolCount": 1,
+          "productPrice": 19.99,
+          "shippingCost": 0,
+          "stockStatus": "op voorraad"
+        },
+        {
+          "variantSourceId": "pla-basic-white",
+          "sku": "MOCK-PLA-WHITE-1KG",
+          "color": "Wit",
+          "spoolWeightGrams": 1000,
+          "spoolCount": 1,
+          "productPrice": 19.99,
+          "shippingCost": 0,
+          "stockStatus": "op voorraad"
+        }
+      ]
+    },
+    {
+      "sourceId": "pla-multipack-4x250",
+      "productName": "Hazali PLA Multipack 4 x 250 g",
+      "brand": "Hazali",
+      "material": "PLA+",
+      "productUrl": "https://mock.example/products/pla-multipack-4x250",
+      "diameterMm": 1.75,
+      "variants": [
+        {
+          "variantSourceId": "pla-multipack-rainbow",
+          "sku": "MOCK-PLA-MULTI-4X250",
+          "color": "Multicolor",
+          "spoolWeightGrams": 250,
+          "spoolCount": 4,
+          "productPrice": 18,
+          "shippingCost": 0,
+          "stockStatus": "available"
+        }
+      ]
+    },
+    {
+      "sourceId": "pla-sold-out",
+      "productName": "Hazali PLA Uitverkocht",
+      "brand": "Hazali",
+      "material": "PLA",
+      "productUrl": "https://mock.example/products/pla-sold-out",
+      "diameterMm": 1.75,
+      "variants": [
+        {
+          "variantSourceId": "pla-sold-out-blue",
+          "sku": "MOCK-PLA-BLUE-1KG",
+          "color": "Blauw",
+          "spoolWeightGrams": 1000,
+          "spoolCount": 1,
+          "productPrice": 16.5,
+          "shippingCost": 0,
+          "stockStatus": "uitverkocht"
+        }
+      ]
+    },
+    {
+      "sourceId": "pla-discount",
+      "productName": "Hazali PLA Korting",
+      "brand": "Hazali",
+      "material": "PLA",
+      "productUrl": "https://mock.example/products/pla-discount",
+      "diameterMm": 1.75,
+      "variants": [
+        {
+          "variantSourceId": "pla-discount-red",
+          "sku": "MOCK-PLA-RED-1KG",
+          "color": "Rood",
+          "spoolWeightGrams": 1000,
+          "spoolCount": 1,
+          "normalPrice": 24.99,
+          "productPrice": 24.99,
+          "directDiscount": 5,
+          "shippingCost": 0,
+          "stockStatus": "in stock"
+        }
+      ]
+    },
+    {
+      "sourceId": "pla-shipping",
+      "productName": "Hazali PLA Met Verzendkosten",
+      "brand": "Hazali",
+      "material": "PLA",
+      "productUrl": "https://mock.example/products/pla-shipping",
+      "diameterMm": 1.75,
+      "variants": [
+        {
+          "variantSourceId": "pla-shipping-green",
+          "sku": "MOCK-PLA-GREEN-1KG",
+          "color": "Groen",
+          "spoolWeightGrams": 1000,
+          "spoolCount": 1,
+          "productPrice": 20,
+          "shippingCost": 4.95,
+          "stockStatus": "voorraad"
+        }
+      ]
+    },
+    {
+      "sourceId": "pla-invalid-price",
+      "productName": "Hazali PLA Ongeldige Prijs",
+      "brand": "Hazali",
+      "material": "PLA",
+      "productUrl": "https://mock.example/products/pla-invalid-price",
+      "diameterMm": 1.75,
+      "variants": [
+        {
+          "variantSourceId": "pla-invalid-price-gray",
+          "sku": "MOCK-PLA-GRAY-1KG",
+          "color": "Grijs",
+          "spoolWeightGrams": 1000,
+          "spoolCount": 1,
+          "productPrice": -1,
+          "shippingCost": 0,
+          "stockStatus": "op voorraad"
+        }
+      ]
+    },
+    {
+      "sourceId": "pla-missing-weight",
+      "productName": "Hazali PLA Mist Gewicht",
+      "brand": "Hazali",
+      "material": "PLA",
+      "productUrl": "https://mock.example/products/pla-missing-weight",
+      "diameterMm": 1.75,
+      "variants": [
+        {
+          "variantSourceId": "pla-missing-weight-orange",
+          "sku": "MOCK-PLA-ORANGE",
+          "color": "Oranje",
+          "productPrice": 20,
+          "shippingCost": 0,
+          "stockStatus": "op voorraad"
+        }
+      ]
+    },
+    {
+      "sourceId": "pla-duplicate",
+      "productName": "Hazali PLA Dubbel",
+      "brand": "Hazali",
+      "material": "PLA",
+      "productUrl": "https://mock.example/products/pla-duplicate",
+      "diameterMm": 1.75,
+      "variants": [
+        {
+          "variantSourceId": "pla-duplicate-black",
+          "sku": "MOCK-PLA-DUP-BLACK",
+          "color": "Zwart",
+          "spoolWeightGrams": 1000,
+          "spoolCount": 1,
+          "productPrice": 21,
+          "shippingCost": 0,
+          "stockStatus": "op voorraad"
+        },
+        {
+          "variantSourceId": "pla-duplicate-black",
+          "sku": "MOCK-PLA-DUP-BLACK",
+          "color": "Zwart",
+          "spoolWeightGrams": 1000,
+          "spoolCount": 1,
+          "productPrice": 21,
+          "shippingCost": 0,
+          "stockStatus": "op voorraad"
+        }
+      ]
+    }
+  ]
+}

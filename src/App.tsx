@@ -9,6 +9,7 @@ import {
 import BottomNavigation from "./components/BottomNavigation/BottomNavigation";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Dashboard from "./pages/Dashboard";
+import Dealtracker from "./pages/Dealtracker";
 import Filamenten from "./pages/Filamenten";
 import Prints from "./pages/Prints";
 import PrintDetails from "./pages/PrintDetails";
@@ -43,6 +44,11 @@ function App() {
           <Route
             path="/filamenten"
             element={<Filamenten />}
+          />
+
+          <Route
+            path="/dealtracker"
+            element={<Dealtracker />}
           />
 
           <Route

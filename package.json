@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
     "lint": "eslint .",
+    "test": "node --test --experimental-strip-types tests/*.test.ts",
+    "dealtracker:mock": "node --experimental-strip-types scripts/dealtracker-mock.ts --dry-run",
+    "dealtracker:joybuy": "node --experimental-strip-types scripts/dealtracker-joybuy.ts --dry-run",
+    "dealtracker:run": "node --experimental-strip-types scripts/dealtracker-run.ts",
     "preview": "vite preview",
     "printer:relay": "node --env-file=.env.printer-relay.local scripts/printer-relay.mjs",
     "dev:mobile": "vite --host",
