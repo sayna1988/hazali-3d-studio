@@ -79,7 +79,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       triggerSource: "api",
       logger: createStructuredLogger({ endpoint: "api/dealtracker-run" }),
     });
-    const appBaseUrl = process.env.HAZALI_APP_URL || request.headers.origin as string | undefined || "";
+    const appBaseUrl = process.env.HAZALI_APP_URL || first(request.headers.origin) || "";
     const alertResult = (!dryRun && !validateOnly && appBaseUrl)
       ? await evaluateDealAlerts(client, result.runId, appBaseUrl)
       : null;

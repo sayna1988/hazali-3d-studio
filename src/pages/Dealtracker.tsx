@@ -1,35 +1,57 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowUpDown,
   BadgePercent,
   Bell,
-  Check,
   ChevronDown,
   CircleDollarSign,
   Clock3,
+  Edit3,
   ExternalLink,
   LoaderCircle,
   PackageOpen,
+  Pause,
+  Play,
   Search,
   SlidersHorizontal,
   Store,
   Tag,
+  Trash2,
   X,
 } from "lucide-react";
 import Page from "../components/Page/Page";
 import { useAuth } from "../auth/AuthProvider";
 import {
   createDealTrackerRule,
+  deleteDealTrackerRule,
   loadDealPriceHistory,
+  loadDealTrackerRules,
   loadDealtrackerOffers,
   loadDealtrackerRunInfo,
+  updateDealTrackerRule,
   type DealPriceHistoryPoint,
+  type DealTrackerRuleView,
   type DealtrackerOffer,
 } from "../services/DealtrackerService";
 import "./Dealtracker.css";
 
 type Sortering = "prijs-kg" | "totaalprijs" | "korting" | "nieuwste" | "controle";
+type AlertEditorState = { mode: "create"; offer: DealtrackerOffer } | { mode: "edit"; rule: DealTrackerRuleView } | null;
+type ActiveAlertEditor = Exclude<AlertEditorState, null>;
+
+type AlertFormState = {
+  label: string;
+  productId: string | null;
+  material: string;
+  brand: string;
+  retailerId: string | null;
+  maxPricePerKg: string;
+  minTotalWeightGrams: number;
+  inStockOnly: boolean;
+  requireKnownShipping: boolean;
+  active: boolean;
+};
 
 const euro = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 const compactEuro = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
@@ -71,6 +93,7 @@ function isStale(value: string | null, nowMs: number) {
 
 export default function Dealtracker() {
   const { session } = useAuth();
+  const userId = session?.user.id;
   const [offers, setOffers] = useState<DealtrackerOffer[]>([]);
   const [lastSuccessfulCheckAt, setLastSuccessfulCheckAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,26 +111,69 @@ export default function Dealtracker() {
   const [sortering, setSortering] = useState<Sortering>("prijs-kg");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [selectedOffer, setSelectedOffer] = useState<DealtrackerOffer | null>(null);
+  const [rules, setRules] = useState<DealTrackerRuleView[]>([]);
+  const [rulesLoading, setRulesLoading] = useState(false);
+  const [ruleError, setRuleError] = useState("");
+  const [alertEditor, setAlertEditor] = useState<AlertEditorState>(null);
   const [nowMs] = useState(() => Date.now());
 
-  async function laden() {
+  const laden = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [offerData, runInfo] = await Promise.all([loadDealtrackerOffers(), loadDealtrackerRunInfo()]);
+      const [offerData, runInfo, ruleData] = await Promise.all([
+        loadDealtrackerOffers(),
+        loadDealtrackerRunInfo(),
+        userId ? loadDealTrackerRules() : Promise.resolve([]),
+      ]);
       setOffers(offerData);
       setLastSuccessfulCheckAt(runInfo.lastSuccessfulCheckAt);
+      setRules(ruleData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Dealtracker laden is mislukt.");
     } finally {
       setLoading(false);
+    }
+  }, [userId]);
+
+  async function reloadRules() {
+    if (!userId) return setRules([]);
+    setRulesLoading(true);
+    setRuleError("");
+    try {
+      setRules(await loadDealTrackerRules());
+    } catch (err) {
+      setRuleError(err instanceof Error ? err.message : "Prijsalerts laden is mislukt.");
+    } finally {
+      setRulesLoading(false);
+    }
+  }
+
+  async function toggleRule(rule: DealTrackerRuleView) {
+    setRuleError("");
+    try {
+      await updateDealTrackerRule(rule.id, { active: !rule.active });
+      await reloadRules();
+    } catch (err) {
+      setRuleError(err instanceof Error ? err.message : "Prijsalert aanpassen is mislukt.");
+    }
+  }
+
+  async function removeRule(rule: DealTrackerRuleView) {
+    if (!window.confirm("Prijsalert verwijderen?")) return;
+    setRuleError("");
+    try {
+      await deleteDealTrackerRule(rule.id);
+      await reloadRules();
+    } catch (err) {
+      setRuleError(err instanceof Error ? err.message : "Prijsalert verwijderen is mislukt.");
     }
   }
 
   useEffect(() => {
     const timer = window.setTimeout(() => void laden(), 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [laden]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setVisibleCount(PAGE_SIZE), 0);
@@ -187,6 +253,18 @@ export default function Dealtracker() {
         </div>
       )}
 
+      <PriceAlertsPanel
+        rules={rules}
+        offers={offers}
+        loading={rulesLoading}
+        error={ruleError}
+        isAuthenticated={Boolean(userId)}
+        onCreateFromCheapest={cheapest ? () => setAlertEditor({ mode: "create", offer: cheapest }) : undefined}
+        onEdit={(rule) => setAlertEditor({ mode: "edit", rule })}
+        onToggle={(rule) => void toggleRule(rule)}
+        onDelete={(rule) => void removeRule(rule)}
+      />
+
       <section className="deal-filter-panel" aria-label="Dealtracker filters">
         <div className="deal-filter-search">
           <Search size={18} />
@@ -226,7 +304,26 @@ export default function Dealtracker() {
         <div className="deal-state"><PackageOpen size={30} /><h2>Geen aanbiedingen gevonden</h2><p>Pas je filters aan of wacht tot de volgende achtergrondcontrole is voltooid.</p></div>
       )}
 
-      {selectedOffer && <DealDetailModal offer={selectedOffer} userId={session?.user.id} onClose={() => setSelectedOffer(null)} />}
+      {selectedOffer && (
+        <DealDetailModal
+          offer={selectedOffer}
+          onCreateAlert={(offer) => setAlertEditor({ mode: "create", offer })}
+          onClose={() => setSelectedOffer(null)}
+        />
+      )}
+      {alertEditor && (
+        <PriceAlertModal
+          key={alertEditor.mode === "edit" ? alertEditor.rule.id : alertEditor.offer.id}
+          editor={alertEditor}
+          offers={offers}
+          userId={userId}
+          onClose={() => setAlertEditor(null)}
+          onSaved={() => {
+            setAlertEditor(null);
+            void reloadRules();
+          }}
+        />
+      )}
     </Page>
   );
 }
@@ -270,14 +367,10 @@ function DealCard({ offer, onDetails }: { offer: DealtrackerOffer; onDetails: (o
   );
 }
 
-function DealDetailModal({ offer, userId, onClose }: { offer: DealtrackerOffer; userId?: string; onClose: () => void }) {
+function DealDetailModal({ offer, onCreateAlert, onClose }: { offer: DealtrackerOffer; onCreateAlert: (offer: DealtrackerOffer) => void; onClose: () => void }) {
   const [history, setHistory] = useState<DealPriceHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [alertOpen, setAlertOpen] = useState(false);
-  const [maxPrice, setMaxPrice] = useState(String(Math.max(1, Math.floor(offer.pricePerKg))));
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -315,29 +408,6 @@ function DealDetailModal({ offer, userId, onClose }: { offer: DealtrackerOffer; 
   const recent = points.filter((point) => new Date(point.checkedAt).getTime() >= thirtyDaysAgo);
   const average30 = (recent.length ? recent : points).reduce((sum, point) => sum + point.pricePerKg, 0) / (recent.length || points.length);
 
-  async function saveAlert() {
-    if (!userId) return setError("Log opnieuw in om een prijsalarm op te slaan.");
-    setSaving(true);
-    setError("");
-    try {
-      await createDealTrackerRule({
-        userId,
-        material: offer.material,
-        brand: offer.brand,
-        retailerId: offer.retailerId,
-        maxPricePerKg: Number(maxPrice.replace(",", ".")),
-        minSpoolWeightGrams: offer.spoolWeightGrams,
-        inStockOnly: true,
-      });
-      setSaved(true);
-      setAlertOpen(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Prijsalarm opslaan is mislukt.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <div className="deal-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="deal-detail-title" onMouseDown={onClose}>
       <section className="deal-modal" onMouseDown={(event) => event.stopPropagation()}>
@@ -358,17 +428,231 @@ function DealDetailModal({ offer, userId, onClose }: { offer: DealtrackerOffer; 
             <div key={point.id}><span>{checkedLabel(point.checkedAt)}</span><strong>{euro.format(point.pricePerKg)}</strong><small>{stockLabel(point.stockStatus)}</small></div>
           ))}
         </div>
-        {saved && <div className="deal-alert-saved"><Check size={16} /> Prijsalarm opgeslagen.</div>}
-        {alertOpen && (
-          <form className="deal-alert-form" onSubmit={(event) => { event.preventDefault(); void saveAlert(); }}>
-            <label><span>Waarschuw onder €/kg</span><input inputMode="decimal" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} /></label>
-            <button type="submit" disabled={saving}>{saving ? "Opslaan..." : "Prijsalarm opslaan"}</button>
-          </form>
-        )}
         <footer className="deal-modal__footer">
-          <button type="button" onClick={() => setAlertOpen((open) => !open)}><Bell size={16} /> Prijsalarm instellen</button>
+          <button type="button" onClick={() => onCreateAlert(offer)}><Bell size={16} /> Prijsalarm instellen</button>
           <a href={offer.productUrl} target="_blank" rel="noopener noreferrer">Bekijk aanbieding <ExternalLink size={15} /></a>
         </footer>
+      </section>
+    </div>
+  );
+}
+
+function PriceAlertsPanel({
+  rules,
+  offers,
+  loading,
+  error,
+  isAuthenticated,
+  onCreateFromCheapest,
+  onEdit,
+  onToggle,
+  onDelete,
+}: {
+  rules: DealTrackerRuleView[];
+  offers: DealtrackerOffer[];
+  loading: boolean;
+  error: string;
+  isAuthenticated: boolean;
+  onCreateFromCheapest?: () => void;
+  onEdit: (rule: DealTrackerRuleView) => void;
+  onToggle: (rule: DealTrackerRuleView) => void;
+  onDelete: (rule: DealTrackerRuleView) => void;
+}) {
+  return (
+    <section className="deal-alerts-panel" aria-label="Mijn prijsalerts">
+      <div className="deal-alerts-panel__head">
+        <div>
+          <span><Bell size={15} /> Mijn prijsalerts</span>
+          <h2>Waarschuw mij bij goede filamentdeals</h2>
+        </div>
+        {onCreateFromCheapest && <button type="button" onClick={onCreateFromCheapest}><Bell size={16} /> Nieuwe alert</button>}
+      </div>
+
+      {!isAuthenticated ? (
+        <p className="deal-alerts-panel__note">Log in om persoonlijke prijsalerts te beheren.</p>
+      ) : loading ? (
+        <p className="deal-alerts-panel__note"><LoaderCircle className="deal-spin" size={17} /> Prijsalerts laden...</p>
+      ) : error ? (
+        <p className="deal-alerts-panel__note is-error">{error}</p>
+      ) : rules.length ? (
+        <div className="deal-alerts-list">
+          {rules.map((rule) => {
+            const offer = offers.find((item) => item.productId === rule.productId);
+            return (
+              <article className="deal-alert-rule" key={rule.id}>
+                <div>
+                  <div className="deal-alert-rule__title">
+                    <strong>{rule.label || offer?.productName || `${rule.material}${rule.brand ? ` - ${rule.brand}` : ""}`}</strong>
+                    <span className={rule.active ? "is-active" : "is-paused"}>{rule.active ? "Actief" : "Gepauzeerd"}</span>
+                  </div>
+                  <p>
+                    Max {euro.format(rule.maxPricePerKg)}/kg, minimaal {kgLabel(rule.minTotalWeightGrams)} totaal
+                    {rule.retailerName ? ` bij ${rule.retailerName}` : ""}
+                    {rule.requireKnownShipping ? ", alleen bekende all-in prijs" : ""}
+                    {rule.inStockOnly ? ", alleen op voorraad" : ""}
+                  </p>
+                  <small>Laatst geactiveerd: {rule.lastTriggeredAt ? checkedLabel(rule.lastTriggeredAt) : "Nog nooit"}</small>
+                </div>
+                <div className="deal-alert-rule__actions">
+                  <button type="button" onClick={() => onEdit(rule)} aria-label="Prijsalert bewerken"><Edit3 size={15} /></button>
+                  <button type="button" onClick={() => onToggle(rule)} aria-label={rule.active ? "Prijsalert pauzeren" : "Prijsalert hervatten"}>
+                    {rule.active ? <Pause size={15} /> : <Play size={15} />}
+                  </button>
+                  <button type="button" onClick={() => onDelete(rule)} aria-label="Prijsalert verwijderen"><Trash2 size={15} /></button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="deal-alerts-panel__note">Nog geen prijsalerts. Open een aanbieding en stel je eerste prijsalarm in.</p>
+      )}
+    </section>
+  );
+}
+
+function PriceAlertModal({
+  editor,
+  offers,
+  userId,
+  onClose,
+  onSaved,
+}: {
+  editor: ActiveAlertEditor;
+  offers: DealtrackerOffer[];
+  userId?: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const sourceOffer = editor.mode === "create" ? editor.offer : offers.find((offer) => offer.productId === editor.rule.productId);
+  const retailerOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    offers.forEach((offer) => map.set(offer.retailerId, offer.retailerName));
+    return [...map.entries()].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name, "nl"));
+  }, [offers]);
+  const [form, setForm] = useState<AlertFormState>(() => {
+    if (editor.mode === "edit") {
+      return {
+        label: editor.rule.label ?? "",
+        productId: editor.rule.productId,
+        material: editor.rule.material,
+        brand: editor.rule.brand ?? "",
+        retailerId: editor.rule.retailerId,
+        maxPricePerKg: String(editor.rule.maxPricePerKg),
+        minTotalWeightGrams: editor.rule.minTotalWeightGrams,
+        inStockOnly: editor.rule.inStockOnly,
+        requireKnownShipping: editor.rule.requireKnownShipping,
+        active: editor.rule.active,
+      };
+    }
+    return {
+      label: editor.offer.productName,
+      productId: editor.offer.productId,
+      material: String(editor.offer.material),
+      brand: editor.offer.brand,
+      retailerId: editor.offer.retailerId,
+      maxPricePerKg: String(Math.max(1, Math.floor(editor.offer.pricePerKg))),
+      minTotalWeightGrams: editor.offer.totalWeightGrams || editor.offer.spoolWeightGrams,
+      inStockOnly: true,
+      requireKnownShipping: true,
+      active: true,
+    };
+  });
+
+  const maxPrice = Number(form.maxPricePerKg.replace(",", "."));
+  const canSave = Boolean(userId) && Number.isFinite(maxPrice) && maxPrice > 0 && form.minTotalWeightGrams >= 0 && form.material.trim().length > 0;
+
+  async function save() {
+    if (!userId) return setError("Log opnieuw in om een prijsalert op te slaan.");
+    if (!canSave) return setError("Controleer materiaal, maximale prijs en minimaal totaalgewicht.");
+    setSaving(true);
+    setError("");
+    try {
+      const payload = {
+        userId,
+        productId: form.productId,
+        material: form.material.trim(),
+        brand: form.brand.trim() || null,
+        retailerId: form.retailerId,
+        maxPricePerKg: maxPrice,
+        minTotalWeightGrams: form.minTotalWeightGrams,
+        inStockOnly: form.inStockOnly,
+        requireKnownShipping: form.requireKnownShipping,
+        label: form.label.trim() || null,
+      };
+      if (editor.mode === "edit") await updateDealTrackerRule(editor.rule.id, { ...payload, active: form.active });
+      else await createDealTrackerRule(payload);
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Prijsalert opslaan is mislukt.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="deal-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="deal-alert-title" onMouseDown={onClose}>
+      <section className="deal-modal deal-alert-modal" onMouseDown={(event) => event.stopPropagation()}>
+        <header className="deal-modal__header">
+          <div>
+            <span><Bell size={15} /> Prijsalarm</span>
+            <h2 id="deal-alert-title">{editor.mode === "edit" ? "Prijsalert bewerken" : "Prijsalarm instellen"}</h2>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Prijsalarm sluiten"><X size={20} /></button>
+        </header>
+        <form className="deal-alert-editor" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+          {sourceOffer && (
+            <div className="deal-alert-source">
+              <strong>{sourceOffer.productName}</strong>
+              <span>{sourceOffer.retailerName} - {sourceOffer.brand} - {sourceOffer.color} - {euro.format(sourceOffer.pricePerKg)}/kg</span>
+            </div>
+          )}
+          {error && <div className="deal-alert-editor__error">{error}</div>}
+          <label className="deal-alert-editor__field">
+            <span>Naam</span>
+            <input value={form.label} onChange={(event) => setForm({ ...form, label: event.target.value })} placeholder="Bijv. PLA onder 15 euro/kg" />
+          </label>
+          <label className="deal-alert-editor__check">
+            <input type="checkbox" checked={Boolean(form.productId)} onChange={(event) => setForm({ ...form, productId: event.target.checked ? sourceOffer?.productId ?? form.productId : null })} disabled={!sourceOffer} />
+            Alleen dit product
+          </label>
+          <div className="deal-alert-editor__grid">
+            <label className="deal-alert-editor__field">
+              <span>Materiaal</span>
+              <input value={form.material} onChange={(event) => setForm({ ...form, material: event.target.value })} />
+            </label>
+            <label className="deal-alert-editor__field">
+              <span>Merk optioneel</span>
+              <input value={form.brand} onChange={(event) => setForm({ ...form, brand: event.target.value })} placeholder="Alle merken" />
+            </label>
+            <label className="deal-alert-editor__field">
+              <span>Webwinkel optioneel</span>
+              <select value={form.retailerId ?? ""} onChange={(event) => setForm({ ...form, retailerId: event.target.value || null })}>
+                <option value="">Alle webwinkels</option>
+                {retailerOptions.map((retailer) => <option key={retailer.id} value={retailer.id}>{retailer.name}</option>)}
+              </select>
+            </label>
+            <label className="deal-alert-editor__field">
+              <span>Max bedrag per kg</span>
+              <input inputMode="decimal" value={form.maxPricePerKg} onChange={(event) => setForm({ ...form, maxPricePerKg: event.target.value })} />
+            </label>
+            <label className="deal-alert-editor__field">
+              <span>Minimaal totaalgewicht gram</span>
+              <input type="number" min="0" step="50" value={form.minTotalWeightGrams} onChange={(event) => setForm({ ...form, minTotalWeightGrams: Number(event.target.value) })} />
+            </label>
+          </div>
+          <div className="deal-alert-editor__checks">
+            <label><input type="checkbox" checked={form.inStockOnly} onChange={(event) => setForm({ ...form, inStockOnly: event.target.checked })} /> Alleen op voorraad</label>
+            <label><input type="checkbox" checked={form.requireKnownShipping} onChange={(event) => setForm({ ...form, requireKnownShipping: event.target.checked })} /> Alleen bekende all-in prijs</label>
+            {editor.mode === "edit" && <label><input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} /> Alert actief</label>}
+          </div>
+          <footer className="deal-modal__footer">
+            <button type="button" onClick={onClose}>Annuleren</button>
+            <button type="submit" disabled={saving || !canSave}>{saving ? "Opslaan..." : "Opslaan"}</button>
+          </footer>
+        </form>
       </section>
     </div>
   );

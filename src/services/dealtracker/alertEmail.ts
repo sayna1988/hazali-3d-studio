@@ -12,6 +12,8 @@ export type AlertEmailInput = {
   manageUrl: string;
 };
 
+declare const process: { env: Record<string, string | undefined> };
+
 export type AlertEmailResult = {
   status: "sent" | "skipped" | "failed";
   error?: string;

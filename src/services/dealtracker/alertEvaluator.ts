@@ -14,6 +14,21 @@ type RuleRow = {
   require_known_shipping: boolean;
 };
 
+type RetailerRow = { name: string };
+type ProductRow = {
+  id: string;
+  retailer_id: string;
+  product_name: string;
+  brand: string;
+  material: string;
+  product_url: string;
+  deal_retailers: RetailerRow | RetailerRow[] | null;
+};
+type VariantRow = {
+  total_weight_grams: number;
+  deal_products: ProductRow | ProductRow[] | null;
+};
+
 type OfferRow = {
   id: string;
   price_per_kg: number | string;
@@ -22,18 +37,7 @@ type OfferRow = {
   shipping_cost_known: boolean;
   stock_status: string;
   checked_at: string;
-  deal_product_variants: {
-    total_weight_grams: number;
-    deal_products: {
-      id: string;
-      retailer_id: string;
-      product_name: string;
-      brand: string;
-      material: string;
-      product_url: string;
-      deal_retailers: { name: string };
-    };
-  };
+  deal_product_variants: VariantRow | VariantRow[] | null;
 };
 
 type PreviousEvent = {
@@ -62,20 +66,33 @@ function kgLabel(grams: number) {
   return `${(grams / 1000).toLocaleString("nl-NL", { maximumFractionDigits: 2 })} kg`;
 }
 
+function first<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
+
+function offerParts(offer: OfferRow) {
+  const variant = first(offer.deal_product_variants);
+  const product = first(variant?.deal_products);
+  const retailer = first(product?.deal_retailers);
+  return variant && product && retailer ? { variant, product, retailer } : null;
+}
+
 function eventKey(rule: RuleRow, offer: OfferRow, price: number) {
   const bucket = Math.floor(price * 20) / 20;
   return `${rule.user_id}:${rule.id}:${offer.id}:${bucket.toFixed(2)}`;
 }
 
 function offerMatches(rule: RuleRow, offer: OfferRow) {
-  const product = offer.deal_product_variants.deal_products;
+  const parts = offerParts(offer);
+  if (!parts) return false;
+  const { product, variant } = parts;
   if (rule.product_id && product.id !== rule.product_id) return false;
   if (product.material !== rule.material) return false;
   if (rule.brand && product.brand !== rule.brand) return false;
   if (rule.retailer_id && product.retailer_id !== rule.retailer_id) return false;
   if (rule.in_stock_only && offer.stock_status !== "in_stock") return false;
   if (rule.require_known_shipping && !offer.shipping_cost_known) return false;
-  if (offer.deal_product_variants.total_weight_grams < rule.min_total_weight_grams) return false;
+  if (variant.total_weight_grams < rule.min_total_weight_grams) return false;
   return numberValue(offer.price_per_kg) <= numberValue(rule.max_price_per_kg);
 }
 
@@ -91,6 +108,12 @@ function shouldTrigger(previous: PreviousEvent | null, currentPrice: number) {
   }
   return { trigger: false, reason: "Geen betekenisvolle verdere prijsdaling." };
 }
+
+export const alertEvaluatorTestInternals = {
+  eventKey,
+  offerMatches,
+  shouldTrigger,
+};
 
 export async function evaluateDealAlerts(client: SupabaseClient, runId: string, appBaseUrl: string): Promise<AlertEvaluationResult> {
   const { data: rules, error: rulesError } = await client
@@ -128,8 +151,10 @@ export async function evaluateDealAlerts(client: SupabaseClient, runId: string, 
   let skippedCooldown = 0;
 
   for (const rule of (rules ?? []) as RuleRow[]) {
-    for (const offer of (offers ?? []) as OfferRow[]) {
+    for (const offer of (offers ?? []) as unknown as OfferRow[]) {
       if (!offerMatches(rule, offer)) continue;
+      const parts = offerParts(offer);
+      if (!parts) continue;
 
       const { data: previousEvents, error: previousError } = await client
         .from("deal_alert_events")
@@ -152,7 +177,7 @@ export async function evaluateDealAlerts(client: SupabaseClient, runId: string, 
       const email = userResult.data.user?.email;
       if (!email) continue;
 
-      const product = offer.deal_product_variants.deal_products;
+      const { product, retailer, variant } = parts;
       const manageUrl = `${appBaseUrl.replace(/\/$/, "")}/dealtracker`;
       const emailResult = await sendAlertEmail({
         to: email,
@@ -161,8 +186,8 @@ export async function evaluateDealAlerts(client: SupabaseClient, runId: string, 
         currentPrice: euro.format(numberValue(offer.total_price)),
         pricePerKg: euro.format(currentPrice),
         shippingCost: offer.shipping_cost_known ? euro.format(numberValue(offer.shipping_cost)) : "Onbekend",
-        totalWeight: kgLabel(offer.deal_product_variants.total_weight_grams),
-        retailerName: product.deal_retailers.name,
+        totalWeight: kgLabel(variant.total_weight_grams),
+        retailerName: retailer.name,
         offerUrl: product.product_url,
         reason: decision.reason,
         manageUrl,
