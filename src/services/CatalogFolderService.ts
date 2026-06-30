@@ -1,6 +1,7 @@
 import { db } from "../database/db";
 import type { CatalogFolder } from "../types/CatalogFolder";
 import type { Print } from "../types/Print";
+import { syncCatalogFolders, uploadCatalogFolder } from "./CatalogFolderSyncService";
 
 export type FolderDeleteMode = "recursive" | "promote";
 
@@ -20,6 +21,15 @@ function normalizeFolderName(name: string) {
 
 function comparableFolderName(name: string) {
   return normalizeFolderName(name).toLocaleLowerCase("nl-NL");
+}
+
+async function uploadFolderLater(folder: CatalogFolder | undefined) {
+  if (!folder) return;
+  try {
+    await uploadCatalogFolder(folder);
+  } catch (error) {
+    console.warn("Mapsync uitgesteld:", error);
+  }
 }
 
 function sameParent(folder: CatalogFolder, parentId: number | null) {
@@ -46,6 +56,11 @@ async function assertUniqueFolderName(name: string, parentId: number | null, ign
 }
 
 export async function loadCatalogFolders() {
+  try {
+    await syncCatalogFolders();
+  } catch (error) {
+    console.warn("Catalogusmappen konden niet worden gesynchroniseerd.", error);
+  }
   return db.folders.orderBy("sortOrder").toArray();
 }
 
@@ -57,13 +72,19 @@ export async function createFolder(name: string, parentId: number | null) {
 
   const siblingCount = await db.folders.filter((folder) => sameParent(folder, parentId)).count();
   const createdAt = nowIso();
-  return db.folders.add({
+  const parent = parentId === null ? undefined : await db.folders.get(parentId);
+  const id = await db.folders.add({
     name: trimmedName,
     parentId,
+    parentCloudId: parent?.cloudId ?? null,
     createdAt,
     updatedAt: createdAt,
-    sortOrder: siblingCount
+    sortOrder: siblingCount,
+    syncPending: true
   });
+  const folder = await db.folders.get(id);
+  await uploadFolderLater(folder);
+  return id;
 }
 
 export async function renameFolder(folderId: number, input: FolderUpdateInput) {
@@ -76,8 +97,11 @@ export async function renameFolder(folderId: number, input: FolderUpdateInput) {
     name: trimmedName,
     backgroundColor: input.backgroundColor || undefined,
     iconImage: input.iconImage || undefined,
-    updatedAt: nowIso()
+    updatedAt: nowIso(),
+    syncPending: true
   });
+  const updated = await db.folders.get(folderId);
+  await uploadFolderLater(updated);
 }
 
 export async function getChildFolders(parentId: number | null) {
@@ -117,22 +141,32 @@ export async function moveFolder(folderId: number, targetParentId: number | null
   }
 
   await assertUniqueFolderName(folder.name, targetParentId, folderId);
-  await db.folders.update(folderId, { parentId: targetParentId, updatedAt: nowIso() });
+  const targetParent = targetParentId === null ? undefined : await db.folders.get(targetParentId);
+  await db.folders.update(folderId, {
+    parentId: targetParentId,
+    parentCloudId: targetParent?.cloudId ?? null,
+    updatedAt: nowIso(),
+    syncPending: true
+  });
+  const updated = await db.folders.get(folderId);
+  await uploadFolderLater(updated);
 }
 
 export async function moveCatalogItem(printId: number, folderId: number | null) {
   await assertParentExists(folderId);
-  await db.prints.update(printId, { folderId, syncPending: true });
+  const folder = folderId === null ? undefined : await db.folders.get(folderId);
+  await db.prints.update(printId, { folderId, folderCloudId: folder?.cloudId ?? null, syncPending: true });
 }
 
 export async function moveCatalogItems(printIds: number[], folderId: number | null) {
   const uniquePrintIds = [...new Set(printIds)];
   if (uniquePrintIds.length === 0) return;
   await assertParentExists(folderId);
+  const folder = folderId === null ? undefined : await db.folders.get(folderId);
 
   await db.transaction("rw", db.prints, async () => {
     for (const printId of uniquePrintIds) {
-      await db.prints.update(printId, { folderId, syncPending: true });
+      await db.prints.update(printId, { folderId, folderCloudId: folder?.cloudId ?? null, syncPending: true });
     }
   });
 }
@@ -186,11 +220,31 @@ export async function deleteFolder(folderId: number, mode: FolderDeleteMode) {
   const descendantIds = await getDescendantFolderIds(folderId);
   const folderIds = [folderId, ...descendantIds];
   const parentId = folder.parentId ?? null;
+  const parent = parentId === null ? undefined : await db.folders.get(parentId);
+  const descendantFolders = (await db.folders.bulkGet(descendantIds))
+    .filter((item): item is CatalogFolder => Boolean(item));
+  const folderCloudIds = [folder, ...descendantFolders]
+    .map((item) => item.cloudId)
+    .filter((cloudId): cloudId is string => Boolean(cloudId));
 
   await db.transaction("rw", [db.folders, db.prints, db.printBestanden, db.inventory, db.syncDeletions], async () => {
     if (mode === "promote") {
-      await db.folders.where("parentId").equals(folderId).modify({ parentId, updatedAt: nowIso() });
-      await db.prints.where("folderId").equals(folderId).modify({ folderId: parentId, syncPending: true });
+      const children = await db.folders.where("parentId").equals(folderId).toArray();
+      for (const child of children) {
+        if (child.id === undefined) continue;
+        await db.folders.update(child.id, {
+          parentId,
+          parentCloudId: parent?.cloudId ?? null,
+          updatedAt: nowIso(),
+          syncPending: true
+        });
+      }
+      await db.prints.where("folderId").equals(folderId).modify({
+        folderId: parentId,
+        folderCloudId: parent?.cloudId ?? null,
+        syncPending: true
+      });
+      if (folder.cloudId) await db.syncDeletions.put({ key: `folder:${folder.cloudId}`, entity: "folder", cloudId: folder.cloudId });
       await db.folders.delete(folderId);
       return;
     }
@@ -209,6 +263,16 @@ export async function deleteFolder(folderId: number, mode: FolderDeleteMode) {
       await db.syncDeletions.put({ key: `print:${cloudId}`, entity: "print", cloudId });
     }
 
+    for (const cloudId of folderCloudIds) {
+      await db.syncDeletions.put({ key: `folder:${cloudId}`, entity: "folder", cloudId });
+    }
+
     await db.folders.bulkDelete(folderIds);
   });
+
+  try {
+    await syncCatalogFolders();
+  } catch (error) {
+    console.warn("Mapverwijdering-sync uitgesteld:", error);
+  }
 }

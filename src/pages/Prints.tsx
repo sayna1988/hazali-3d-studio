@@ -308,6 +308,15 @@ export default function Prints() {
     const verversNaSync = () => {
       void loadPrintSummaries().then((data) => { if (actief) setPrints(data); });
     };
+    const verversCatalogusNaSync = () => {
+      void Promise.all([loadPrintSummaries(), db.folders.orderBy("sortOrder").toArray()])
+        .then(([printData, folderData]) => {
+          if (!actief) return;
+          setPrints(printData);
+          setFolders(folderData);
+        })
+        .catch((error) => console.error(error));
+    };
     Promise.all([loadPrints(), loadFilaments(), loadInventory(), loadCatalogFolders()]).then(([printData, filamentData, producten, folderData]) => {
       if (!actief) return;
       setPrints(printData);
@@ -328,10 +337,12 @@ export default function Prints() {
       }
     });
     window.addEventListener("hazali:prints-synced", verversNaSync);
+    window.addEventListener("hazali:folders-synced", verversCatalogusNaSync);
     window.addEventListener("hazali:inventory-synced", laadCatalogusVoorraad);
     return () => {
       actief = false;
       window.removeEventListener("hazali:prints-synced", verversNaSync);
+      window.removeEventListener("hazali:folders-synced", verversCatalogusNaSync);
       window.removeEventListener("hazali:inventory-synced", laadCatalogusVoorraad);
     };
   }, []);
