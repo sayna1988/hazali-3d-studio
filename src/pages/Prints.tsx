@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { DragEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Boxes, CircleDollarSign, FolderPlus } from "lucide-react";
+import { FolderPlus, Move } from "lucide-react";
 import "./Prints.css";
 import EditPrintModal from "../components/EditPrintModal/EditPrintModal";
 import { import3MF } from "../services/PrintImportService";
@@ -21,12 +22,13 @@ import {
   deleteFolder,
   getDescendantFolderIds,
   loadCatalogFolders,
-  moveCatalogItem,
+  moveCatalogItems,
   moveFolder,
   renameFolder,
   sortFolders,
   sortPrints,
-  type FolderDeleteMode
+  type FolderDeleteMode,
+  type FolderUpdateInput
 } from "../services/CatalogFolderService";
 import { db } from "../database/db";
 import { importMakerWorldUrl } from "../services/MakerWorldImportService";
@@ -43,7 +45,13 @@ interface ImportMessage {
   aandachtspunten?: Array<{ bestandsnaam: string; meldingen: string[] }>;
 }
 
-const euro = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
+const printDragMimeType = "application/x-hazali-print-ids";
+
+interface MovePrintSelection {
+  ids: number[];
+  title: string;
+  initialFolderId: number | null;
+}
 
 function catalogusVoorraadMap(producten: Inventory[]) {
   return Object.fromEntries(
@@ -63,7 +71,7 @@ export default function Prints() {
   const [zoekterm, setZoekterm] = useState("");
   const [zoekBereik, setZoekBereik] = useState<"current" | "global">("current");
   const [sortering, setSortering] = useState("nieuwste");
-  const [geselecteerdeTag, setGeselecteerdeTag] = useState("");
+  const [geselecteerdeTag] = useState("");
   const [weergave, setWeergave] = useState<"tabel" | "grid">(() =>
     window.localStorage.getItem("catalogus-weergave") === "grid" ? "grid" : "tabel"
   );
@@ -85,8 +93,10 @@ export default function Prints() {
   const [moveFolderTarget, setMoveFolderTarget] = useState<CatalogFolder | null>(null);
   const [moveFolderDisabledIds, setMoveFolderDisabledIds] = useState<Set<number>>(new Set());
   const [deleteFolderTarget, setDeleteFolderTarget] = useState<CatalogFolder | null>(null);
-  const [movePrintTarget, setMovePrintTarget] = useState<Print | null>(null);
+  const [movePrintSelection, setMovePrintSelection] = useState<MovePrintSelection | null>(null);
   const [openMenuFolderId, setOpenMenuFolderId] = useState<number | null>(null);
+  const [draggedPrintIds, setDraggedPrintIds] = useState<number[]>([]);
+  const [dropTargetFolderId, setDropTargetFolderId] = useState<number | null>(null);
   const navigate = useNavigate();
 
   async function laden() {
@@ -377,20 +387,6 @@ export default function Prints() {
     window.localStorage.setItem("catalogus-weergave", weergave);
   }, [weergave]);
 
-  const tagRanking = useMemo(() => {
-    const aantallen = new Map<string, number>();
-
-    prints.forEach((print) => {
-      new Set(print.tags ?? []).forEach((tag) => {
-        aantallen.set(tag, (aantallen.get(tag) ?? 0) + 1);
-      });
-    });
-
-    return [...aantallen.entries()]
-      .map(([tag, aantal]) => ({ tag, aantal }))
-      .sort((a, b) => b.aantal - a.aantal || a.tag.localeCompare(b.tag, "nl"));
-  }, [prints]);
-
   const pricingByPrintId = useMemo(
     () => catalogPricingMap(prints, filamentVoorraad),
     [prints, filamentVoorraad]
@@ -471,13 +467,6 @@ export default function Prints() {
   const alleZichtbarePrintsGeselecteerd = zichtbarePrintIds.length > 0 && zichtbarePrintIds.every((id) => geselecteerdePrintIds.includes(id));
   const enkeleZichtbarePrintsGeselecteerd = zichtbarePrintIds.some((id) => geselecteerdePrintIds.includes(id));
 
-  const inventarisStats = useMemo(() => {
-    const totaleStuks = inventarisProducten.reduce((totaal, item) => totaal + item.voorraad, 0);
-    const verkoopwaarde = inventarisProducten.reduce((totaal, item) => totaal + item.voorraad * item.verkoopprijs, 0);
-    const lageVoorraad = inventarisProducten.filter((item) => item.voorraad <= item.minimumVoorraad).length;
-    return { totaleStuks, verkoopwaarde, lageVoorraad };
-  }, [inventarisProducten]);
-
   function togglePrintSelectie(id: number, checked: boolean) {
     setGeselecteerdePrintIds((huidig) => checked
       ? [...new Set([...huidig, id])]
@@ -512,12 +501,12 @@ export default function Prints() {
     }
   }
 
-  async function mapHernoemen(name: string) {
+  async function mapHernoemen(input: FolderUpdateInput) {
     if (renameFolderTarget?.id === undefined) return;
     setFolderSaving(true);
     setFolderModalError("");
     try {
-      await renameFolder(renameFolderTarget.id, name);
+      await renameFolder(renameFolderTarget.id, input);
       setRenameFolderTarget(null);
       await laadFolders();
     } catch (error) {
@@ -550,18 +539,117 @@ export default function Prints() {
     }
   }
 
+  function openPrintsVerplaatsen(selection: MovePrintSelection) {
+    resetFolderModalState();
+    setMovePrintSelection(selection);
+  }
+
+  function openPrintVerplaatsen(printData: Print) {
+    if (printData.id === undefined) return;
+    openPrintsVerplaatsen({
+      ids: [printData.id],
+      title: `"${printData.naam}" verplaatsen naar`,
+      initialFolderId: printData.folderId ?? null
+    });
+  }
+
+  function openBulkPrintsVerplaatsen() {
+    const ids = prints
+      .map((print) => print.id)
+      .filter((id): id is number => id !== undefined && geselecteerdePrintIds.includes(id));
+    if (ids.length === 0) return;
+
+    const selectedPrints = prints.filter((print) => print.id !== undefined && ids.includes(print.id));
+    const firstFolderId = selectedPrints[0]?.folderId ?? null;
+    const sameFolder = selectedPrints.every((print) => (print.folderId ?? null) === firstFolderId);
+    openPrintsVerplaatsen({
+      ids,
+      title: `${ids.length} ${ids.length === 1 ? "print" : "prints"} verplaatsen naar`,
+      initialFolderId: sameFolder ? firstFolderId : currentFolderId
+    });
+  }
+
   async function printVerplaatsen(targetFolderId: number | null) {
-    if (movePrintTarget?.id === undefined) return;
+    if (!movePrintSelection?.ids.length) return;
+    const ids = movePrintSelection.ids;
     setFolderSaving(true);
     setFolderModalError("");
     try {
-      await moveCatalogItem(movePrintTarget.id, targetFolderId);
-      setMovePrintTarget(null);
+      await moveCatalogItems(ids, targetFolderId);
+      const movedCount = ids.length;
+      setMovePrintSelection(null);
+      setGeselecteerdePrintIds((huidig) => huidig.filter((id) => !ids.includes(id)));
       await laden();
+      setImportMessage({
+        type: "success",
+        text: `${movedCount} ${movedCount === 1 ? "print is" : "prints zijn"} verplaatst.`
+      });
     } catch (error) {
       setFolderModalError(error instanceof Error ? error.message : "Het item kon niet worden verplaatst.");
     } finally {
       setFolderSaving(false);
+    }
+  }
+
+  function draggedIdsFromEvent(event: DragEvent<HTMLElement>) {
+    const raw = event.dataTransfer.getData(printDragMimeType);
+    if (!raw) return draggedPrintIds;
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) return draggedPrintIds;
+      return parsed.filter((id): id is number => Number.isInteger(id));
+    } catch {
+      return draggedPrintIds;
+    }
+  }
+
+  function handlePrintDragStart(printData: Print, event: DragEvent<HTMLElement>) {
+    if (printData.id === undefined) return;
+    const ids = geselecteerdePrintIds.includes(printData.id) ? geselecteerdePrintIds : [printData.id];
+    setDraggedPrintIds(ids);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData(printDragMimeType, JSON.stringify(ids));
+    event.dataTransfer.setData("text/plain", `${ids.length} ${ids.length === 1 ? "print" : "prints"} verplaatsen`);
+  }
+
+  function handlePrintDragEnd() {
+    setDraggedPrintIds([]);
+    setDropTargetFolderId(null);
+  }
+
+  function handleFolderDragOver(event: DragEvent<HTMLElement>, folderId: number) {
+    if (draggedPrintIds.length === 0 && !event.dataTransfer.types.includes(printDragMimeType)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDropTargetFolderId(folderId);
+  }
+
+  function handleFolderDragLeave(folderId: number) {
+    setDropTargetFolderId((current) => current === folderId ? null : current);
+  }
+
+  async function handleDropOnFolder(event: DragEvent<HTMLElement>, folderId: number) {
+    event.preventDefault();
+    event.stopPropagation();
+    const ids = draggedIdsFromEvent(event);
+    setDraggedPrintIds([]);
+    setDropTargetFolderId(null);
+    if (ids.length === 0) return;
+
+    try {
+      await moveCatalogItems(ids, folderId);
+      setGeselecteerdePrintIds((huidig) => huidig.filter((id) => !ids.includes(id)));
+      await laden();
+      const folderName = folderById.get(folderId)?.name ?? "de map";
+      setImportMessage({
+        type: "success",
+        text: `${ids.length} ${ids.length === 1 ? "print is" : "prints zijn"} verplaatst naar ${folderName}.`
+      });
+    } catch (error) {
+      setImportMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "De prints konden niet worden verplaatst."
+      });
     }
   }
 
@@ -623,23 +711,6 @@ export default function Prints() {
           </button>
         </div>
       </section>
-      <section className="catalog-stats" aria-label="Catalogusoverzicht">
-        <article className="catalog-stat-card">
-          <span className="catalog-stat-icon blue"><Boxes size={20} /></span>
-          <div><span>Producten</span><strong>{inventarisProducten.length}</strong></div>
-          <small>{inventarisStats.totaleStuks} stuks op voorraad</small>
-        </article>
-        <article className="catalog-stat-card">
-          <span className="catalog-stat-icon green"><CircleDollarSign size={20} /></span>
-          <div><span>Verkoopwaarde</span><strong>{euro.format(inventarisStats.verkoopwaarde)}</strong></div>
-          <small>Potentiele omzet</small>
-        </article>
-        <article className={`catalog-stat-card ${inventarisStats.lageVoorraad > 0 ? "needs-attention" : ""}`}>
-          <span className="catalog-stat-icon orange"><AlertTriangle size={20} /></span>
-          <div><span>Aandacht nodig</span><strong>{inventarisStats.lageVoorraad}</strong></div>
-          <small>{inventarisStats.lageVoorraad ? "Onder minimumvoorraad" : "Alles is op niveau"}</small>
-        </article>
-      </section>
       {importMessage && (
         <div className={`import-message ${importMessage.type}`} role="status">
           <div className="import-message-content">
@@ -668,9 +739,6 @@ export default function Prints() {
         setZoekBereik={setZoekBereik}
         sortering={sortering}
         setSortering={setSortering}
-        tagRanking={tagRanking}
-        geselecteerdeTag={geselecteerdeTag}
-        setGeselecteerdeTag={setGeselecteerdeTag}
         weergave={weergave}
         setWeergave={setWeergave}
         onExport={() => void exporteerCatalogus()}
@@ -685,11 +753,15 @@ export default function Prints() {
             folders={zichtbareFolders}
             countsByFolderId={countsByFolderId}
             openMenuFolderId={openMenuFolderId}
+            dropTargetFolderId={dropTargetFolderId}
             onToggleMenu={(folderId) => setOpenMenuFolderId((huidig) => huidig === folderId ? null : folderId)}
             onOpen={setCurrentFolderId}
             onRename={(folder) => { resetFolderModalState(); setRenameFolderTarget(folder); }}
             onMove={(folder) => void openMapVerplaatsen(folder)}
             onDelete={(folder) => { resetFolderModalState(); setDeleteFolderTarget(folder); }}
+            onDragOverFolder={handleFolderDragOver}
+            onDragLeaveFolder={handleFolderDragLeave}
+            onDropOnFolder={(event, folderId) => void handleDropOnFolder(event, folderId)}
           />
           {zichtbareFolders.length === 0 && gefilterdePrints.length === 0 && (
             <div className="catalog-empty-state">
@@ -720,6 +792,10 @@ export default function Prints() {
           <button type="button" className="save-button" onClick={() => void bulkTagsToepassen()} disabled={bulkBezig || geselecteerdePrintIds.length === 0}>
             Tags toepassen
           </button>
+          <button type="button" className="save-button bulk-actions__move" onClick={openBulkPrintsVerplaatsen} disabled={bulkBezig || geselecteerdePrintIds.length === 0}>
+            <Move size={15} />
+            Verplaatsen
+          </button>
           <button type="button" className="cancel-button bulk-actions__delete" onClick={() => void bulkVerwijderen()} disabled={bulkBezig || geselecteerdePrintIds.length === 0}>
             Verwijderen
           </button>
@@ -733,7 +809,9 @@ export default function Prints() {
         folderPathByPrintId={folderPathByPrintId}
         navigate={navigate}
         verwijderen={verwijderen}
-        onMovePrint={(printData) => { resetFolderModalState(); setMovePrintTarget(printData); }}
+        onMovePrint={openPrintVerplaatsen}
+        onPrintDragStart={handlePrintDragStart}
+        onPrintDragEnd={handlePrintDragEnd}
         setSelectedPrint={setSelectedPrint}
         setShowEditModal={setShowEditModal}
         toggleSplitPrint={(printData, checked) => void toggleSplitPrint(printData, checked)}
@@ -747,9 +825,9 @@ export default function Prints() {
       />
       <EditPrintModal key={`${showEditModal}-${selectedPrint?.id ?? "new"}`} open={showEditModal} print={selectedPrint} filamentVoorraad={filamentVoorraad} folders={folders} setPrint={setSelectedPrint} onSave={savePrintChanges} onCancel={() => setShowEditModal(false)} />
       <CreateFolderModal key={createFolderOpen ? `create-${currentFolderId ?? "root"}` : "create-closed"} open={createFolderOpen} parentName={currentFolderName} error={folderModalError} saving={folderSaving} onCreate={(name) => void mapAanmaken(name)} onCancel={() => { resetFolderModalState(); setCreateFolderOpen(false); }} />
-      <RenameFolderModal key={renameFolderTarget?.id ?? "rename-closed"} folder={renameFolderTarget} error={folderModalError} saving={folderSaving} onRename={(name) => void mapHernoemen(name)} onCancel={() => { resetFolderModalState(); setRenameFolderTarget(null); }} />
+      <RenameFolderModal key={renameFolderTarget?.id ?? "rename-closed"} folder={renameFolderTarget} error={folderModalError} saving={folderSaving} onRename={(input) => void mapHernoemen(input)} onCancel={() => { resetFolderModalState(); setRenameFolderTarget(null); }} />
       <MoveToFolderModal key={moveFolderTarget?.id ?? "move-folder-closed"} open={Boolean(moveFolderTarget)} title={moveFolderTarget ? `"${moveFolderTarget.name}" verplaatsen naar` : "Map verplaatsen"} folders={folders} initialFolderId={moveFolderTarget?.parentId ?? null} disabledFolderIds={moveFolderDisabledIds} error={folderModalError} saving={folderSaving} onMove={(folderId) => void mapVerplaatsen(folderId)} onCancel={() => { resetFolderModalState(); setMoveFolderTarget(null); }} />
-      <MoveToFolderModal key={movePrintTarget?.id ?? "move-print-closed"} open={Boolean(movePrintTarget)} title={movePrintTarget ? `"${movePrintTarget.naam}" verplaatsen naar` : "Item verplaatsen"} folders={folders} initialFolderId={movePrintTarget?.folderId ?? null} error={folderModalError} saving={folderSaving} onMove={(folderId) => void printVerplaatsen(folderId)} onCancel={() => { resetFolderModalState(); setMovePrintTarget(null); }} />
+      <MoveToFolderModal key={movePrintSelection?.ids.join("-") ?? "move-print-closed"} open={Boolean(movePrintSelection)} title={movePrintSelection?.title ?? "Prints verplaatsen"} folders={folders} initialFolderId={movePrintSelection?.initialFolderId ?? null} error={folderModalError} saving={folderSaving} onMove={(folderId) => void printVerplaatsen(folderId)} onCancel={() => { resetFolderModalState(); setMovePrintSelection(null); }} />
       <DeleteFolderModal folder={deleteFolderTarget} childFolderCount={deleteFolderTarget?.id === undefined ? 0 : countsByFolderId[deleteFolderTarget.id]?.childFolderCount ?? 0} itemCount={deleteFolderTarget?.id === undefined ? 0 : countsByFolderId[deleteFolderTarget.id]?.itemCount ?? 0} error={folderModalError} saving={folderSaving} onDelete={(mode) => void mapVerwijderen(mode)} onCancel={() => { resetFolderModalState(); setDeleteFolderTarget(null); }} />
     </div>
   );

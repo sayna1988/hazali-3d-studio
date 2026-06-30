@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { DragEvent } from "react";
 import { Check, Layers3, Minus, Move, PackagePlus, Pencil, Plus, Tag, Trash2 } from "lucide-react";
 import "./PrintsTable.css";
 import type { Print } from "../../types/Print";
@@ -14,6 +15,8 @@ interface Props {
   navigate: (path: string) => void;
   verwijderen: (id: number) => Promise<void>;
   onMovePrint: (printData: Print) => void;
+  onPrintDragStart: (printData: Print, event: DragEvent<HTMLElement>) => void;
+  onPrintDragEnd: () => void;
   setSelectedPrint: (printData: Print) => void;
   setShowEditModal: (value: boolean) => void;
   toggleSplitPrint: (printData: Print, checked: boolean) => void;
@@ -43,6 +46,8 @@ export default function PrintsTable({
   navigate,
   verwijderen,
   onMovePrint,
+  onPrintDragStart,
+  onPrintDragEnd,
   setSelectedPrint,
   setShowEditModal,
   toggleSplitPrint,
@@ -126,7 +131,14 @@ export default function PrintsTable({
               const winst = berekendePrijs?.winst ?? Number(p.winst || 0);
               const voorraadBezig = voorraadBezigMet === p.id;
               return (
-              <article className="catalog-card" key={p.id} onClick={() => p.id !== undefined && navigate(`/prints/${p.id}`)}>
+              <article
+                className="catalog-card"
+                key={p.id}
+                draggable={p.id !== undefined}
+                onDragStart={(event) => onPrintDragStart(p, event)}
+                onDragEnd={onPrintDragEnd}
+                onClick={() => p.id !== undefined && navigate(`/prints/${p.id}`)}
+              >
                 <div className="catalog-card-image">
                   {p.foto ? <img src={p.foto} alt={p.naam} loading="lazy" /> : <PackagePlus size={36} aria-hidden="true" />}
                   {p.id !== undefined && (
@@ -226,6 +238,9 @@ export default function PrintsTable({
             <tr
               key={p.id}
               className="clickable-row"
+              draggable={p.id !== undefined}
+              onDragStart={(event) => onPrintDragStart(p, event)}
+              onDragEnd={onPrintDragEnd}
               onClick={() => {
                 if (p.id !== undefined) {
                   navigate(`/prints/${p.id}`);

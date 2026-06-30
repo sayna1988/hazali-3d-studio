@@ -13,6 +13,8 @@ import {
   PackageOpen,
   Pause,
   Play,
+  Plus,
+  RefreshCw,
   Search,
   SlidersHorizontal,
   Store,
@@ -24,13 +26,17 @@ import Page from "../components/Page/Page";
 import { useAuth } from "../auth/AuthProvider";
 import {
   createDealTrackerRule,
+  createDealRetailer,
   deleteDealTrackerRule,
   loadDealPriceHistory,
+  loadDealRetailers,
   loadDealTrackerRules,
   loadDealtrackerOffers,
   loadDealtrackerRunInfo,
+  updateDealRetailerActive,
   updateDealTrackerRule,
   type DealPriceHistoryPoint,
+  type DealRetailerView,
   type DealTrackerRuleView,
   type DealtrackerOffer,
 } from "../services/DealtrackerService";
@@ -50,6 +56,13 @@ type AlertFormState = {
   minTotalWeightGrams: number;
   inStockOnly: boolean;
   requireKnownShipping: boolean;
+  active: boolean;
+};
+
+type RetailerFormState = {
+  name: string;
+  domain: string;
+  feedUrl: string;
   active: boolean;
 };
 
@@ -111,6 +124,9 @@ export default function Dealtracker() {
   const [sortering, setSortering] = useState<Sortering>("prijs-kg");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [selectedOffer, setSelectedOffer] = useState<DealtrackerOffer | null>(null);
+  const [retailers, setRetailers] = useState<DealRetailerView[]>([]);
+  const [retailersLoading, setRetailersLoading] = useState(false);
+  const [retailerError, setRetailerError] = useState("");
   const [rules, setRules] = useState<DealTrackerRuleView[]>([]);
   const [rulesLoading, setRulesLoading] = useState(false);
   const [ruleError, setRuleError] = useState("");
@@ -122,13 +138,15 @@ export default function Dealtracker() {
     setError("");
     try {
       const offerData = await loadDealtrackerOffers();
-      const [runInfo, ruleData] = await Promise.all([
+      const [runInfo, ruleData, retailerData] = await Promise.all([
         loadDealtrackerRunInfo().catch(() => ({ lastSuccessfulCheckAt: null })),
         userId ? loadDealTrackerRules().catch(() => []) : Promise.resolve([]),
+        userId ? loadDealRetailers().catch(() => []) : Promise.resolve([]),
       ]);
       setOffers(offerData);
       setLastSuccessfulCheckAt(runInfo.lastSuccessfulCheckAt);
       setRules(ruleData);
+      setRetailers(retailerData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Dealtracker laden is mislukt.");
     } finally {
@@ -146,6 +164,49 @@ export default function Dealtracker() {
       setRuleError(err instanceof Error ? err.message : "Prijsalerts laden is mislukt.");
     } finally {
       setRulesLoading(false);
+    }
+  }
+
+  async function reloadRetailers() {
+    if (!userId) return setRetailers([]);
+    setRetailersLoading(true);
+    setRetailerError("");
+    try {
+      setRetailers(await loadDealRetailers());
+    } catch (err) {
+      setRetailerError(err instanceof Error ? err.message : "Retailers laden is mislukt.");
+    } finally {
+      setRetailersLoading(false);
+    }
+  }
+
+  async function toggleRetailer(retailer: DealRetailerView) {
+    if (!session?.access_token) return setRetailerError("Log opnieuw in om retailers te beheren.");
+    setRetailerError("");
+    try {
+      await updateDealRetailerActive(retailer.id, !retailer.active, session.access_token);
+      await reloadRetailers();
+    } catch (err) {
+      setRetailerError(err instanceof Error ? err.message : "Retailer aanpassen is mislukt.");
+    }
+  }
+
+  async function saveRetailer(input: RetailerFormState) {
+    if (!session?.access_token) return setRetailerError("Log opnieuw in om retailers te beheren.");
+    setRetailerError("");
+    try {
+      await createDealRetailer({
+        name: input.name,
+        domain: input.domain,
+        adapterKey: "joybuy-nl",
+        adapterType: "affiliate_feed",
+        feedUrl: input.feedUrl,
+        active: input.active,
+      }, session.access_token);
+      await reloadRetailers();
+    } catch (err) {
+      setRetailerError(err instanceof Error ? err.message : "Retailer opslaan is mislukt.");
+      throw err;
     }
   }
 
@@ -252,6 +313,16 @@ export default function Dealtracker() {
           <span>De dealtrackergegevens zijn mogelijk verouderd. Controleer de prijs altijd bij de webwinkel voordat je bestelt.</span>
         </div>
       )}
+
+      <RetailerManagerPanel
+        retailers={retailers}
+        loading={retailersLoading}
+        error={retailerError}
+        isAuthenticated={Boolean(userId)}
+        onReload={() => void reloadRetailers()}
+        onToggle={(retailer) => void toggleRetailer(retailer)}
+        onSave={(input) => saveRetailer(input)}
+      />
 
       <PriceAlertsPanel
         rules={rules}
@@ -434,6 +505,117 @@ function DealDetailModal({ offer, onCreateAlert, onClose }: { offer: Dealtracker
         </footer>
       </section>
     </div>
+  );
+}
+
+function RetailerManagerPanel({
+  retailers,
+  loading,
+  error,
+  isAuthenticated,
+  onReload,
+  onToggle,
+  onSave,
+}: {
+  retailers: DealRetailerView[];
+  loading: boolean;
+  error: string;
+  isAuthenticated: boolean;
+  onReload: () => void;
+  onToggle: (retailer: DealRetailerView) => void;
+  onSave: (input: RetailerFormState) => Promise<void>;
+}) {
+  const [form, setForm] = useState<RetailerFormState>({
+    name: "Joybuy",
+    domain: "www.joybuy.nl",
+    feedUrl: "",
+    active: true,
+  });
+  const [saving, setSaving] = useState(false);
+  const [localError, setLocalError] = useState("");
+  const canSave = form.name.trim().length > 0 && form.domain.trim().length > 0 && /^https?:\/\//i.test(form.feedUrl.trim());
+
+  async function submit() {
+    setLocalError("");
+    if (!canSave) {
+      setLocalError("Vul naam, domein en een geldige feed-URL in.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(form);
+      setForm((current) => ({ ...current, feedUrl: "" }));
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : "Retailer opslaan is mislukt.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="deal-retailers-panel" aria-label="Retailerbronnen">
+      <div className="deal-retailers-panel__head">
+        <div>
+          <span><Store size={15} /> Retailerbronnen</span>
+          <h2>Webwinkels die door de dealtracker worden gecontroleerd</h2>
+        </div>
+        <button type="button" onClick={onReload} disabled={!isAuthenticated || loading}><RefreshCw size={16} /> Vernieuwen</button>
+      </div>
+
+      {!isAuthenticated ? (
+        <p className="deal-retailers-panel__note">Log in om retailers toe te voegen of te activeren.</p>
+      ) : (
+        <>
+          <form className="deal-retailer-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+            <label>
+              <span>Adapter</span>
+              <select value="joybuy-nl" disabled aria-label="Adapter">
+                <option value="joybuy-nl">Joybuy NL feed</option>
+              </select>
+            </label>
+            <label>
+              <span>Naam</span>
+              <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Joybuy" />
+            </label>
+            <label>
+              <span>Domein</span>
+              <input value={form.domain} onChange={(event) => setForm({ ...form, domain: event.target.value })} placeholder="www.joybuy.nl" />
+            </label>
+            <label className="deal-retailer-form__wide">
+              <span>Officiele feed-URL</span>
+              <input value={form.feedUrl} onChange={(event) => setForm({ ...form, feedUrl: event.target.value })} placeholder="https://..." />
+            </label>
+            <label className="deal-retailer-form__check">
+              <input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} />
+              Actief
+            </label>
+            <button type="submit" disabled={saving || !canSave}><Plus size={16} /> {saving ? "Opslaan..." : "Retailer opslaan"}</button>
+          </form>
+          {(localError || error) && <p className="deal-retailers-panel__note is-error">{localError || error}</p>}
+          <div className="deal-retailer-list">
+            {loading ? (
+              <p className="deal-retailers-panel__note"><LoaderCircle className="deal-spin" size={17} /> Retailers laden...</p>
+            ) : retailers.length ? (
+              retailers.map((retailer) => (
+                <article className="deal-retailer-row" key={retailer.id}>
+                  <label>
+                    <input type="checkbox" checked={retailer.active} onChange={() => onToggle(retailer)} />
+                    <span>{retailer.active ? "Actief" : "Inactief"}</span>
+                  </label>
+                  <div>
+                    <strong>{retailer.name}</strong>
+                    <p>{retailer.domain} · {retailer.adapterKey} · {retailer.feedUrl ? "feed ingesteld" : "geen feed"}</p>
+                    <small>Laatst succesvol gecontroleerd: {checkedLabel(retailer.lastSuccessfulCheckAt)}</small>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <p className="deal-retailers-panel__note">Nog geen retailers. Voeg eerst een officiele feedbron toe.</p>
+            )}
+          </div>
+        </>
+      )}
+    </section>
   );
 }
 

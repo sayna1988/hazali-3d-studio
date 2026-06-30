@@ -4,6 +4,12 @@ import type { Print } from "../types/Print";
 
 export type FolderDeleteMode = "recursive" | "promote";
 
+export interface FolderUpdateInput {
+  name: string;
+  backgroundColor?: string;
+  iconImage?: string;
+}
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -60,13 +66,18 @@ export async function createFolder(name: string, parentId: number | null) {
   });
 }
 
-export async function renameFolder(folderId: number, name: string) {
-  const trimmedName = normalizeFolderName(name);
+export async function renameFolder(folderId: number, input: FolderUpdateInput) {
+  const trimmedName = normalizeFolderName(input.name);
   if (!trimmedName) throw new Error("Voer een mapnaam in.");
   const folder = await db.folders.get(folderId);
   if (!folder) throw new Error("Deze map bestaat niet meer.");
   await assertUniqueFolderName(trimmedName, folder.parentId ?? null, folderId);
-  await db.folders.update(folderId, { name: trimmedName, updatedAt: nowIso() });
+  await db.folders.update(folderId, {
+    name: trimmedName,
+    backgroundColor: input.backgroundColor || undefined,
+    iconImage: input.iconImage || undefined,
+    updatedAt: nowIso()
+  });
 }
 
 export async function getChildFolders(parentId: number | null) {
@@ -112,6 +123,18 @@ export async function moveFolder(folderId: number, targetParentId: number | null
 export async function moveCatalogItem(printId: number, folderId: number | null) {
   await assertParentExists(folderId);
   await db.prints.update(printId, { folderId, syncPending: true });
+}
+
+export async function moveCatalogItems(printIds: number[], folderId: number | null) {
+  const uniquePrintIds = [...new Set(printIds)];
+  if (uniquePrintIds.length === 0) return;
+  await assertParentExists(folderId);
+
+  await db.transaction("rw", db.prints, async () => {
+    for (const printId of uniquePrintIds) {
+      await db.prints.update(printId, { folderId, syncPending: true });
+    }
+  });
 }
 
 export async function getFolderPath(folderId: number | null, folders?: CatalogFolder[]) {

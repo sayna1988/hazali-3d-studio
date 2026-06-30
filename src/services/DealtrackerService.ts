@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import type { DealMaterial, DealStockStatus } from "../types/Dealtracker";
+import type { DealAdapterType, DealMaterial, DealStockStatus, JsonValue } from "../types/Dealtracker";
 
 export type DealtrackerOffer = {
   id: string;
@@ -50,6 +50,30 @@ export type DealtrackerRunInfo = {
   lastSuccessfulCheckAt: string | null;
 };
 
+export type DealRetailerView = {
+  id: string;
+  name: string;
+  domain: string;
+  countryCode: string;
+  active: boolean;
+  adapterType: DealAdapterType;
+  adapterKey: string;
+  feedUrl: string;
+  lastSuccessfulCheckAt: string | null;
+  requestDelayMs: number;
+  requestTimeoutMs: number;
+  maxConcurrency: number;
+};
+
+export type CreateDealRetailerInput = {
+  name: string;
+  domain: string;
+  adapterKey: string;
+  adapterType: DealAdapterType;
+  feedUrl: string;
+  active: boolean;
+};
+
 export type CreateTrackerRuleInput = {
   userId: string;
   productId?: string | null;
@@ -84,6 +108,21 @@ type RetailerJoin = {
   id?: string;
   name?: string;
   domain?: string;
+};
+
+type RetailerRow = {
+  id?: string;
+  name?: string;
+  domain?: string;
+  country_code?: string;
+  active?: boolean;
+  adapter_type?: DealAdapterType;
+  adapter_key?: string;
+  config?: Record<string, JsonValue> | null;
+  last_successful_check_at?: string | null;
+  request_delay_ms?: number;
+  request_timeout_ms?: number;
+  max_concurrency?: number;
 };
 
 type ProductJoin = {
@@ -147,6 +186,11 @@ function first<T>(value: T | T[] | null | undefined): T | null {
 function money(value: number | string | null | undefined) {
   const parsed = typeof value === "number" ? value : Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function stringConfig(config: Record<string, JsonValue> | null | undefined, key: string) {
+  const value = config?.[key];
+  return typeof value === "string" ? value : "";
 }
 
 function mapOffer(row: OfferRow): DealtrackerOffer | null {
@@ -270,6 +314,55 @@ export async function loadDealtrackerRunInfo(): Promise<DealtrackerRunInfo> {
     .maybeSingle();
   if (error) throw error;
   return { lastSuccessfulCheckAt: typeof data?.finished_at === "string" ? data.finished_at : null };
+}
+
+function mapRetailer(row: RetailerRow): DealRetailerView | null {
+  if (!row.id || !row.name || !row.domain || !row.adapter_key || !row.adapter_type) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    domain: row.domain,
+    countryCode: row.country_code ?? "NL",
+    active: Boolean(row.active),
+    adapterType: row.adapter_type,
+    adapterKey: row.adapter_key,
+    feedUrl: stringConfig(row.config, "feedUrl"),
+    lastSuccessfulCheckAt: row.last_successful_check_at ?? null,
+    requestDelayMs: Number(row.request_delay_ms ?? 1000),
+    requestTimeoutMs: Number(row.request_timeout_ms ?? 15000),
+    maxConcurrency: Number(row.max_concurrency ?? 3),
+  };
+}
+
+export async function loadDealRetailers(): Promise<DealRetailerView[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("deal_retailers")
+    .select("id,name,domain,country_code,active,adapter_type,adapter_key,config,last_successful_check_at,request_delay_ms,request_timeout_ms,max_concurrency")
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return ((data ?? []) as RetailerRow[]).map(mapRetailer).filter((retailer): retailer is DealRetailerView => retailer !== null);
+}
+
+async function retailerManagementRequest(accessToken: string, body: Record<string, unknown>) {
+  const response = await fetch("/api/deal-retailers", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const payload = await response.json().catch(() => ({})) as { error?: string };
+  if (!response.ok) throw new Error(payload.error || "Retailer opslaan is mislukt.");
+}
+
+export async function createDealRetailer(input: CreateDealRetailerInput, accessToken: string) {
+  await retailerManagementRequest(accessToken, { action: "create", retailer: input });
+}
+
+export async function updateDealRetailerActive(id: string, active: boolean, accessToken: string) {
+  await retailerManagementRequest(accessToken, { action: "setActive", id, active });
 }
 
 export async function createDealTrackerRule(input: CreateTrackerRuleInput) {

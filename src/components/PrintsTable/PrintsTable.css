@@ -26,5 +26,7 @@
 .catalog-card-price-badge.loss,.profit-cell.negative{color:#ff6b7a}
 .catalog-stock-editor{display:inline-flex;align-items:center;gap:7px;width:max-content}
 .catalog-item-path{display:block;max-width:280px;overflow:hidden;color:#55b9ff!important;font-size:11px!important;font-weight:750!important;text-overflow:ellipsis;white-space:nowrap}
+.catalog-card[draggable=true],.prints-table tr[draggable=true]{cursor:grab}
+.catalog-card[draggable=true]:active,.prints-table tr[draggable=true]:active{cursor:grabbing}
 
 @media(max-width:600px){.catalog-card-stock{top:8px;bottom:auto}.catalog-card-image-metrics{left:8px;right:8px;bottom:8px;gap:5px}.catalog-card-price-badge{min-height:25px;padding:5px 7px;font-size:9px}.catalog-card-price-badge small{font-size:7px}}
