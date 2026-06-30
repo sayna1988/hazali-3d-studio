@@ -3,7 +3,7 @@ import { parse3MFInWorker } from "./ThreeMFWorkerClient";
 import { createPrint } from "./PrintService";
 import { loadFilaments } from "./FilamentService";
 
-export async function import3MF(file: File) {
+export async function import3MF(file: File, folderId: number | null = null) {
 
   const result =
     await parse3MFInWorker(file);
@@ -34,6 +34,8 @@ export async function import3MF(file: File) {
 
   aangemaaktOp:
     new Date().toISOString(),
+
+  folderId,
 
   gewicht: result.gewicht,
 

@@ -40,7 +40,7 @@ async function imageAsDataUrl(url: string) {
 
   try {
     return await fetchImage(url);
-  } catch (error) {
+  } catch {
     try {
       const parsed = new URL(url, window.location.origin);
       if (!["http:", "https:"].includes(parsed.protocol)) return undefined;
@@ -198,7 +198,7 @@ export async function exportCatalogusPdf(prints: Print[], inventaris: Inventory[
   const logo = await imageAsDataUrl("/logo.png");
   const datumTijd = exportDatumTijd();
   const subtitle = `${actiefFilter} - ${datumTijd}`;
-  let y = 62;
+  const y = 62;
 
   addPageBackground(pdf);
   addHeader(pdf, logo, subtitle, prints, inventaris);

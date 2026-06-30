@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Boxes, CircleDollarSign } from "lucide-react";
+import { AlertTriangle, Boxes, CircleDollarSign, FolderPlus } from "lucide-react";
 import "./Prints.css";
 import EditPrintModal from "../components/EditPrintModal/EditPrintModal";
 import { import3MF } from "../services/PrintImportService";
@@ -9,6 +9,25 @@ import PrintToolbar from "../components/PrintToolbar/PrintToolbar";
 import PrintHeader from "../components/PrintHeader/PrintHeader";
 import type { Print } from "../types/Print";
 import { loadPrints, loadPrintSummaries, deletePrint, savePrint } from "../services/PrintService";
+import type { CatalogFolder } from "../types/CatalogFolder";
+import CatalogBreadcrumbs from "../components/catalog/CatalogBreadcrumbs";
+import CatalogFolderGrid from "../components/catalog/CatalogFolderGrid";
+import CreateFolderModal from "../components/catalog/CreateFolderModal";
+import DeleteFolderModal from "../components/catalog/DeleteFolderModal";
+import MoveToFolderModal from "../components/catalog/MoveToFolderModal";
+import RenameFolderModal from "../components/catalog/RenameFolderModal";
+import {
+  createFolder,
+  deleteFolder,
+  getDescendantFolderIds,
+  loadCatalogFolders,
+  moveCatalogItem,
+  moveFolder,
+  renameFolder,
+  sortFolders,
+  sortPrints,
+  type FolderDeleteMode
+} from "../services/CatalogFolderService";
 import { db } from "../database/db";
 import { importMakerWorldUrl } from "../services/MakerWorldImportService";
 import { createInventory, deleteInventory, loadInventory, updateInventory } from "../services/InventoryService";
@@ -42,6 +61,7 @@ export default function Prints() {
   const [bulkTagsInput, setBulkTagsInput] = useState("");
   const [bulkBezig, setBulkBezig] = useState(false);
   const [zoekterm, setZoekterm] = useState("");
+  const [zoekBereik, setZoekBereik] = useState<"current" | "global">("current");
   const [sortering, setSortering] = useState("nieuwste");
   const [geselecteerdeTag, setGeselecteerdeTag] = useState("");
   const [weergave, setWeergave] = useState<"tabel" | "grid">(() =>
@@ -55,14 +75,31 @@ export default function Prints() {
   const [catalogusVoorraad, setCatalogusVoorraad] = useState<Record<number, number>>({});
   const [inventarisProducten, setInventarisProducten] = useState<Inventory[]>([]);
   const [filamentVoorraad, setFilamentVoorraad] = useState<Filament[]>([]);
+  const [folders, setFolders] = useState<CatalogFolder[]>([]);
+  const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [folderModalError, setFolderModalError] = useState("");
+  const [folderSaving, setFolderSaving] = useState(false);
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [renameFolderTarget, setRenameFolderTarget] = useState<CatalogFolder | null>(null);
+  const [moveFolderTarget, setMoveFolderTarget] = useState<CatalogFolder | null>(null);
+  const [moveFolderDisabledIds, setMoveFolderDisabledIds] = useState<Set<number>>(new Set());
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState<CatalogFolder | null>(null);
+  const [movePrintTarget, setMovePrintTarget] = useState<Print | null>(null);
+  const [openMenuFolderId, setOpenMenuFolderId] = useState<number | null>(null);
   const navigate = useNavigate();
 
   async function laden() {
-    const [printsData, filamentenData, producten] = await Promise.all([loadPrints(), loadFilaments(), loadInventory()]);
+    const [printsData, filamentenData, producten, folderData] = await Promise.all([loadPrints(), loadFilaments(), loadInventory(), loadCatalogFolders()]);
     setPrints(printsData);
     setFilamentVoorraad(filamentenData);
     setInventarisProducten(producten);
     setCatalogusVoorraad(catalogusVoorraadMap(producten));
+    setFolders(folderData);
+  }
+
+  async function laadFolders() {
+    setFolders(await loadCatalogFolders());
   }
 
   async function laadCatalogusVoorraad() {
@@ -244,7 +281,7 @@ export default function Prints() {
     try {
       for (const [index, file] of geldigeBestanden.entries()) {
         try {
-          const result = await import3MF(file);
+          const result = await import3MF(file, currentFolderId);
           results.push({ bestandsnaam: file.name, waarschuwingen: result.waarschuwingen });
         } catch (error) {
           console.error(error);
@@ -275,7 +312,7 @@ export default function Prints() {
     setMakerWorldImporting(true);
     setImportMessage(null);
     try {
-      const result = await importMakerWorldUrl(url);
+      const result = await importMakerWorldUrl(url, undefined, currentFolderId);
       await laden();
       setImportMessage({
         type: "success",
@@ -300,16 +337,24 @@ export default function Prints() {
     const verversNaSync = () => {
       void loadPrintSummaries().then((data) => { if (actief) setPrints(data); });
     };
-    Promise.all([loadPrints(), loadFilaments(), loadInventory()]).then(([printData, filamentData, producten]) => {
+    Promise.all([loadPrints(), loadFilaments(), loadInventory(), loadCatalogFolders()]).then(([printData, filamentData, producten, folderData]) => {
       if (!actief) return;
       setPrints(printData);
       setFilamentVoorraad(filamentData);
       setInventarisProducten(producten);
+      setFolders(folderData);
       setCatalogusVoorraad(Object.fromEntries(
         producten
           .filter((product) => product.printId !== undefined)
           .map((product) => [product.printId!, product.voorraad])
       ));
+      setCatalogLoading(false);
+    }).catch((error) => {
+      console.error(error);
+      if (actief) {
+        setImportMessage({ type: "error", text: "De catalogus kon niet worden geladen." });
+        setCatalogLoading(false);
+      }
     });
     window.addEventListener("hazali:prints-synced", verversNaSync);
     window.addEventListener("hazali:inventory-synced", laadCatalogusVoorraad);
@@ -351,17 +396,74 @@ export default function Prints() {
     [prints, filamentVoorraad]
   );
 
-  const gefilterdePrints = [...prints]
-    .filter((print) => {
-      const zoek = zoekterm.trim().toLowerCase();
-      return !zoek || print.naam?.toLowerCase().includes(zoek) || print.tags?.some((tag) => tag.toLowerCase().includes(zoek));
-    })
-    .filter((print) => !geselecteerdeTag || print.tags?.includes(geselecteerdeTag))
-    .sort((a, b) => {
-      if (sortering === "winst") return (b.id === undefined ? b.winst : pricingByPrintId[b.id]?.winst ?? b.winst) - (a.id === undefined ? a.winst : pricingByPrintId[a.id]?.winst ?? a.winst);
-      if (sortering === "verkoopprijs") return b.verkoopprijs - a.verkoopprijs;
-      return (b.id || 0) - (a.id || 0);
+  const folderById = useMemo(
+    () => new Map(folders.filter((folder) => folder.id !== undefined).map((folder) => [folder.id!, folder])),
+    [folders]
+  );
+
+  const folderPath = useCallback((folderId: number | null) => {
+    const path: CatalogFolder[] = [];
+    const visited = new Set<number>();
+    let id = folderId;
+    while (id !== null && !visited.has(id)) {
+      visited.add(id);
+      const folder = folderById.get(id);
+      if (!folder) break;
+      path.unshift(folder);
+      id = folder.parentId ?? null;
+    }
+    return path;
+  }, [folderById]);
+
+  const currentFolderPath = useMemo(() => folderPath(currentFolderId), [currentFolderId, folderPath]);
+  const currentFolderName = currentFolderPath.at(-1)?.name ?? "Catalogus hoofdmap";
+  const zoek = zoekterm.trim().toLocaleLowerCase("nl-NL");
+  const isGlobaleZoekactie = zoekBereik === "global" && Boolean(zoek);
+
+  const countsByFolderId = useMemo(() => {
+    const counts: Record<number, { childFolderCount: number; itemCount: number }> = {};
+    folders.forEach((folder) => {
+      if (folder.id === undefined) return;
+      counts[folder.id] = { childFolderCount: 0, itemCount: 0 };
     });
+    folders.forEach((folder) => {
+      if (folder.parentId !== null && folder.parentId !== undefined && counts[folder.parentId]) counts[folder.parentId].childFolderCount += 1;
+    });
+    prints.forEach((print) => {
+      if (print.folderId !== null && print.folderId !== undefined && counts[print.folderId]) counts[print.folderId].itemCount += 1;
+    });
+    return counts;
+  }, [folders, prints]);
+
+  const zichtbareFolders = useMemo(() => {
+    const basis = isGlobaleZoekactie
+      ? folders.filter((folder) => folder.name.toLocaleLowerCase("nl-NL").includes(zoek))
+      : folders.filter((folder) => (folder.parentId ?? null) === currentFolderId);
+
+    return basis.sort(sortFolders);
+  }, [currentFolderId, folders, isGlobaleZoekactie, zoek]);
+
+  const folderPathByPrintId = useMemo(() => {
+    const labels: Record<number, string> = {};
+    if (!isGlobaleZoekactie) return labels;
+    prints.forEach((print) => {
+      if (print.id === undefined) return;
+      const path = folderPath(print.folderId ?? null);
+      labels[print.id] = path.length ? path.map((folder) => folder.name).join(" / ") : "Catalogus";
+    });
+    return labels;
+  }, [folderPath, isGlobaleZoekactie, prints]);
+
+  const gefilterdePrints = sortPrints(
+    prints
+      .filter((print) => isGlobaleZoekactie || (print.folderId ?? null) === currentFolderId)
+      .filter((print) => {
+        return !zoek || print.naam?.toLocaleLowerCase("nl-NL").includes(zoek) || print.tags?.some((tag) => tag.toLocaleLowerCase("nl-NL").includes(zoek));
+      })
+      .filter((print) => !geselecteerdeTag || print.tags?.includes(geselecteerdeTag)),
+    sortering,
+    pricingByPrintId
+  );
 
   const zichtbarePrintIds = gefilterdePrints
     .map((print) => print.id)
@@ -388,6 +490,95 @@ export default function Prints() {
       ? [...new Set([...huidig, ...zichtbarePrintIds])]
       : huidig.filter((id) => !zichtbarePrintIds.includes(id))
     );
+  }
+
+  function resetFolderModalState() {
+    setFolderModalError("");
+    setFolderSaving(false);
+    setOpenMenuFolderId(null);
+  }
+
+  async function mapAanmaken(name: string) {
+    setFolderSaving(true);
+    setFolderModalError("");
+    try {
+      await createFolder(name, currentFolderId);
+      setCreateFolderOpen(false);
+      await laadFolders();
+    } catch (error) {
+      setFolderModalError(error instanceof Error ? error.message : "De map kon niet worden aangemaakt.");
+    } finally {
+      setFolderSaving(false);
+    }
+  }
+
+  async function mapHernoemen(name: string) {
+    if (renameFolderTarget?.id === undefined) return;
+    setFolderSaving(true);
+    setFolderModalError("");
+    try {
+      await renameFolder(renameFolderTarget.id, name);
+      setRenameFolderTarget(null);
+      await laadFolders();
+    } catch (error) {
+      setFolderModalError(error instanceof Error ? error.message : "De map kon niet worden hernoemd.");
+    } finally {
+      setFolderSaving(false);
+    }
+  }
+
+  async function openMapVerplaatsen(folder: CatalogFolder) {
+    if (folder.id === undefined) return;
+    resetFolderModalState();
+    const descendants = await getDescendantFolderIds(folder.id);
+    setMoveFolderDisabledIds(new Set([folder.id, ...descendants]));
+    setMoveFolderTarget(folder);
+  }
+
+  async function mapVerplaatsen(targetParentId: number | null) {
+    if (moveFolderTarget?.id === undefined) return;
+    setFolderSaving(true);
+    setFolderModalError("");
+    try {
+      await moveFolder(moveFolderTarget.id, targetParentId);
+      setMoveFolderTarget(null);
+      await laadFolders();
+    } catch (error) {
+      setFolderModalError(error instanceof Error ? error.message : "De map kon niet worden verplaatst.");
+    } finally {
+      setFolderSaving(false);
+    }
+  }
+
+  async function printVerplaatsen(targetFolderId: number | null) {
+    if (movePrintTarget?.id === undefined) return;
+    setFolderSaving(true);
+    setFolderModalError("");
+    try {
+      await moveCatalogItem(movePrintTarget.id, targetFolderId);
+      setMovePrintTarget(null);
+      await laden();
+    } catch (error) {
+      setFolderModalError(error instanceof Error ? error.message : "Het item kon niet worden verplaatst.");
+    } finally {
+      setFolderSaving(false);
+    }
+  }
+
+  async function mapVerwijderen(mode: FolderDeleteMode) {
+    if (deleteFolderTarget?.id === undefined) return;
+    setFolderSaving(true);
+    setFolderModalError("");
+    try {
+      await deleteFolder(deleteFolderTarget.id, mode);
+      if (currentFolderId === deleteFolderTarget.id) setCurrentFolderId(deleteFolderTarget.parentId ?? null);
+      setDeleteFolderTarget(null);
+      await laden();
+    } catch (error) {
+      setFolderModalError(error instanceof Error ? error.message : "De map kon niet worden verwijderd.");
+    } finally {
+      setFolderSaving(false);
+    }
   }
 
   async function exporteerCatalogus() {
@@ -423,6 +614,15 @@ export default function Prints() {
         makerWorldImporting={makerWorldImporting}
         importProgress={importProgress}
       />
+      <section className="catalog-organizer" aria-label="Catalogusmappen">
+        <div className="catalog-organizer__top">
+          <CatalogBreadcrumbs path={currentFolderPath} onNavigate={setCurrentFolderId} />
+          <button type="button" className="new-folder-button" onClick={() => { resetFolderModalState(); setCreateFolderOpen(true); }}>
+            <FolderPlus size={16} />
+            Nieuwe map
+          </button>
+        </div>
+      </section>
       <section className="catalog-stats" aria-label="Catalogusoverzicht">
         <article className="catalog-stat-card">
           <span className="catalog-stat-icon blue"><Boxes size={20} /></span>
@@ -464,6 +664,8 @@ export default function Prints() {
       <PrintToolbar
         zoekterm={zoekterm}
         setZoekterm={setZoekterm}
+        zoekBereik={zoekBereik}
+        setZoekBereik={setZoekBereik}
         sortering={sortering}
         setSortering={setSortering}
         tagRanking={tagRanking}
@@ -473,7 +675,29 @@ export default function Prints() {
         setWeergave={setWeergave}
         onExport={() => void exporteerCatalogus()}
         exportBezig={exportBezig}
+        onCreateFolder={() => { resetFolderModalState(); setCreateFolderOpen(true); }}
       />
+      {catalogLoading ? (
+        <div className="catalog-loading">Catalogus laden...</div>
+      ) : (
+        <>
+          <CatalogFolderGrid
+            folders={zichtbareFolders}
+            countsByFolderId={countsByFolderId}
+            openMenuFolderId={openMenuFolderId}
+            onToggleMenu={(folderId) => setOpenMenuFolderId((huidig) => huidig === folderId ? null : folderId)}
+            onOpen={setCurrentFolderId}
+            onRename={(folder) => { resetFolderModalState(); setRenameFolderTarget(folder); }}
+            onMove={(folder) => void openMapVerplaatsen(folder)}
+            onDelete={(folder) => { resetFolderModalState(); setDeleteFolderTarget(folder); }}
+          />
+          {zichtbareFolders.length === 0 && gefilterdePrints.length === 0 && (
+            <div className="catalog-empty-state">
+              {zoek ? "Geen mappen of catalogusitems gevonden." : "Deze map is leeg."}
+            </div>
+          )}
+        </>
+      )}
       <section className="bulk-actions" aria-label="Bulkacties voor de catalogus">
         <div className="bulk-actions__summary">
           <strong>{geselecteerdePrintIds.length}</strong>
@@ -506,8 +730,10 @@ export default function Prints() {
         prints={gefilterdePrints}
         catalogusVoorraad={catalogusVoorraad}
         pricingByPrintId={pricingByPrintId}
+        folderPathByPrintId={folderPathByPrintId}
         navigate={navigate}
         verwijderen={verwijderen}
+        onMovePrint={(printData) => { resetFolderModalState(); setMovePrintTarget(printData); }}
         setSelectedPrint={setSelectedPrint}
         setShowEditModal={setShowEditModal}
         toggleSplitPrint={(printData, checked) => void toggleSplitPrint(printData, checked)}
@@ -519,7 +745,12 @@ export default function Prints() {
         togglePrintSelectie={togglePrintSelectie}
         toggleZichtbarePrints={toggleZichtbarePrints}
       />
-      <EditPrintModal key={`${showEditModal}-${selectedPrint?.id ?? "new"}`} open={showEditModal} print={selectedPrint} filamentVoorraad={filamentVoorraad} setPrint={setSelectedPrint} onSave={savePrintChanges} onCancel={() => setShowEditModal(false)} />
+      <EditPrintModal key={`${showEditModal}-${selectedPrint?.id ?? "new"}`} open={showEditModal} print={selectedPrint} filamentVoorraad={filamentVoorraad} folders={folders} setPrint={setSelectedPrint} onSave={savePrintChanges} onCancel={() => setShowEditModal(false)} />
+      <CreateFolderModal key={createFolderOpen ? `create-${currentFolderId ?? "root"}` : "create-closed"} open={createFolderOpen} parentName={currentFolderName} error={folderModalError} saving={folderSaving} onCreate={(name) => void mapAanmaken(name)} onCancel={() => { resetFolderModalState(); setCreateFolderOpen(false); }} />
+      <RenameFolderModal key={renameFolderTarget?.id ?? "rename-closed"} folder={renameFolderTarget} error={folderModalError} saving={folderSaving} onRename={(name) => void mapHernoemen(name)} onCancel={() => { resetFolderModalState(); setRenameFolderTarget(null); }} />
+      <MoveToFolderModal key={moveFolderTarget?.id ?? "move-folder-closed"} open={Boolean(moveFolderTarget)} title={moveFolderTarget ? `"${moveFolderTarget.name}" verplaatsen naar` : "Map verplaatsen"} folders={folders} initialFolderId={moveFolderTarget?.parentId ?? null} disabledFolderIds={moveFolderDisabledIds} error={folderModalError} saving={folderSaving} onMove={(folderId) => void mapVerplaatsen(folderId)} onCancel={() => { resetFolderModalState(); setMoveFolderTarget(null); }} />
+      <MoveToFolderModal key={movePrintTarget?.id ?? "move-print-closed"} open={Boolean(movePrintTarget)} title={movePrintTarget ? `"${movePrintTarget.naam}" verplaatsen naar` : "Item verplaatsen"} folders={folders} initialFolderId={movePrintTarget?.folderId ?? null} error={folderModalError} saving={folderSaving} onMove={(folderId) => void printVerplaatsen(folderId)} onCancel={() => { resetFolderModalState(); setMovePrintTarget(null); }} />
+      <DeleteFolderModal folder={deleteFolderTarget} childFolderCount={deleteFolderTarget?.id === undefined ? 0 : countsByFolderId[deleteFolderTarget.id]?.childFolderCount ?? 0} itemCount={deleteFolderTarget?.id === undefined ? 0 : countsByFolderId[deleteFolderTarget.id]?.itemCount ?? 0} error={folderModalError} saving={folderSaving} onDelete={(mode) => void mapVerwijderen(mode)} onCancel={() => { resetFolderModalState(); setDeleteFolderTarget(null); }} />
     </div>
   );
 }

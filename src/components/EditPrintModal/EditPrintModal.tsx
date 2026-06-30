@@ -3,7 +3,9 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import type { Print } from "../../types/Print";
 import type { Filament } from "../../types/Filament";
+import type { CatalogFolder } from "../../types/CatalogFolder";
 import { filamentColorLabel, filamentColorValue, filamentOptionLabel } from "../../utils/filamentColor";
+import { sortFolders } from "../../services/CatalogFolderService";
 
 type PrintFilament = NonNullable<Print["filamenten"]>[number];
 
@@ -14,6 +16,7 @@ interface Props {
   print: Print | null;
 
   filamentVoorraad?: Filament[];
+  folders?: CatalogFolder[];
 
   setPrint: (printData: Print) => void;
 
@@ -30,6 +33,7 @@ export default function EditPrintModal({
   print,
 
   filamentVoorraad = [],
+  folders = [],
 
   setPrint,
 
@@ -106,6 +110,28 @@ export default function EditPrintModal({
   const removeFilament = (index: number) => setFilaments(currentFilaments().filter((_, itemIndex) => itemIndex !== index));
 
   const addFilament = () => setFilaments([...currentFilaments(), { kleur: "#64748B", gewicht: 0, uren: 0, minuten: 0 }]);
+
+  const folderOptions = () => {
+    const byParent = new Map<number | null, CatalogFolder[]>();
+    folders.forEach((folder) => {
+      const parentId = folder.parentId ?? null;
+      byParent.set(parentId, [...(byParent.get(parentId) ?? []), folder]);
+    });
+    byParent.forEach((items) => items.sort(sortFolders));
+
+    const options: Array<{ folder: CatalogFolder; depth: number }> = [];
+    const visited = new Set<number>();
+    const visit = (parentId: number | null, depth: number) => {
+      for (const folder of byParent.get(parentId) ?? []) {
+        if (folder.id === undefined || visited.has(folder.id)) continue;
+        visited.add(folder.id);
+        options.push({ folder, depth });
+        visit(folder.id, depth + 1);
+      }
+    };
+    visit(null, 0);
+    return options;
+  };
 
   if (!open || !print) {
 
@@ -227,6 +253,22 @@ export default function EditPrintModal({
             onChange={(event) => setTagsInput(event.target.value)}
           />
           <small className="tag-help">Scheid meerdere tags met een komma.</small>
+        </div>
+
+        <div className="form-group">
+          <label>Map</label>
+          <select
+            className="edit-print-folder-select"
+            value={print.folderId ?? ""}
+            onChange={(event) => setPrint({ ...print, folderId: event.target.value ? Number(event.target.value) : null })}
+          >
+            <option value="">Catalogus hoofdmap</option>
+            {folderOptions().map(({ folder, depth }) => (
+              <option key={folder.id} value={folder.id}>
+                {"--".repeat(depth)}{depth > 0 ? " " : ""}{folder.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <label className="split-toggle">

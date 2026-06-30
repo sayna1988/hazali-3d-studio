@@ -76,7 +76,7 @@ export default function Dashboard() {
   useEffect(() => {
     const userId = session?.user.id;
     if (!userId || !supabase) {
-      setQueueLoading(false);
+      queueMicrotask(() => setQueueLoading(false));
       return;
     }
     const client = supabase;

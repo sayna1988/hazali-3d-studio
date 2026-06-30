@@ -16,6 +16,7 @@ export interface Print {
   makerWorldId?: string;
   bestandsGrootte?: number;
   aangemaaktOp: string;
+  folderId?: number | null;
   opmerkingen?: string;
   tags?: string[];
 

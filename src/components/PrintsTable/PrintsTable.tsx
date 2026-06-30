@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Layers3, Minus, PackagePlus, Pencil, Plus, Tag, Trash2 } from "lucide-react";
+import { Check, Layers3, Minus, Move, PackagePlus, Pencil, Plus, Tag, Trash2 } from "lucide-react";
 import "./PrintsTable.css";
 import type { Print } from "../../types/Print";
 import { filamentColorLabel, filamentColorValue } from "../../utils/filamentColor";
@@ -10,8 +10,10 @@ interface Props {
   prints: Print[];
   catalogusVoorraad: Record<number, number>;
   pricingByPrintId: Record<number, CatalogPricing>;
+  folderPathByPrintId: Record<number, string>;
   navigate: (path: string) => void;
   verwijderen: (id: number) => Promise<void>;
+  onMovePrint: (printData: Print) => void;
   setSelectedPrint: (printData: Print) => void;
   setShowEditModal: (value: boolean) => void;
   toggleSplitPrint: (printData: Print, checked: boolean) => void;
@@ -37,8 +39,10 @@ export default function PrintsTable({
   prints,
   catalogusVoorraad,
   pricingByPrintId,
+  folderPathByPrintId,
   navigate,
   verwijderen,
+  onMovePrint,
   setSelectedPrint,
   setShowEditModal,
   toggleSplitPrint,
@@ -147,6 +151,7 @@ export default function PrintsTable({
                   <div className="catalog-card-title">
                     <div>
                       <h2>{p.naam}</h2>
+                      {p.id !== undefined && folderPathByPrintId[p.id] && <span className="catalog-item-path" title={folderPathByPrintId[p.id]}>{folderPathByPrintId[p.id]}</span>}
                       <span>{Number(p.gewicht || 0).toLocaleString("nl-NL", { maximumFractionDigits: 2 })} g · {p.uren}u {p.minuten}m</span>
                     </div>
                     {p.splitPrint && <span className="split-print-badge"><Layers3 size={12} /> Split</span>}
@@ -162,6 +167,7 @@ export default function PrintsTable({
 
                   <div className="catalog-card-actions" onClick={(event) => event.stopPropagation()}>
                     <button type="button" onClick={() => openBewerken(p)}><Pencil size={15} /> Bewerken</button>
+                    <button type="button" onClick={() => onMovePrint(p)} aria-label={`${p.naam} verplaatsen`} title="Verplaatsen"><Move size={15} /></button>
                     <button type="button" className="danger" onClick={(event) => { event.stopPropagation(); if (p.id !== undefined) void verwijderen(p.id); }} aria-label={`${p.naam} verwijderen`}><Trash2 size={15} /></button>
                   </div>
                 </div>
@@ -252,6 +258,7 @@ export default function PrintsTable({
 
                   <div className="print-title-and-tags">
                     <span>{p.naam}</span>
+                    {p.id !== undefined && folderPathByPrintId[p.id] && <small className="catalog-item-path" title={folderPathByPrintId[p.id]}>{folderPathByPrintId[p.id]}</small>}
                     {p.splitPrint && <span className="split-print-badge"><Layers3 size={12} /> Split print</span>}
                     {(p.tags?.length ?? 0) > 0 && (
                       <div className="print-tags">
@@ -341,6 +348,18 @@ export default function PrintsTable({
 
               <td>
                 <div className="action-buttons">
+                  <button
+                    className="icon-button"
+                    aria-label={`${p.naam} verplaatsen`}
+                    title="Print verplaatsen"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onMovePrint(p);
+                    }}
+                  >
+                    <Move size={16} />
+                  </button>
+
                   <button
                     className="icon-button"
                     aria-label={`${p.naam} bewerken`}
