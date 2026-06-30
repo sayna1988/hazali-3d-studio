@@ -5,7 +5,6 @@ import {
   ArrowRight,
   Boxes,
   ChevronRight,
-  CircleDollarSign,
   Clock3,
   Euro,
   Layers3,
@@ -397,11 +396,6 @@ export default function Dashboard() {
             <button className="dashboard-link-row" onClick={() => navigate("/filamenten") }>
               Voorraad beheren <ChevronRight size={17} />
             </button>
-          </div>
-
-          <div className="dashboard-panel dashboard-shortcuts">
-            <span className="dashboard-section-label">Snel naar</span>
-            <button onClick={() => navigate("/prints") }><CircleDollarSign size={19} /><span><strong>Printresultaten</strong><small>Omzet & winst</small></span><ChevronRight size={17} /></button>
           </div>
         </aside>
       </section>

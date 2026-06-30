@@ -108,10 +108,11 @@
 .catalog-breadcrumbs button:hover,.catalog-back-button:hover{color:white}
 .catalog-back-button{min-height:36px;padding:0 10px;border:1px solid rgba(56,182,255,.18);border-radius:10px;background:rgba(31,156,255,.07)}
 .catalog-back-button:disabled{opacity:.42;cursor:not-allowed}
-.catalog-folder-grid-section{display:grid;gap:11px;margin-bottom:18px}
-.catalog-folder-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
-.catalog-folder-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;min-width:0;border:1px solid rgba(56,182,255,.16);border-radius:14px;background:linear-gradient(145deg,rgba(10,28,49,.95),rgba(5,17,32,.96));box-shadow:0 12px 30px rgba(0,0,0,.13);transition:border-color .16s,transform .16s,background .16s}
+.catalog-folder-grid-section{position:relative;z-index:2;display:grid;gap:11px;margin-bottom:18px}
+.catalog-folder-grid{position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.catalog-folder-card{position:relative;z-index:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;min-width:0;border:1px solid rgba(56,182,255,.16);border-radius:14px;background:linear-gradient(145deg,rgba(10,28,49,.95),rgba(5,17,32,.96));box-shadow:0 12px 30px rgba(0,0,0,.13);transition:border-color .16s,transform .16s,background .16s}
 .catalog-folder-card:hover{transform:translateY(-1px);border-color:rgba(56,182,255,.36);background:linear-gradient(145deg,rgba(12,35,61,.98),rgba(7,22,39,.98))}
+.catalog-folder-card.menu-open{z-index:80}
 .catalog-folder-card.drop-active{transform:translateY(-2px);border-color:#38b6ff;background:linear-gradient(145deg,rgba(24,83,132,.72),rgba(8,29,52,.98));box-shadow:0 0 0 3px rgba(56,182,255,.16),0 18px 42px rgba(0,0,0,.28)}
 .catalog-folder-card__main{display:flex;align-items:center;gap:12px;min-width:0;padding:14px 8px 14px 14px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
 .catalog-folder-card__icon{display:grid;place-items:center;width:42px;height:42px;flex:0 0 auto;border-radius:12px;background:rgba(31,156,255,.13);color:#73c8ff}
@@ -122,7 +123,7 @@
 .catalog-folder-card__menu{position:relative;padding-right:8px}
 .catalog-folder-card__menu>button{display:grid;place-items:center;width:34px;height:34px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.035);color:#8cabcf;cursor:pointer}
 .catalog-folder-card__menu>button:hover{color:white;border-color:rgba(56,182,255,.28)}
-.catalog-folder-card__menu-panel{position:absolute;z-index:20;right:8px;top:39px;display:grid;min-width:150px;padding:6px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#07182d;box-shadow:0 18px 45px rgba(0,0,0,.4)}
+.catalog-folder-card__menu-panel{position:absolute;z-index:90;right:8px;top:39px;display:grid;min-width:150px;padding:6px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#07182d;box-shadow:0 18px 45px rgba(0,0,0,.4)}
 .catalog-folder-card__menu-panel button{display:flex;width:100%;padding:9px 10px;border:0;border-radius:8px;background:transparent;color:#bdd9f4;font:inherit;font-size:12px;font-weight:700;text-align:left;cursor:pointer}
 .catalog-folder-card__menu-panel button:hover{background:rgba(31,156,255,.13);color:white}
 .catalog-folder-card__menu-panel button.danger{color:#ffb4bd}

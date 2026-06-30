@@ -53,7 +53,7 @@ export default function CatalogFolderCard({
 
   return (
     <article
-      className={`catalog-folder-card ${dropActive ? "drop-active" : ""}`}
+      className={`catalog-folder-card ${dropActive ? "drop-active" : ""} ${menuOpen ? "menu-open" : ""}`}
       style={cardStyle}
       onDoubleClick={onOpen}
       onDragOver={onDragOver}

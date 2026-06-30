@@ -708,6 +708,9 @@ export default function Prints() {
           )}
         </>
       )}
+      <section className="catalog-organizer" aria-label="Catalogusmappen">
+        <CatalogBreadcrumbs path={currentFolderPath} onNavigate={setCurrentFolderId} />
+      </section>
       <section className="bulk-actions" aria-label="Bulkacties voor de catalogus">
         <div className="bulk-actions__summary">
           <strong>{geselecteerdePrintIds.length}</strong>
@@ -741,9 +744,6 @@ export default function Prints() {
             Verwijderen
           </button>
         </div>
-      </section>
-      <section className="catalog-organizer" aria-label="Catalogusmappen">
-        <CatalogBreadcrumbs path={currentFolderPath} onNavigate={setCurrentFolderId} />
       </section>
       <PrintsTable
         weergave={weergave}
