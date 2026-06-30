@@ -683,34 +683,6 @@ export default function Prints() {
           <button aria-label="Melding sluiten" onClick={() => setImportMessage(null)}>×</button>
         </div>
       )}
-      {catalogLoading ? (
-        <div className="catalog-loading">Catalogus laden...</div>
-      ) : (
-        <>
-          <CatalogFolderGrid
-            folders={zichtbareFolders}
-            countsByFolderId={countsByFolderId}
-            openMenuFolderId={openMenuFolderId}
-            dropTargetFolderId={dropTargetFolderId}
-            onToggleMenu={(folderId) => setOpenMenuFolderId((huidig) => huidig === folderId ? null : folderId)}
-            onOpen={setCurrentFolderId}
-            onRename={(folder) => { resetFolderModalState(); setRenameFolderTarget(folder); }}
-            onMove={(folder) => void openMapVerplaatsen(folder)}
-            onDelete={(folder) => { resetFolderModalState(); setDeleteFolderTarget(folder); }}
-            onDragOverFolder={handleFolderDragOver}
-            onDragLeaveFolder={handleFolderDragLeave}
-            onDropOnFolder={(event, folderId) => void handleDropOnFolder(event, folderId)}
-          />
-          {zichtbareFolders.length === 0 && gefilterdePrints.length === 0 && (
-            <div className="catalog-empty-state">
-              {zoek ? "Geen mappen of catalogusitems gevonden." : "Deze map is leeg."}
-            </div>
-          )}
-        </>
-      )}
-      <section className="catalog-organizer" aria-label="Catalogusmappen">
-        <CatalogBreadcrumbs path={currentFolderPath} onNavigate={setCurrentFolderId} />
-      </section>
       <section className="bulk-actions" aria-label="Bulkacties voor de catalogus">
         <div className="bulk-actions__summary">
           <strong>{geselecteerdePrintIds.length}</strong>
@@ -745,6 +717,34 @@ export default function Prints() {
           </button>
         </div>
       </section>
+      <section className="catalog-organizer" aria-label="Catalogusmappen">
+        <CatalogBreadcrumbs path={currentFolderPath} onNavigate={setCurrentFolderId} />
+      </section>
+      {catalogLoading ? (
+        <div className="catalog-loading">Catalogus laden...</div>
+      ) : (
+        <>
+          <CatalogFolderGrid
+            folders={zichtbareFolders}
+            countsByFolderId={countsByFolderId}
+            openMenuFolderId={openMenuFolderId}
+            dropTargetFolderId={dropTargetFolderId}
+            onToggleMenu={(folderId) => setOpenMenuFolderId((huidig) => huidig === folderId ? null : folderId)}
+            onOpen={setCurrentFolderId}
+            onRename={(folder) => { resetFolderModalState(); setRenameFolderTarget(folder); }}
+            onMove={(folder) => void openMapVerplaatsen(folder)}
+            onDelete={(folder) => { resetFolderModalState(); setDeleteFolderTarget(folder); }}
+            onDragOverFolder={handleFolderDragOver}
+            onDragLeaveFolder={handleFolderDragLeave}
+            onDropOnFolder={(event, folderId) => void handleDropOnFolder(event, folderId)}
+          />
+          {zichtbareFolders.length === 0 && gefilterdePrints.length === 0 && (
+            <div className="catalog-empty-state">
+              {zoek ? "Geen mappen of catalogusitems gevonden." : "Deze map is leeg."}
+            </div>
+          )}
+        </>
+      )}
       <PrintsTable
         weergave={weergave}
         prints={gefilterdePrints}
