@@ -121,10 +121,10 @@ export default function Dealtracker() {
     setLoading(true);
     setError("");
     try {
-      const [offerData, runInfo, ruleData] = await Promise.all([
-        loadDealtrackerOffers(),
-        loadDealtrackerRunInfo(),
-        userId ? loadDealTrackerRules() : Promise.resolve([]),
+      const offerData = await loadDealtrackerOffers();
+      const [runInfo, ruleData] = await Promise.all([
+        loadDealtrackerRunInfo().catch(() => ({ lastSuccessfulCheckAt: null })),
+        userId ? loadDealTrackerRules().catch(() => []) : Promise.resolve([]),
       ]);
       setOffers(offerData);
       setLastSuccessfulCheckAt(runInfo.lastSuccessfulCheckAt);
