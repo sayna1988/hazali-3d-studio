@@ -66,10 +66,8 @@ export default function Prints() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [prints, setPrints] = useState<Print[]>([]);
   const [geselecteerdePrintIds, setGeselecteerdePrintIds] = useState<number[]>([]);
-  const [bulkTagsInput, setBulkTagsInput] = useState("");
   const [bulkBezig, setBulkBezig] = useState(false);
   const [zoekterm, setZoekterm] = useState("");
-  const [zoekBereik, setZoekBereik] = useState<"current" | "global">("current");
   const [sortering, setSortering] = useState("nieuwste");
   const [geselecteerdeTag] = useState("");
   const [weergave, setWeergave] = useState<"tabel" | "grid">(() =>
@@ -209,43 +207,6 @@ export default function Prints() {
     await deletePrint(id);
     setGeselecteerdePrintIds((huidig) => huidig.filter((printId) => printId !== id));
     await laden();
-  }
-
-  function parseBulkTags() {
-    return Array.from(new Set(
-      bulkTagsInput
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean)
-    ));
-  }
-
-  async function bulkTagsToepassen() {
-    const tags = parseBulkTags();
-    const geselecteerdePrints = prints.filter((print) => print.id !== undefined && geselecteerdePrintIds.includes(print.id));
-
-    if (!geselecteerdePrints.length) return;
-    if (!tags.length) {
-      setImportMessage({ type: "error", text: "Voer minimaal een tag in om in bulk toe te passen." });
-      return;
-    }
-
-    setBulkBezig(true);
-    setImportMessage(null);
-    try {
-      await Promise.all(geselecteerdePrints.map((print) => savePrint({
-        ...print,
-        tags: Array.from(new Set([...(print.tags ?? []), ...tags]))
-      })));
-      await laden();
-      setBulkTagsInput("");
-      setImportMessage({
-        type: "success",
-        text: `${tags.length} ${tags.length === 1 ? "tag is" : "tags zijn"} toegevoegd aan ${geselecteerdePrints.length} ${geselecteerdePrints.length === 1 ? "print" : "prints"}.`
-      });
-    } finally {
-      setBulkBezig(false);
-    }
   }
 
   async function bulkVerwijderen() {
@@ -414,7 +375,6 @@ export default function Prints() {
   const currentFolderPath = useMemo(() => folderPath(currentFolderId), [currentFolderId, folderPath]);
   const currentFolderName = currentFolderPath.at(-1)?.name ?? "Catalogus hoofdmap";
   const zoek = zoekterm.trim().toLocaleLowerCase("nl-NL");
-  const isGlobaleZoekactie = zoekBereik === "global" && Boolean(zoek);
 
   const countsByFolderId = useMemo(() => {
     const counts: Record<number, { childFolderCount: number; itemCount: number }> = {};
@@ -432,27 +392,16 @@ export default function Prints() {
   }, [folders, prints]);
 
   const zichtbareFolders = useMemo(() => {
-    const basis = isGlobaleZoekactie
-      ? folders.filter((folder) => folder.name.toLocaleLowerCase("nl-NL").includes(zoek))
-      : folders.filter((folder) => (folder.parentId ?? null) === currentFolderId);
+    const basis = folders.filter((folder) => (folder.parentId ?? null) === currentFolderId);
 
     return basis.sort(sortFolders);
-  }, [currentFolderId, folders, isGlobaleZoekactie, zoek]);
+  }, [currentFolderId, folders]);
 
-  const folderPathByPrintId = useMemo(() => {
-    const labels: Record<number, string> = {};
-    if (!isGlobaleZoekactie) return labels;
-    prints.forEach((print) => {
-      if (print.id === undefined) return;
-      const path = folderPath(print.folderId ?? null);
-      labels[print.id] = path.length ? path.map((folder) => folder.name).join(" / ") : "Catalogus";
-    });
-    return labels;
-  }, [folderPath, isGlobaleZoekactie, prints]);
+  const folderPathByPrintId = useMemo<Record<number, string>>(() => ({}), []);
 
   const gefilterdePrints = sortPrints(
     prints
-      .filter((print) => isGlobaleZoekactie || (print.folderId ?? null) === currentFolderId)
+      .filter((print) => (print.folderId ?? null) === currentFolderId)
       .filter((print) => {
         return !zoek || print.naam?.toLocaleLowerCase("nl-NL").includes(zoek) || print.tags?.some((tag) => tag.toLocaleLowerCase("nl-NL").includes(zoek));
       })
@@ -702,15 +651,6 @@ export default function Prints() {
         makerWorldImporting={makerWorldImporting}
         importProgress={importProgress}
       />
-      <section className="catalog-organizer" aria-label="Catalogusmappen">
-        <div className="catalog-organizer__top">
-          <CatalogBreadcrumbs path={currentFolderPath} onNavigate={setCurrentFolderId} />
-          <button type="button" className="new-folder-button" onClick={() => { resetFolderModalState(); setCreateFolderOpen(true); }}>
-            <FolderPlus size={16} />
-            Nieuwe map
-          </button>
-        </div>
-      </section>
       {importMessage && (
         <div className={`import-message ${importMessage.type}`} role="status">
           <div className="import-message-content">
@@ -732,19 +672,6 @@ export default function Prints() {
           <button aria-label="Melding sluiten" onClick={() => setImportMessage(null)}>×</button>
         </div>
       )}
-      <PrintToolbar
-        zoekterm={zoekterm}
-        setZoekterm={setZoekterm}
-        zoekBereik={zoekBereik}
-        setZoekBereik={setZoekBereik}
-        sortering={sortering}
-        setSortering={setSortering}
-        weergave={weergave}
-        setWeergave={setWeergave}
-        onExport={() => void exporteerCatalogus()}
-        exportBezig={exportBezig}
-        onCreateFolder={() => { resetFolderModalState(); setCreateFolderOpen(true); }}
-      />
       {catalogLoading ? (
         <div className="catalog-loading">Catalogus laden...</div>
       ) : (
@@ -781,25 +708,31 @@ export default function Prints() {
           )}
         </div>
         <div className="bulk-actions__controls">
-          <input
-            type="text"
-            value={bulkTagsInput}
-            onChange={(event) => setBulkTagsInput(event.target.value)}
-            placeholder="Tags toevoegen, gescheiden door komma's"
-            aria-label="Tags in bulk toevoegen"
-            disabled={bulkBezig || geselecteerdePrintIds.length === 0}
+          <PrintToolbar
+            zoekterm={zoekterm}
+            setZoekterm={setZoekterm}
+            sortering={sortering}
+            setSortering={setSortering}
+            weergave={weergave}
+            setWeergave={setWeergave}
+            onExport={() => void exporteerCatalogus()}
+            exportBezig={exportBezig}
           />
-          <button type="button" className="save-button" onClick={() => void bulkTagsToepassen()} disabled={bulkBezig || geselecteerdePrintIds.length === 0}>
-            Tags toepassen
+          <button type="button" className="catalog-action-button" onClick={() => { resetFolderModalState(); setCreateFolderOpen(true); }}>
+            <FolderPlus size={15} />
+            Nieuwe map
           </button>
-          <button type="button" className="save-button bulk-actions__move" onClick={openBulkPrintsVerplaatsen} disabled={bulkBezig || geselecteerdePrintIds.length === 0}>
+          <button type="button" className="catalog-action-button bulk-actions__move" onClick={openBulkPrintsVerplaatsen} disabled={bulkBezig || geselecteerdePrintIds.length === 0}>
             <Move size={15} />
             Verplaatsen
           </button>
-          <button type="button" className="cancel-button bulk-actions__delete" onClick={() => void bulkVerwijderen()} disabled={bulkBezig || geselecteerdePrintIds.length === 0}>
+          <button type="button" className="catalog-action-button danger bulk-actions__delete" onClick={() => void bulkVerwijderen()} disabled={bulkBezig || geselecteerdePrintIds.length === 0}>
             Verwijderen
           </button>
         </div>
+      </section>
+      <section className="catalog-organizer" aria-label="Catalogusmappen">
+        <CatalogBreadcrumbs path={currentFolderPath} onNavigate={setCurrentFolderId} />
       </section>
       <PrintsTable
         weergave={weergave}

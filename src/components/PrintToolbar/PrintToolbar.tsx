@@ -1,12 +1,10 @@
-import { ArrowUpDown, ChevronDown, FileDown, FolderPlus, Grid2X2, List, Search } from "lucide-react";
+import { ArrowUpDown, ChevronDown, FileDown, Grid2X2, List, Search } from "lucide-react";
 import "./PrintToolbar.css";
 
 interface Props {
 
   zoekterm: string;
   setZoekterm: (value: string) => void;
-  zoekBereik: "current" | "global";
-  setZoekBereik: (value: "current" | "global") => void;
 
   sortering: string;
   setSortering: (value: string) => void;
@@ -14,7 +12,6 @@ interface Props {
   setWeergave: (value: "tabel" | "grid") => void;
   onExport: () => void;
   exportBezig: boolean;
-  onCreateFolder: () => void;
 
 }
 
@@ -22,21 +19,18 @@ export default function PrintToolbar({
 
   zoekterm,
   setZoekterm,
-  zoekBereik,
-  setZoekBereik,
   sortering,
   setSortering,
   weergave,
   setWeergave,
   onExport,
-  exportBezig,
-  onCreateFolder
+  exportBezig
 
 }: Props) {
 
   return (
 
-    <div className="prints-toolbar">
+    <div className="prints-toolbar compact">
 
       <div className="search-wrapper">
 
@@ -63,11 +57,6 @@ export default function PrintToolbar({
 
         />
 
-      </div>
-
-      <div className="search-scope" role="group" aria-label="Zoekbereik">
-        <button type="button" className={zoekBereik === "current" ? "active" : ""} aria-pressed={zoekBereik === "current"} onClick={() => setZoekBereik("current")}>Huidige map</button>
-        <button type="button" className={zoekBereik === "global" ? "active" : ""} aria-pressed={zoekBereik === "global"} onClick={() => setZoekBereik("global")}>Alles</button>
       </div>
 
       <label className="toolbar-select toolbar-select--sort">
@@ -127,11 +116,6 @@ export default function PrintToolbar({
       <button type="button" className="catalog-export-button" onClick={onExport} disabled={exportBezig}>
         <FileDown size={16} />
         <span>{exportBezig ? "Exporteren..." : "Export PDF"}</span>
-      </button>
-
-      <button type="button" className="catalog-export-button catalog-new-folder-toolbar" onClick={onCreateFolder}>
-        <FolderPlus size={16} />
-        <span>Nieuwe map</span>
       </button>
 
     </div>
