@@ -13,8 +13,6 @@ import Filamenten from "./pages/Filamenten";
 import Prints from "./pages/Prints";
 import PrintDetails from "./pages/PrintDetails";
 import Voorraad from "./pages/Voorraad";
-import MijnPrinter from "../MijnPrinterRealtime";
-import { Navigate } from "react-router-dom";
 import Inventaris from "./pages/Inventaris";
 
 
@@ -59,9 +57,6 @@ function App() {
             path="/voorraad"
             element={<Voorraad />}
           />
-
-          <Route path="/mijn-printer" element={<MijnPrinter />} />
-          <Route path="/instellingen" element={<Navigate to="/mijn-printer" replace />} />
 
         </Routes>
 

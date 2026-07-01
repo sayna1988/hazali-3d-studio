@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   PlusCircle,
   Package,
-  Printer,
   Boxes,
   LogOut,
 } from "lucide-react";
@@ -46,11 +45,6 @@ export default function Sidebar() {
         <NavLink to="/filamenten" className={({ isActive }) => isActive ? "active" : ""}>
           <Boxes size={16}/>
           Filamenten
-        </NavLink>
-
-        <NavLink to="/mijn-printer" className={({ isActive }) => isActive ? "active" : ""}>
-          <Printer size={16}/>
-          Mijn Printer
         </NavLink>
 
       </nav>
