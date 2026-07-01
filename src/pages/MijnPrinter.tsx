@@ -115,6 +115,7 @@ export default function MijnPrinter() {
       printerIp,
       printerRemoteUrl: remoteUrl,
       printerCameraUrl: cameraUrl,
+      appIconVariant: current?.appIconVariant,
     });
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1800);

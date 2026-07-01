@@ -34,7 +34,9 @@
 
 .logo-image{
 
-  width:170px;
+  width:126px;
+
+  height:126px;
 
   display:block;
 
@@ -43,6 +45,12 @@
   margin-top:20px;
 
   margin-bottom:45px;
+
+  border-radius:28px;
+
+  object-fit:cover;
+
+  box-shadow:0 16px 42px rgba(0,0,0,.28);
 
 }
 
@@ -232,7 +240,9 @@
 
     .logo-image{
 
-    width:140px;
+    width:112px;
+
+    height:112px;
 
     margin:24px auto 36px;
 

@@ -11,7 +11,9 @@ import "./styles/index.css";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
 import { AuthGate } from "./auth/AuthGate";
+import { applyStoredAppIconVariant } from "./utils/appIcon";
 
+applyStoredAppIconVariant();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

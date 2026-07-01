@@ -1,6 +1,13 @@
 import { db } from "../database/db";
 import { supabase } from "../lib/supabase";
 import type { SettingsModel } from "../types/Settings";
+import {
+  announceAppIconVariant,
+  getAppIconPath,
+  normalizeAppIconVariant,
+  setFavicon,
+  storeAppIconVariant,
+} from "../utils/appIcon";
 
 function cloudData(settings: SettingsModel) {
   return Object.fromEntries(
@@ -12,6 +19,14 @@ async function currentUserId() {
   if (!supabase) return null;
   const { data } = await supabase.auth.getUser();
   return data.user?.id ?? null;
+}
+
+function applySettingsIcon(settings: Partial<SettingsModel>) {
+  if (!settings.appIconVariant) return;
+  const variant = normalizeAppIconVariant(settings.appIconVariant);
+  storeAppIconVariant(variant);
+  setFavicon(getAppIconPath(variant));
+  announceAppIconVariant(variant);
 }
 
 export async function syncSettings() {
@@ -34,15 +49,19 @@ export async function syncSettings() {
     });
     if (result.error) throw result.error;
     await db.settings.update(1, { syncPending: false });
+    applySettingsIcon(local);
     return;
   }
 
   if (remote?.data) {
-    await db.settings.put({ ...remote.data, id: 1, syncPending: false } as SettingsModel);
+    const remoteSettings = { ...remote.data, id: 1, syncPending: false } as SettingsModel;
+    await db.settings.put(remoteSettings);
+    applySettingsIcon(remoteSettings);
   }
 }
 
 export async function saveSettings(settings: SettingsModel) {
   await db.settings.put({ ...settings, id: 1, syncPending: true });
+  applySettingsIcon(settings);
   try { await syncSettings(); } catch (error) { console.warn("Instellingensync uitgesteld:", error); }
 }
