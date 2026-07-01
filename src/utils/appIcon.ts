@@ -37,7 +37,7 @@ export function normalizeAppIconVariant(value: unknown): AppIconVariant {
   return isAppIconVariant(normalized) ? normalized : DEFAULT_APP_ICON_VARIANT;
 }
 
-export function getAppIconPath(variant: AppIconVariant, size?: 192 | 512) {
+export function getAppIconPath(variant: AppIconVariant, size?: 180 | 192 | 512) {
   return `/icons/app-icon-${variant}${size ? `-${size}` : ""}.png`;
 }
 
@@ -57,6 +57,20 @@ export function setFavicon(iconPath: string) {
 
   favicon.type = "image/png";
   favicon.href = iconPath;
+}
+
+export function setAppleTouchIcon(iconPath: string) {
+  if (typeof document === "undefined") return;
+
+  let appleTouchIcon = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
+  if (!appleTouchIcon) {
+    appleTouchIcon = document.createElement("link");
+    appleTouchIcon.rel = "apple-touch-icon";
+    document.head.appendChild(appleTouchIcon);
+  }
+
+  appleTouchIcon.sizes = "180x180";
+  appleTouchIcon.href = iconPath;
 }
 
 export function setAppManifest(variant: AppIconVariant) {
@@ -87,6 +101,7 @@ export function storeAppIconVariant(variant: AppIconVariant) {
     const secure = window.location.protocol === "https:" ? "; Secure" : "";
     document.cookie = `${APP_ICON_COOKIE_NAME}=${variant}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
     setAppManifest(variant);
+    setAppleTouchIcon(getAppIconPath(variant, 180));
   }
 }
 
@@ -94,6 +109,7 @@ export function applyStoredAppIconVariant() {
   const variant = getStoredAppIconVariant();
   storeAppIconVariant(variant);
   setFavicon(getAppIconPath(variant));
+  setAppleTouchIcon(getAppIconPath(variant, 180));
   return variant;
 }
 
