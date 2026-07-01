@@ -563,6 +563,10 @@ function QueueItem({
     swipeStart.current = null;
   }
 
+  function openMakerWorld(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (swipeOffset !== 0) event.preventDefault();
+  }
+
   return (
     <div className="dashboard-queue__item-shell" data-queue-id={item.id}>
       <div className="dashboard-queue__delete"><Trash2 size={19} /><span>Verwijder</span></div>
@@ -612,15 +616,24 @@ function QueueItem({
         >
           <GripVertical size={18} />
         </button>
-        <div className="dashboard-queue__thumb">
-          {item.image ? <img src={item.image} alt="" /> : item.status === "loading" ? <LoaderCircle size={19} className="dashboard-spin" /> : <Package size={19} />}
-          <span>{index + 1}</span>
-        </div>
-        <div className="dashboard-queue__body">
-          <strong>{item.title || (item.status === "loading" ? "MakerWorld ophalen…" : "MakerWorld print")}</strong>
-          <small><Clock3 size={13} /> {item.status === "loading" ? "Printprofiel laden" : formatPrintTime(item.printTimeSeconds)}</small>
-          {item.error && <span className="dashboard-queue__error">{item.error}</span>}
-        </div>
+        <a
+          className="dashboard-queue__model-link"
+          href={item.url}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Open ${item.title || "MakerWorld print"} op MakerWorld`}
+          onClick={openMakerWorld}
+        >
+          <div className="dashboard-queue__thumb">
+            {item.image ? <img src={item.image} alt="" /> : item.status === "loading" ? <LoaderCircle size={19} className="dashboard-spin" /> : <Package size={19} />}
+            <span>{index + 1}</span>
+          </div>
+          <div className="dashboard-queue__body">
+            <strong>{item.title || (item.status === "loading" ? "MakerWorld ophalen…" : "MakerWorld print")}</strong>
+            <small><Clock3 size={13} /> {item.status === "loading" ? "Printprofiel laden" : formatPrintTime(item.printTimeSeconds)}</small>
+            {item.error && <span className="dashboard-queue__error">{item.error}</span>}
+          </div>
+        </a>
         <button
           type="button"
           className="dashboard-queue__check"

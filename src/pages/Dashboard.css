@@ -527,6 +527,28 @@
 
 .dashboard-queue__handle:active { cursor: grabbing; }
 
+.dashboard-queue__model-link {
+  display: grid;
+  grid-column: 2 / 4;
+  grid-template-columns: 54px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 12px;
+}
+
+.dashboard-queue__model-link:hover .dashboard-queue__body strong,
+.dashboard-queue__model-link:focus-visible .dashboard-queue__body strong {
+  color: #8fd2ff;
+}
+
+.dashboard-queue__model-link:focus-visible {
+  outline: 2px solid rgba(85, 191, 255, 0.8);
+  outline-offset: 3px;
+}
+
 .dashboard-queue__thumb {
   position: relative;
   display: grid;
