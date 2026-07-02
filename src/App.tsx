@@ -15,6 +15,7 @@ import Prints from "./pages/Prints";
 import PrintDetails from "./pages/PrintDetails";
 import Voorraad from "./pages/Voorraad";
 import Inventaris from "./pages/Inventaris";
+import Instellingen from "./pages/Instellingen";
 
 
 
@@ -62,6 +63,11 @@ function App() {
           <Route
             path="/voorraad"
             element={<Voorraad />}
+          />
+
+          <Route
+            path="/instellingen"
+            element={<Instellingen />}
           />
 
         </Routes>

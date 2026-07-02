@@ -17,11 +17,9 @@ import {
   Check,
   LoaderCircle,
   GripVertical,
-  Palette,
 } from "lucide-react";
 import type { Print } from "../types/Print";
 import type { Filament } from "../types/Filament";
-import type { SettingsModel } from "../types/Settings";
 import { loadFilaments } from "../services/FilamentService";
 import { loadPrintSummaries } from "../services/PrintService";
 import { rolGegevens, totaalGewicht } from "../utils/filamentInventory";
@@ -29,18 +27,6 @@ import { loadMakerWorldMetadata } from "../services/MakerWorldImportService";
 import { loadPrintQueue, savePrintQueue, type PrintQueueItem } from "../services/PrintQueueService";
 import { useAuth } from "../auth/AuthProvider";
 import { supabase } from "../lib/supabase";
-import { db } from "../database/db";
-import { saveSettings as saveAppSettings } from "../services/SettingsSyncService";
-import {
-  announceAppIconVariant,
-  APP_ICON_VARIANTS,
-  type AppIconVariant,
-  getAppIconPath,
-  getStoredAppIconVariant,
-  normalizeAppIconVariant,
-  setFavicon,
-  storeAppIconVariant,
-} from "../utils/appIcon";
 
 type DashboardData = {
   prints: Print[];
@@ -60,9 +46,6 @@ export default function Dashboard() {
   const [queueItems, setQueueItems] = useState<PrintQueueItem[]>([]);
   const [queueLoading, setQueueLoading] = useState(true);
   const [queueMessage, setQueueMessage] = useState<string | null>(null);
-  const [appIconVariant, setAppIconVariant] = useState<AppIconVariant>(() => getStoredAppIconVariant());
-  const [appIconSaving, setAppIconSaving] = useState(false);
-  const [appIconMessage, setAppIconMessage] = useState("Optie 03 is actief.");
   const draggedQueueId = useRef<string | null>(null);
   const queueReady = useRef(false);
   const savedQueueFingerprint = useRef("");
@@ -140,29 +123,6 @@ export default function Dashboard() {
       setQueueMessage(error instanceof Error ? error.message : "Printqueue opslaan is mislukt.");
     });
   }, [queueItems, session?.user.id]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadAppIcon() {
-      const settings = await db.settings.get(1);
-      if (!active) return;
-      const variant = normalizeAppIconVariant(settings?.appIconVariant ?? getStoredAppIconVariant());
-      setAppIconVariant(variant);
-      setAppIconMessage(`Optie ${variant} is actief.`);
-      storeAppIconVariant(variant);
-      setFavicon(getAppIconPath(variant));
-      announceAppIconVariant(variant);
-    }
-
-    void loadAppIcon();
-    const handleSettingsSynced = () => { void loadAppIcon(); };
-    window.addEventListener("hazali:settings-synced", handleSettingsSynced);
-    return () => {
-      active = false;
-      window.removeEventListener("hazali:settings-synced", handleSettingsSynced);
-    };
-  }, []);
 
   const stats = useMemo(() => {
     const omzet = data.prints.reduce((sum, print) => sum + Number(print.verkoopprijs || 0), 0);
@@ -298,32 +258,6 @@ export default function Dashboard() {
     setQueueItems((current) => current.map((item) => item.id === id ? { ...item, completed: !item.completed } : item));
   }
 
-  async function selectAppIcon(variant: AppIconVariant) {
-    if (variant === appIconVariant || appIconSaving) return;
-
-    const previousVariant = appIconVariant;
-    setAppIconVariant(variant);
-    setAppIconSaving(true);
-    setAppIconMessage(`Optie ${variant} opslaan...`);
-    storeAppIconVariant(variant);
-    setFavicon(getAppIconPath(variant));
-    announceAppIconVariant(variant);
-
-    try {
-      const currentSettings = await db.settings.get(1);
-      await saveAppSettings(settingsWithAppIcon(currentSettings, variant));
-      setAppIconMessage(`Optie ${variant} is actief.`);
-    } catch (error) {
-      setAppIconVariant(previousVariant);
-      storeAppIconVariant(previousVariant);
-      setFavicon(getAppIconPath(previousVariant));
-      announceAppIconVariant(previousVariant);
-      setAppIconMessage(error instanceof Error ? error.message : "App-icoon opslaan is mislukt.");
-    } finally {
-      setAppIconSaving(false);
-    }
-  }
-
   return (
     <div className="dashboard-page">
       <header className="dashboard-hero">
@@ -402,45 +336,6 @@ export default function Dashboard() {
         />
       </section>
 
-      <section className="dashboard-panel dashboard-icon-settings" aria-labelledby="dashboard-app-icon-title">
-        <div className="dashboard-panel__header dashboard-icon-settings__header">
-          <div>
-            <span className="dashboard-section-label">Instellingen</span>
-            <h2 id="dashboard-app-icon-title">App-icoon</h2>
-          </div>
-          <Palette size={22} className="dashboard-icon-settings__symbol" />
-          <div className="dashboard-icon-current" aria-live="polite">
-            <img src={getAppIconPath(appIconVariant)} alt="" />
-            <span>{appIconMessage}</span>
-          </div>
-        </div>
-        <p className="dashboard-icon-note">
-          Het gekozen icoon wordt direct toegepast in de webapp en browser. Voor het homescreen-icoon moet je de app mogelijk opnieuw installeren.
-        </p>
-        <div className="dashboard-icon-grid">
-          {APP_ICON_VARIANTS.map((variant) => {
-            const selected = appIconVariant === variant;
-            return (
-              <button
-                key={variant}
-                type="button"
-                className={`dashboard-icon-option${selected ? " dashboard-icon-option--selected" : ""}`}
-                aria-label={`Kies app-icoon optie ${variant}`}
-                aria-pressed={selected}
-                disabled={appIconSaving}
-                onClick={() => { void selectAppIcon(variant); }}
-              >
-                <span className="dashboard-icon-option__preview">
-                  <img src={getAppIconPath(variant)} alt="" loading="lazy" />
-                  {selected && <span className="dashboard-icon-option__check"><Check size={14} /></span>}
-                </span>
-                <span>Optie {variant}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
       <section className="dashboard-layout">
         <div className="dashboard-panel dashboard-recent">
           <div className="dashboard-panel__header">
@@ -506,25 +401,6 @@ export default function Dashboard() {
       </section>
     </div>
   );
-}
-
-function settingsWithAppIcon(current: SettingsModel | undefined, appIconVariant: AppIconVariant): SettingsModel {
-  return {
-    id: 1,
-    printerNaam: current?.printerNaam ?? "Bambu Lab P2S",
-    stroomPrijs: current?.stroomPrijs ?? 0.23,
-    printerVermogen: current?.printerVermogen ?? 180,
-    btw: current?.btw ?? 21,
-    verpakking: current?.verpakking ?? 0.3,
-    onderhoud: current?.onderhoud ?? 0.1,
-    platform: current?.platform ?? "Etsy",
-    platformKosten: current?.platformKosten ?? 6.5,
-    printerIp: current?.printerIp,
-    printerRemoteUrl: current?.printerRemoteUrl,
-    printerCameraUrl: current?.printerCameraUrl,
-    printerDeviceToken: current?.printerDeviceToken,
-    appIconVariant,
-  };
 }
 
 function formatPrintTime(seconds?: number) {

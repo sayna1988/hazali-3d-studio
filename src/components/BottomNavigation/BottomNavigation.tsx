@@ -5,7 +5,8 @@ import { NavLink } from "react-router-dom";
 import {
   House,
   Package,
-  Boxes
+  Boxes,
+  Settings
 } from "lucide-react";
 
 export default function BottomNavigation() {
@@ -35,6 +36,14 @@ export default function BottomNavigation() {
         <Boxes size={22} />
 
         <span>Filament</span>
+
+      </NavLink>
+
+      <NavLink to="/instellingen">
+
+        <Settings size={22} />
+
+        <span>Instellingen</span>
 
       </NavLink>
 

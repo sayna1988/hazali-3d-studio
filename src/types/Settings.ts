@@ -30,4 +30,6 @@ export interface SettingsModel {
 
   appIconVariant?: string;
 
+  appThemeVariant?: string;
+
 }

@@ -8,6 +8,12 @@ import {
   setFavicon,
   storeAppIconVariant,
 } from "../utils/appIcon";
+import {
+  announceAppThemeVariant,
+  applyAppThemeVariant,
+  normalizeAppThemeVariant,
+  storeAppThemeVariant,
+} from "../utils/appTheme";
 
 function cloudData(settings: SettingsModel) {
   return Object.fromEntries(
@@ -27,6 +33,14 @@ function applySettingsIcon(settings: Partial<SettingsModel>) {
   storeAppIconVariant(variant);
   setFavicon(getAppIconPath(variant));
   announceAppIconVariant(variant);
+}
+
+function applySettingsTheme(settings: Partial<SettingsModel>) {
+  if (!settings.appThemeVariant) return;
+  const variant = normalizeAppThemeVariant(settings.appThemeVariant);
+  storeAppThemeVariant(variant);
+  applyAppThemeVariant(variant);
+  announceAppThemeVariant(variant);
 }
 
 export async function syncSettings() {
@@ -50,6 +64,7 @@ export async function syncSettings() {
     if (result.error) throw result.error;
     await db.settings.update(1, { syncPending: false });
     applySettingsIcon(local);
+    applySettingsTheme(local);
     return;
   }
 
@@ -57,11 +72,13 @@ export async function syncSettings() {
     const remoteSettings = { ...remote.data, id: 1, syncPending: false } as SettingsModel;
     await db.settings.put(remoteSettings);
     applySettingsIcon(remoteSettings);
+    applySettingsTheme(remoteSettings);
   }
 }
 
 export async function saveSettings(settings: SettingsModel) {
   await db.settings.put({ ...settings, id: 1, syncPending: true });
   applySettingsIcon(settings);
+  applySettingsTheme(settings);
   try { await syncSettings(); } catch (error) { console.warn("Instellingensync uitgesteld:", error); }
 }

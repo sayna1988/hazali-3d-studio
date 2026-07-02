@@ -1,0 +1,172 @@
+html[data-hazali-theme="glassmorphism"] {
+  --color-primary: #38bdf8;
+  --color-primary-hover: #7dd3fc;
+  --bg-page: #dff4ff;
+  --bg-sidebar: rgba(7, 30, 52, 0.58);
+  --bg-card: rgba(255, 255, 255, 0.32);
+  --bg-card-hover: rgba(255, 255, 255, 0.45);
+  --border-color: rgba(255, 255, 255, 0.44);
+  --text-primary: #f8fbff;
+  --text-secondary: #cde8f6;
+  --text-muted: #9ec4d7;
+  --shadow-card: 0 18px 48px rgba(5, 28, 48, 0.22);
+}
+
+html[data-hazali-theme="pokemon"] {
+  --color-primary: #ffcb05;
+  --color-primary-hover: #ffe066;
+  --bg-page: #101f4b;
+  --bg-sidebar: #17285d;
+  --bg-card: #1b3476;
+  --bg-card-hover: #244391;
+  --border-color: rgba(255, 203, 5, 0.28);
+  --text-primary: #ffffff;
+  --text-secondary: #d9e8ff;
+  --text-muted: #9bb5e6;
+  --warning: #ffcb05;
+  --danger: #ef2b2d;
+  --shadow-card: 0 14px 36px rgba(2, 8, 28, 0.32);
+}
+
+html[data-hazali-theme="dragonball-z"] {
+  --color-primary: #ff7a00;
+  --color-primary-hover: #ffb000;
+  --bg-page: #170d28;
+  --bg-sidebar: #120a22;
+  --bg-card: #21123a;
+  --bg-card-hover: #2b174c;
+  --border-color: rgba(255, 122, 0, 0.28);
+  --text-primary: #fffaf4;
+  --text-secondary: #f4d7bd;
+  --text-muted: #c59a78;
+  --warning: #ffb000;
+  --shadow-card: 0 14px 38px rgba(36, 12, 0, 0.32);
+}
+
+html[data-hazali-theme="glassmorphism"] body {
+  background:
+    linear-gradient(135deg, rgba(58, 175, 255, 0.48), rgba(255, 255, 255, 0.34) 42%, rgba(111, 227, 255, 0.35)),
+    #dff4ff;
+}
+
+html[data-hazali-theme="pokemon"] body {
+  background:
+    radial-gradient(circle at 12% 0, rgba(239, 43, 45, 0.34), transparent 34%),
+    radial-gradient(circle at 90% 12%, rgba(255, 203, 5, 0.26), transparent 32%),
+    linear-gradient(145deg, #101f4b, #07112d 58%, #132c67);
+}
+
+html[data-hazali-theme="dragonball-z"] body {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 176, 0, 0.34), transparent 34%),
+    radial-gradient(circle at 88% 6%, rgba(23, 63, 216, 0.34), transparent 30%),
+    linear-gradient(145deg, #170d28, #2a1236 55%, #431909);
+}
+
+html[data-hazali-theme="glassmorphism"] .sidebar,
+html[data-hazali-theme="glassmorphism"] .bottom-navigation,
+html[data-hazali-theme="glassmorphism"] .dashboard-panel,
+html[data-hazali-theme="glassmorphism"] .dashboard-kpi,
+html[data-hazali-theme="glassmorphism"] .dashboard-hero,
+html[data-hazali-theme="glassmorphism"] .dashboard-hero__queue,
+html[data-hazali-theme="glassmorphism"] .settings-header,
+html[data-hazali-theme="glassmorphism"] .settings-panel,
+html[data-hazali-theme="glassmorphism"] .inventory-card,
+html[data-hazali-theme="glassmorphism"] .catalog-card {
+  border-color: rgba(255, 255, 255, 0.46);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.28), rgba(8, 31, 55, 0.24));
+  box-shadow: 0 18px 52px rgba(7, 30, 52, 0.24);
+  backdrop-filter: blur(22px);
+}
+
+html[data-hazali-theme="glassmorphism"] .sidebar {
+  background: rgba(4, 22, 39, 0.56);
+}
+
+html[data-hazali-theme="glassmorphism"] .dashboard-queue__input input,
+html[data-hazali-theme="glassmorphism"] input,
+html[data-hazali-theme="glassmorphism"] select,
+html[data-hazali-theme="glassmorphism"] textarea {
+  border-color: rgba(255, 255, 255, 0.36);
+  background: rgba(4, 20, 36, 0.42);
+}
+
+html[data-hazali-theme="pokemon"] .sidebar,
+html[data-hazali-theme="pokemon"] .bottom-navigation,
+html[data-hazali-theme="pokemon"] .dashboard-panel,
+html[data-hazali-theme="pokemon"] .dashboard-kpi,
+html[data-hazali-theme="pokemon"] .dashboard-hero,
+html[data-hazali-theme="pokemon"] .dashboard-hero__queue,
+html[data-hazali-theme="pokemon"] .settings-header,
+html[data-hazali-theme="pokemon"] .settings-panel,
+html[data-hazali-theme="pokemon"] .inventory-card,
+html[data-hazali-theme="pokemon"] .catalog-card {
+  border-color: rgba(255, 203, 5, 0.26);
+  background:
+    linear-gradient(145deg, rgba(239, 43, 45, 0.14), rgba(31, 63, 145, 0.96) 44%, rgba(12, 26, 67, 0.98));
+}
+
+html[data-hazali-theme="pokemon"] .sidebar nav a.active,
+html[data-hazali-theme="pokemon"] .bottom-navigation a.active {
+  color: #ffcb05;
+  border-color: rgba(255, 203, 5, 0.5);
+  background: rgba(239, 43, 45, 0.16);
+  box-shadow: 0 0 18px rgba(255, 203, 5, 0.16);
+}
+
+html[data-hazali-theme="pokemon"] .dashboard-section-label,
+html[data-hazali-theme="pokemon"] .settings-section-label,
+html[data-hazali-theme="pokemon"] .settings-eyebrow,
+html[data-hazali-theme="pokemon"] .dashboard-eyebrow,
+html[data-hazali-theme="pokemon"] .dashboard-print-price,
+html[data-hazali-theme="pokemon"] .dashboard-link-row {
+  color: #ffcb05;
+}
+
+html[data-hazali-theme="pokemon"] .dashboard-btn--primary,
+html[data-hazali-theme="pokemon"] .dashboard-queue__input button,
+html[data-hazali-theme="pokemon"] .new-print-button,
+html[data-hazali-theme="pokemon"] .save-button {
+  color: #12245b;
+  background: linear-gradient(135deg, #ffcb05, #ffe066);
+}
+
+html[data-hazali-theme="dragonball-z"] .sidebar,
+html[data-hazali-theme="dragonball-z"] .bottom-navigation,
+html[data-hazali-theme="dragonball-z"] .dashboard-panel,
+html[data-hazali-theme="dragonball-z"] .dashboard-kpi,
+html[data-hazali-theme="dragonball-z"] .dashboard-hero,
+html[data-hazali-theme="dragonball-z"] .dashboard-hero__queue,
+html[data-hazali-theme="dragonball-z"] .settings-header,
+html[data-hazali-theme="dragonball-z"] .settings-panel,
+html[data-hazali-theme="dragonball-z"] .inventory-card,
+html[data-hazali-theme="dragonball-z"] .catalog-card {
+  border-color: rgba(255, 122, 0, 0.28);
+  background:
+    linear-gradient(145deg, rgba(255, 122, 0, 0.14), rgba(18, 10, 34, 0.98) 46%, rgba(23, 63, 216, 0.16));
+}
+
+html[data-hazali-theme="dragonball-z"] .sidebar nav a.active,
+html[data-hazali-theme="dragonball-z"] .bottom-navigation a.active {
+  color: #ffb000;
+  border-color: rgba(255, 122, 0, 0.5);
+  background: rgba(255, 122, 0, 0.16);
+  box-shadow: 0 0 18px rgba(255, 122, 0, 0.18);
+}
+
+html[data-hazali-theme="dragonball-z"] .dashboard-section-label,
+html[data-hazali-theme="dragonball-z"] .settings-section-label,
+html[data-hazali-theme="dragonball-z"] .settings-eyebrow,
+html[data-hazali-theme="dragonball-z"] .dashboard-eyebrow,
+html[data-hazali-theme="dragonball-z"] .dashboard-print-price,
+html[data-hazali-theme="dragonball-z"] .dashboard-link-row {
+  color: #ffb000;
+}
+
+html[data-hazali-theme="dragonball-z"] .dashboard-btn--primary,
+html[data-hazali-theme="dragonball-z"] .dashboard-queue__input button,
+html[data-hazali-theme="dragonball-z"] .new-print-button,
+html[data-hazali-theme="dragonball-z"] .save-button {
+  background: linear-gradient(135deg, #ff7a00, #ffb000);
+}
