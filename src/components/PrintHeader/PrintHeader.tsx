@@ -1,20 +1,62 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { FileUp, Link2, Upload } from "lucide-react";
 import "./PrintHeader.css";
+import type { CatalogFolder } from "../../types/CatalogFolder";
+import { sortFolders } from "../../services/CatalogFolderService";
 
 interface Props {
   onFiles: (files: File[]) => void;
-  onMakerWorld: (url: string) => void;
+  onMakerWorld: (url: string, folderId: number | null) => void;
+  makerWorldFolderId: number | null;
+  onMakerWorldFolderChange: (folderId: number | null) => void;
+  folders?: CatalogFolder[];
   importing?: boolean;
   makerWorldImporting?: boolean;
   importProgress?: { current: number; total: number } | null;
 }
 
-export default function PrintHeader({ onFiles, onMakerWorld, importing = false, makerWorldImporting = false, importProgress = null }: Props) {
+interface FolderOption {
+  folder: CatalogFolder;
+  depth: number;
+}
+
+function folderOptions(folders: CatalogFolder[]) {
+  const byParent = new Map<number | null, CatalogFolder[]>();
+  folders.forEach((folder) => {
+    const parentId = folder.parentId ?? null;
+    byParent.set(parentId, [...(byParent.get(parentId) ?? []), folder]);
+  });
+  byParent.forEach((items) => items.sort(sortFolders));
+
+  const options: FolderOption[] = [];
+  const visited = new Set<number>();
+  const visit = (parentId: number | null, depth: number) => {
+    for (const folder of byParent.get(parentId) ?? []) {
+      if (folder.id === undefined || visited.has(folder.id)) continue;
+      visited.add(folder.id);
+      options.push({ folder, depth });
+      visit(folder.id, depth + 1);
+    }
+  };
+  visit(null, 0);
+  return options;
+}
+
+export default function PrintHeader({
+  onFiles,
+  onMakerWorld,
+  makerWorldFolderId,
+  onMakerWorldFolderChange,
+  folders = [],
+  importing = false,
+  makerWorldImporting = false,
+  importProgress = null
+}: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [makerWorldUrl, setMakerWorldUrl] = useState("");
+  const makerWorldFolderOptions = useMemo(() => folderOptions(folders), [folders]);
   const progressPercentage = importProgress?.total
     ? Math.min(100, Math.max(0, (importProgress.current / importProgress.total) * 100))
     : 0;
@@ -27,7 +69,7 @@ export default function PrintHeader({ onFiles, onMakerWorld, importing = false, 
   function submitMakerWorld(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = makerWorldUrl.trim();
-    if (value && !makerWorldImporting && !importing) onMakerWorld(value);
+    if (value && !makerWorldImporting && !importing) onMakerWorld(value, makerWorldFolderId);
   }
 
   return (
@@ -105,6 +147,20 @@ export default function PrintHeader({ onFiles, onMakerWorld, importing = false, 
             disabled={makerWorldImporting || importing}
             required
           />
+          <select
+            className="makerworld-folder-select"
+            value={makerWorldFolderId ?? ""}
+            onChange={(event) => onMakerWorldFolderChange(event.target.value ? Number(event.target.value) : null)}
+            disabled={makerWorldImporting || importing}
+            aria-label="MakerWorld importmap"
+          >
+            <option value="">Catalogus hoofdmap</option>
+            {makerWorldFolderOptions.map(({ folder, depth }) => (
+              <option key={folder.id} value={folder.id}>
+                {"--".repeat(depth)}{depth > 0 ? " " : ""}{folder.name}
+              </option>
+            ))}
+          </select>
           <button type="submit" disabled={!makerWorldUrl.trim() || makerWorldImporting || importing}>
             {makerWorldImporting ? <span className="makerworld-spinner" aria-hidden="true" /> : <Link2 size={16} />}
             {makerWorldImporting ? "Importeren…" : "Importeren"}

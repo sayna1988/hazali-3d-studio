@@ -53,6 +53,8 @@ interface MovePrintSelection {
   initialFolderId: number | null;
 }
 
+type MakerWorldFolderSelection = number | null | "current";
+
 function catalogusVoorraadMap(producten: Inventory[]) {
   return Object.fromEntries(
     producten
@@ -83,6 +85,7 @@ export default function Prints() {
   const [filamentVoorraad, setFilamentVoorraad] = useState<Filament[]>([]);
   const [folders, setFolders] = useState<CatalogFolder[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
+  const [makerWorldFolderSelection, setMakerWorldFolderSelection] = useState<MakerWorldFolderSelection>("current");
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [folderModalError, setFolderModalError] = useState("");
   const [folderSaving, setFolderSaving] = useState(false);
@@ -279,11 +282,11 @@ export default function Prints() {
     }
   }
 
-  async function importeerMakerWorld(url: string) {
+  async function importeerMakerWorld(url: string, folderId: number | null) {
     setMakerWorldImporting(true);
     setImportMessage(null);
     try {
-      const result = await importMakerWorldUrl(url, undefined, currentFolderId);
+      const result = await importMakerWorldUrl(url, undefined, folderId);
       await laden();
       setImportMessage({
         type: "success",
@@ -368,6 +371,11 @@ export default function Prints() {
     () => new Map(folders.filter((folder) => folder.id !== undefined).map((folder) => [folder.id!, folder])),
     [folders]
   );
+
+  const makerWorldFolderId = useMemo(() => {
+    const selectedFolderId = makerWorldFolderSelection === "current" ? currentFolderId : makerWorldFolderSelection;
+    return selectedFolderId !== null && !folderById.has(selectedFolderId) ? null : selectedFolderId;
+  }, [currentFolderId, folderById, makerWorldFolderSelection]);
 
   const folderPath = useCallback((folderId: number | null) => {
     const path: CatalogFolder[] = [];
@@ -657,7 +665,10 @@ export default function Prints() {
     <div>
       <PrintHeader
         onFiles={(files) => void importeer3MF(files)}
-        onMakerWorld={(url) => void importeerMakerWorld(url)}
+        onMakerWorld={(url, folderId) => void importeerMakerWorld(url, folderId)}
+        makerWorldFolderId={makerWorldFolderId}
+        onMakerWorldFolderChange={(folderId) => setMakerWorldFolderSelection(folderId)}
+        folders={folders}
         importing={importing}
         makerWorldImporting={makerWorldImporting}
         importProgress={importProgress}
