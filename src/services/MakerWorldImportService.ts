@@ -48,10 +48,10 @@ export async function loadMakerWorldMetadata(url: string) {
   return response.json() as Promise<MakerWorldImportData>;
 }
 
-export async function importMakerWorldUrl(url: string, metadata?: MakerWorldImportData) {
+export async function importMakerWorldUrl(url: string, metadata?: MakerWorldImportData, folderId: number | null = null) {
   const data = metadata || await loadMakerWorldMetadata(url);
   const file = await download3MF(data);
-  const result = await import3MF(file);
+  const result = await import3MF(file, folderId);
   const print = await db.prints.get(result.id);
   if (!print) throw new Error("De geïmporteerde print kon niet worden opgeslagen.");
 

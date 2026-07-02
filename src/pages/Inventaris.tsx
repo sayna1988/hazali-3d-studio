@@ -2,9 +2,7 @@ import "./InventarisNext.css";
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import {
-  AlertTriangle,
   Boxes,
-  CircleDollarSign,
   Grid2X2,
   List,
   Minus,
@@ -127,13 +125,6 @@ export default function Inventaris() {
     await laden();
   }
 
-  const stats = useMemo(() => {
-    const totaleStuks = producten.reduce((totaal, item) => totaal + item.voorraad, 0);
-    const verkoopwaarde = producten.reduce((totaal, item) => totaal + item.voorraad * item.verkoopprijs, 0);
-    const lageVoorraad = producten.filter((item) => item.voorraad <= item.minimumVoorraad).length;
-    return { totaleStuks, verkoopwaarde, lageVoorraad };
-  }, [producten]);
-
   const zichtbareProducten = useMemo(() => {
     const term = zoeken.toLocaleLowerCase("nl").trim();
     return producten.filter((product) => {
@@ -158,12 +149,6 @@ export default function Inventaris() {
           <p>Alles wat klaarstaat om verkocht te worden, helder op een plek.</p>
         </div>
       </header>
-
-      <section className="inventory-stats" aria-label="Inventarisoverzicht">
-        <article className="inventory-stat-card"><span className="inventory-stat-icon blue"><Boxes size={20} /></span><div><span>Producten</span><strong>{producten.length}</strong></div><small>{stats.totaleStuks} stuks op voorraad</small></article>
-        <article className="inventory-stat-card"><span className="inventory-stat-icon green"><CircleDollarSign size={20} /></span><div><span>Verkoopwaarde</span><strong>{euro.format(stats.verkoopwaarde)}</strong></div><small>Potentiele omzet</small></article>
-        <article className={`inventory-stat-card ${stats.lageVoorraad > 0 ? "needs-attention" : ""}`}><span className="inventory-stat-icon orange"><AlertTriangle size={20} /></span><div><span>Aandacht nodig</span><strong>{stats.lageVoorraad}</strong></div><small>{stats.lageVoorraad ? "Onder minimumvoorraad" : "Alles is op niveau"}</small></article>
-      </section>
 
       <section className="inventory-workspace">
         <div className="inventory-toolbar">

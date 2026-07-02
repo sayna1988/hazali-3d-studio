@@ -1,4 +1,4 @@
-import { ArrowUpDown, ChevronDown, Grid2X2, List, Search, Tag } from "lucide-react";
+import { ArrowUpDown, ChevronDown, FileDown, Grid2X2, List, Search } from "lucide-react";
 import "./PrintToolbar.css";
 
 interface Props {
@@ -8,11 +8,10 @@ interface Props {
 
   sortering: string;
   setSortering: (value: string) => void;
-  tagRanking: Array<{ tag: string; aantal: number }>;
-  geselecteerdeTag: string;
-  setGeselecteerdeTag: (value: string) => void;
   weergave: "tabel" | "grid";
   setWeergave: (value: "tabel" | "grid") => void;
+  onExport: () => void;
+  exportBezig: boolean;
 
 }
 
@@ -22,18 +21,16 @@ export default function PrintToolbar({
   setZoekterm,
   sortering,
   setSortering,
-  tagRanking,
-  geselecteerdeTag,
-  setGeselecteerdeTag,
   weergave,
-  setWeergave
+  setWeergave,
+  onExport,
+  exportBezig
 
 }: Props) {
 
   return (
 
-    <>
-    <div className="prints-toolbar">
+    <div className="prints-toolbar compact">
 
       <div className="search-wrapper">
 
@@ -78,6 +75,22 @@ export default function PrintToolbar({
             Nieuwste eerst
           </option>
 
+          <option value="oudste">
+            Oudste eerst
+          </option>
+
+          <option value="naam-az">
+            Naam A-Z
+          </option>
+
+          <option value="naam-za">
+            Naam Z-A
+          </option>
+
+          <option value="handmatig">
+            Handmatige volgorde
+          </option>
+
           <option value="winst">
             Hoogste winst
           </option>
@@ -85,15 +98,6 @@ export default function PrintToolbar({
           <option value="verkoopprijs">
             Hoogste vk-prijs
           </option>
-        </select>
-        <ChevronDown size={16} aria-hidden="true" />
-      </label>
-
-      <label className="toolbar-select toolbar-select--tag">
-        <Tag size={16} aria-hidden="true" />
-        <select className="sort-select tag-filter" value={geselecteerdeTag} onChange={(event) => setGeselecteerdeTag(event.target.value)} aria-label="Filter op tag">
-          <option value="">Alle tags</option>
-          {tagRanking.map(({ tag, aantal }) => <option key={tag} value={tag}>{tag} ({aantal})</option>)}
         </select>
         <ChevronDown size={16} aria-hidden="true" />
       </label>
@@ -109,36 +113,12 @@ export default function PrintToolbar({
         </button>
       </div>
 
-    </div>
+      <button type="button" className="catalog-export-button" onClick={onExport} disabled={exportBezig}>
+        <FileDown size={16} />
+        <span>{exportBezig ? "Exporteren..." : "Export PDF"}</span>
+      </button>
 
-    <section className="tag-ranking" aria-labelledby="tag-ranking-title">
-      <div className="tag-ranking__heading">
-        <div>
-          <Tag size={17} aria-hidden="true" />
-          <strong id="tag-ranking-title">Meest gebruikte tags</strong>
-        </div>
-        <span>{tagRanking.length} {tagRanking.length === 1 ? "tag" : "tags"}</span>
-      </div>
-      {tagRanking.length > 0 ? (
-        <div className="tag-ranking__list">
-          {tagRanking.map(({ tag, aantal }) => (
-            <button
-              type="button"
-              key={tag}
-              className={geselecteerdeTag === tag ? "active" : ""}
-              aria-pressed={geselecteerdeTag === tag}
-              onClick={() => setGeselecteerdeTag(geselecteerdeTag === tag ? "" : tag)}
-            >
-              <span className="tag-ranking__name">{tag}</span>
-              <span className="tag-ranking__count">{aantal}</span>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <p className="tag-ranking__empty">Nog geen tags toegevoegd.</p>
-      )}
-    </section>
-    </>
+    </div>
 
   );
 

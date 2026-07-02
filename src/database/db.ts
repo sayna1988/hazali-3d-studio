@@ -4,6 +4,7 @@ import type { Print } from "../types/Print";
 import type { Filament } from "../types/Filament";
 import type { SettingsModel } from "../types/Settings";
 import type { Inventory } from "../types/Inventory";
+import type { CatalogFolder } from "../types/CatalogFolder";
 
 export class HazaliDatabase extends Dexie {
 
@@ -11,9 +12,11 @@ export class HazaliDatabase extends Dexie {
 
   prints!: Dexie.Table<Print, number>;
 
+  folders!: Dexie.Table<CatalogFolder, number>;
+
   printBestanden!: Dexie.Table<{ printId: number; bestand: Blob }, number>;
 
-  syncDeletions!: Dexie.Table<{ key: string; entity: "print" | "inventory" | "filament"; cloudId: string; userId?: string }, string>;
+  syncDeletions!: Dexie.Table<{ key: string; entity: "print" | "inventory" | "filament" | "folder"; cloudId: string; userId?: string }, string>;
 
   settings!: Dexie.Table<SettingsModel, number>;
 
@@ -92,6 +95,26 @@ export class HazaliDatabase extends Dexie {
     this.version(12).stores({
       filamenten: "++id, &cloudId, syncKey, naam, merk, kleur, type, ean",
       prints: "++id, &cloudId, syncKey, naam, aangemaaktOp",
+      printBestanden: "&printId",
+      syncDeletions: "&key, entity, userId",
+      settings: "++id",
+      inventory: "++id, &cloudId, syncKey, printId, printCloudId, naam, sku, voorraad"
+    });
+
+    this.version(13).stores({
+      filamenten: "++id, &cloudId, syncKey, naam, merk, kleur, type, ean",
+      prints: "++id, &cloudId, syncKey, naam, folderId, aangemaaktOp",
+      folders: "++id, name, parentId, createdAt, updatedAt, sortOrder",
+      printBestanden: "&printId",
+      syncDeletions: "&key, entity, userId",
+      settings: "++id",
+      inventory: "++id, &cloudId, syncKey, printId, printCloudId, naam, sku, voorraad"
+    });
+
+    this.version(14).stores({
+      filamenten: "++id, &cloudId, syncKey, naam, merk, kleur, type, ean",
+      prints: "++id, &cloudId, syncKey, naam, folderId, folderCloudId, aangemaaktOp",
+      folders: "++id, &cloudId, syncKey, name, parentId, parentCloudId, createdAt, updatedAt, sortOrder",
       printBestanden: "&printId",
       syncDeletions: "&key, entity, userId",
       settings: "++id",

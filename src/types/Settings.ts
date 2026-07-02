@@ -28,4 +28,6 @@ export interface SettingsModel {
 
   printerDeviceToken?: string;
 
+  appIconVariant?: string;
+
 }

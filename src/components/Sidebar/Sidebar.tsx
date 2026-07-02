@@ -1,26 +1,44 @@
 import "./Sidebar.css";
 
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import {
   LayoutDashboard,
-  PlusCircle,
   Package,
   Boxes,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../auth/AuthProvider";
+import { getAppIconPath, getStoredAppIconVariant, normalizeAppIconVariant } from "../../utils/appIcon";
 
 export default function Sidebar() {
 
   const { session, signOut } = useAuth();
+  const [logoSrc, setLogoSrc] = useState(() => getAppIconPath(getStoredAppIconVariant()));
+
+  useEffect(() => {
+    function updateLogo(event?: Event) {
+      const variant = event instanceof CustomEvent
+        ? normalizeAppIconVariant(event.detail?.variant)
+        : getStoredAppIconVariant();
+      setLogoSrc(getAppIconPath(variant));
+    }
+
+    window.addEventListener("hazali:app-icon-changed", updateLogo);
+    window.addEventListener("storage", updateLogo);
+    return () => {
+      window.removeEventListener("hazali:app-icon-changed", updateLogo);
+      window.removeEventListener("storage", updateLogo);
+    };
+  }, []);
 
   return (
 
     <aside className="sidebar">
 
       <img
-        src="/logo.png"
+        src={logoSrc}
         alt="Hazali"
         className="logo-image"
       />
@@ -30,11 +48,6 @@ export default function Sidebar() {
         <NavLink to="/" end className={({ isActive }) => isActive ? "active" : ""}>
           <LayoutDashboard size={16}/>
           Dashboard
-        </NavLink>
-
-        <NavLink to="/inventaris" className={({ isActive }) => isActive ? "active" : ""}>
-          <PlusCircle size={16}/>
-          Inventaris
         </NavLink>
 
         <NavLink to="/prints" className={({ isActive }) => isActive ? "active" : ""}>

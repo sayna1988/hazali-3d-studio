@@ -6,6 +6,7 @@ import { syncPrints } from "../services/PrintSyncService";
 import { syncFilaments } from "../services/FilamentSyncService";
 import { syncInventory } from "../services/InventorySyncService";
 import { syncSettings } from "../services/SettingsSyncService";
+import { syncCatalogFolders } from "../services/CatalogFolderSyncService";
 
 type AuthContextValue = {
   session: Session | null;
@@ -36,12 +37,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       synchronizing = true;
       try {
-        // Prints eerst, zodat inventarisitems hun printCloudId op elk apparaat
-        // aan de juiste lokale print kunnen koppelen.
+        // Mappen eerst, zodat prints hun folderCloudId op elk apparaat aan de
+        // juiste lokale map kunnen koppelen.
+        await syncCatalogFolders();
         await Promise.all([syncPrints(), syncFilaments()]);
         await Promise.all([syncInventory(), syncSettings()]);
         if (active) {
           setSyncError(null);
+          window.dispatchEvent(new Event("hazali:folders-synced"));
           window.dispatchEvent(new Event("hazali:prints-synced"));
           window.dispatchEvent(new Event("hazali:inventory-synced"));
           window.dispatchEvent(new Event("hazali:settings-synced"));
@@ -96,6 +99,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .on("postgres_changes", { event: "*", schema: "public", table: "app_settings" }, scheduleSync)
       .subscribe();
 
+    const folderChannel = supabase
+      .channel("catalog-folder-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "catalog_folders" }, scheduleSync)
+      .subscribe();
+
     function applySession(nextSession: Session | null) {
       if (!active) return;
       setSession(nextSession);
@@ -134,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       void supabase?.removeChannel(inventoryChannel);
       void supabase?.removeChannel(filamentChannel);
       void supabase?.removeChannel(settingsChannel);
+      void supabase?.removeChannel(folderChannel);
       listener.subscription.unsubscribe();
     };
   }, []);
