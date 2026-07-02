@@ -793,6 +793,10 @@
 }
 
 @media (max-width: 460px) {
-  .dashboard-kpis { grid-template-columns: 1fr; }
+  .dashboard-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-kpi { padding: 14px; }
+  .dashboard-kpi__top { gap: 8px; margin-bottom: 14px; }
+  .dashboard-kpi__top > span { width: 32px; height: 32px; }
+  .dashboard-kpi p { line-height: 1.35; }
   .dashboard-panel__header { flex-wrap: wrap; }
 }
