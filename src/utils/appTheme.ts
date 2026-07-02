@@ -12,14 +12,29 @@ export const APP_THEME_VARIANTS = [
     description: "Transparante panelen, zachte randen en glasachtige diepte.",
   },
   {
-    id: "pokemon",
-    label: "Pokemon",
-    description: "Een speelse rood-geel-blauwe palette voor je studio.",
+    id: "aurora",
+    label: "Aurora",
+    description: "Een moderne mix van teal, violet en diepe nachttinten.",
   },
   {
-    id: "dragonball-z",
-    label: "Dragon Ball Z",
-    description: "Oranje, blauw en fel contrast geinspireerd op anime energie.",
+    id: "graphite",
+    label: "Graphite",
+    description: "Rustige charcoal-basis met scherpe lime en cyan accenten.",
+  },
+  {
+    id: "sage",
+    label: "Sage",
+    description: "Zachte groentinten met heldere mint en warme coral details.",
+  },
+  {
+    id: "copper",
+    label: "Copper",
+    description: "Donkere studio-interface met koper, teal en amber.",
+  },
+  {
+    id: "prism",
+    label: "Prism",
+    description: "Strakke donkere basis met fuchsia, cyan en gouden highlights.",
   },
 ] as const;
 
@@ -72,10 +87,16 @@ function themeColorForVariant(variant: AppThemeVariant) {
   switch (variant) {
     case "glassmorphism":
       return "#d8f3ff";
-    case "pokemon":
-      return "#ef2b2d";
-    case "dragonball-z":
-      return "#ff7a00";
+    case "aurora":
+      return "#14b8a6";
+    case "graphite":
+      return "#a3e635";
+    case "sage":
+      return "#7dd3a8";
+    case "copper":
+      return "#d97706";
+    case "prism":
+      return "#d946ef";
     default:
       return "#0094ff";
   }

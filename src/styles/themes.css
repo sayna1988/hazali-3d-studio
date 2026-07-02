@@ -7,166 +7,425 @@ html[data-hazali-theme="glassmorphism"] {
   --bg-card-hover: rgba(255, 255, 255, 0.45);
   --border-color: rgba(255, 255, 255, 0.44);
   --text-primary: #f8fbff;
-  --text-secondary: #cde8f6;
-  --text-muted: #9ec4d7;
+  --text-secondary: #d7edf8;
+  --text-muted: #a8ccdc;
   --shadow-card: 0 18px 48px rgba(5, 28, 48, 0.22);
-}
-
-html[data-hazali-theme="pokemon"] {
-  --color-primary: #ffcb05;
-  --color-primary-hover: #ffe066;
-  --bg-page: #101f4b;
-  --bg-sidebar: #17285d;
-  --bg-card: #1b3476;
-  --bg-card-hover: #244391;
-  --border-color: rgba(255, 203, 5, 0.28);
-  --text-primary: #ffffff;
-  --text-secondary: #d9e8ff;
-  --text-muted: #9bb5e6;
-  --warning: #ffcb05;
-  --danger: #ef2b2d;
-  --shadow-card: 0 14px 36px rgba(2, 8, 28, 0.32);
-}
-
-html[data-hazali-theme="dragonball-z"] {
-  --color-primary: #ff7a00;
-  --color-primary-hover: #ffb000;
-  --bg-page: #170d28;
-  --bg-sidebar: #120a22;
-  --bg-card: #21123a;
-  --bg-card-hover: #2b174c;
-  --border-color: rgba(255, 122, 0, 0.28);
-  --text-primary: #fffaf4;
-  --text-secondary: #f4d7bd;
-  --text-muted: #c59a78;
-  --warning: #ffb000;
-  --shadow-card: 0 14px 38px rgba(36, 12, 0, 0.32);
-}
-
-html[data-hazali-theme="glassmorphism"] body {
-  background:
+  --theme-page-bg:
     linear-gradient(135deg, rgba(58, 175, 255, 0.48), rgba(255, 255, 255, 0.34) 42%, rgba(111, 227, 255, 0.35)),
     #dff4ff;
+  --theme-surface: rgba(4, 22, 39, 0.56);
+  --theme-panel-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.28), rgba(8, 31, 55, 0.24));
+  --theme-panel-hover: linear-gradient(145deg, rgba(255, 255, 255, 0.36), rgba(8, 31, 55, 0.3));
+  --theme-input-bg: rgba(4, 20, 36, 0.42);
+  --theme-accent: #7dd3fc;
+  --theme-accent-2: #c084fc;
+  --theme-accent-3: #5eead4;
+  --theme-accent-soft: rgba(125, 211, 252, 0.17);
+  --theme-accent-contrast: #052033;
+  --theme-border: rgba(255, 255, 255, 0.46);
+  --theme-border-strong: rgba(125, 211, 252, 0.5);
 }
 
-html[data-hazali-theme="pokemon"] body {
-  background:
-    radial-gradient(circle at 12% 0, rgba(239, 43, 45, 0.34), transparent 34%),
-    radial-gradient(circle at 90% 12%, rgba(255, 203, 5, 0.26), transparent 32%),
-    linear-gradient(145deg, #101f4b, #07112d 58%, #132c67);
+html[data-hazali-theme="aurora"] {
+  --color-primary: #2dd4bf;
+  --color-primary-hover: #5eead4;
+  --bg-page: #07111f;
+  --bg-sidebar: #081421;
+  --bg-card: #0d1c2c;
+  --bg-card-hover: #13283c;
+  --border-color: rgba(45, 212, 191, 0.2);
+  --text-primary: #f7fbff;
+  --text-secondary: #b8d4e2;
+  --text-muted: #7e9baa;
+  --shadow-card: 0 16px 40px rgba(3, 10, 20, 0.34);
+  --theme-page-bg:
+    radial-gradient(circle at 16% 2%, rgba(20, 184, 166, 0.26), transparent 34%),
+    radial-gradient(circle at 86% 8%, rgba(124, 58, 237, 0.24), transparent 30%),
+    linear-gradient(145deg, #07111f, #0a1726 58%, #0d1220);
+  --theme-surface: #081421;
+  --theme-panel-bg: linear-gradient(145deg, rgba(12, 31, 48, 0.98), rgba(8, 18, 31, 0.98));
+  --theme-panel-hover: linear-gradient(145deg, rgba(16, 44, 65, 0.98), rgba(10, 23, 38, 0.98));
+  --theme-input-bg: rgba(5, 17, 30, 0.9);
+  --theme-accent: #2dd4bf;
+  --theme-accent-2: #a78bfa;
+  --theme-accent-3: #f472b6;
+  --theme-accent-soft: rgba(45, 212, 191, 0.13);
+  --theme-accent-contrast: #06201f;
+  --theme-border: rgba(45, 212, 191, 0.2);
+  --theme-border-strong: rgba(45, 212, 191, 0.48);
 }
 
-html[data-hazali-theme="dragonball-z"] body {
-  background:
-    radial-gradient(circle at 18% 12%, rgba(255, 176, 0, 0.34), transparent 34%),
-    radial-gradient(circle at 88% 6%, rgba(23, 63, 216, 0.34), transparent 30%),
-    linear-gradient(145deg, #170d28, #2a1236 55%, #431909);
+html[data-hazali-theme="graphite"] {
+  --color-primary: #a3e635;
+  --color-primary-hover: #bef264;
+  --bg-page: #111315;
+  --bg-sidebar: #15171a;
+  --bg-card: #1b1f22;
+  --bg-card-hover: #24292d;
+  --border-color: rgba(163, 230, 53, 0.19);
+  --text-primary: #f5f7f8;
+  --text-secondary: #c8d0d4;
+  --text-muted: #899399;
+  --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.3);
+  --theme-page-bg:
+    radial-gradient(circle at 82% 0, rgba(34, 211, 238, 0.13), transparent 30%),
+    linear-gradient(145deg, #111315, #181b1f 60%, #0e1012);
+  --theme-surface: #15171a;
+  --theme-panel-bg: linear-gradient(145deg, rgba(31, 35, 38, 0.98), rgba(20, 23, 26, 0.98));
+  --theme-panel-hover: linear-gradient(145deg, rgba(42, 47, 51, 0.98), rgba(25, 29, 32, 0.98));
+  --theme-input-bg: rgba(12, 14, 16, 0.9);
+  --theme-accent: #a3e635;
+  --theme-accent-2: #22d3ee;
+  --theme-accent-3: #f5f7f8;
+  --theme-accent-soft: rgba(163, 230, 53, 0.12);
+  --theme-accent-contrast: #15170d;
+  --theme-border: rgba(163, 230, 53, 0.19);
+  --theme-border-strong: rgba(163, 230, 53, 0.45);
 }
 
-html[data-hazali-theme="glassmorphism"] .sidebar,
-html[data-hazali-theme="glassmorphism"] .bottom-navigation,
-html[data-hazali-theme="glassmorphism"] .dashboard-panel,
-html[data-hazali-theme="glassmorphism"] .dashboard-kpi,
-html[data-hazali-theme="glassmorphism"] .dashboard-hero,
-html[data-hazali-theme="glassmorphism"] .dashboard-hero__queue,
-html[data-hazali-theme="glassmorphism"] .settings-header,
-html[data-hazali-theme="glassmorphism"] .settings-panel,
-html[data-hazali-theme="glassmorphism"] .inventory-card,
-html[data-hazali-theme="glassmorphism"] .catalog-card {
-  border-color: rgba(255, 255, 255, 0.46);
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.28), rgba(8, 31, 55, 0.24));
-  box-shadow: 0 18px 52px rgba(7, 30, 52, 0.24);
+html[data-hazali-theme="sage"] {
+  --color-primary: #7dd3a8;
+  --color-primary-hover: #a7f3d0;
+  --bg-page: #0d1712;
+  --bg-sidebar: #102018;
+  --bg-card: #14251d;
+  --bg-card-hover: #1a3026;
+  --border-color: rgba(125, 211, 168, 0.21);
+  --text-primary: #f7fff9;
+  --text-secondary: #c4decf;
+  --text-muted: #88a494;
+  --warning: #f59e0b;
+  --shadow-card: 0 16px 42px rgba(4, 20, 12, 0.32);
+  --theme-page-bg:
+    radial-gradient(circle at 12% 0, rgba(125, 211, 168, 0.2), transparent 34%),
+    radial-gradient(circle at 88% 16%, rgba(251, 113, 133, 0.14), transparent 32%),
+    linear-gradient(145deg, #0d1712, #13261d 62%, #101513);
+  --theme-surface: #102018;
+  --theme-panel-bg: linear-gradient(145deg, rgba(20, 41, 31, 0.98), rgba(12, 25, 18, 0.98));
+  --theme-panel-hover: linear-gradient(145deg, rgba(27, 55, 42, 0.98), rgba(15, 31, 23, 0.98));
+  --theme-input-bg: rgba(7, 19, 13, 0.9);
+  --theme-accent: #7dd3a8;
+  --theme-accent-2: #fb7185;
+  --theme-accent-3: #fef3c7;
+  --theme-accent-soft: rgba(125, 211, 168, 0.13);
+  --theme-accent-contrast: #102018;
+  --theme-border: rgba(125, 211, 168, 0.21);
+  --theme-border-strong: rgba(125, 211, 168, 0.5);
+}
+
+html[data-hazali-theme="copper"] {
+  --color-primary: #f59e0b;
+  --color-primary-hover: #fbbf24;
+  --bg-page: #17110d;
+  --bg-sidebar: #1d1510;
+  --bg-card: #261a12;
+  --bg-card-hover: #332217;
+  --border-color: rgba(245, 158, 11, 0.22);
+  --text-primary: #fffaf4;
+  --text-secondary: #e3cbb4;
+  --text-muted: #a98868;
+  --warning: #f59e0b;
+  --shadow-card: 0 16px 42px rgba(25, 10, 2, 0.32);
+  --theme-page-bg:
+    radial-gradient(circle at 18% 6%, rgba(217, 119, 6, 0.24), transparent 34%),
+    radial-gradient(circle at 88% 10%, rgba(20, 184, 166, 0.13), transparent 30%),
+    linear-gradient(145deg, #17110d, #25160d 58%, #101615);
+  --theme-surface: #1d1510;
+  --theme-panel-bg: linear-gradient(145deg, rgba(42, 27, 17, 0.98), rgba(22, 16, 12, 0.98));
+  --theme-panel-hover: linear-gradient(145deg, rgba(56, 36, 21, 0.98), rgba(28, 20, 14, 0.98));
+  --theme-input-bg: rgba(14, 10, 7, 0.9);
+  --theme-accent: #f59e0b;
+  --theme-accent-2: #14b8a6;
+  --theme-accent-3: #f8fafc;
+  --theme-accent-soft: rgba(245, 158, 11, 0.13);
+  --theme-accent-contrast: #211307;
+  --theme-border: rgba(245, 158, 11, 0.22);
+  --theme-border-strong: rgba(245, 158, 11, 0.5);
+}
+
+html[data-hazali-theme="prism"] {
+  --color-primary: #d946ef;
+  --color-primary-hover: #f0abfc;
+  --bg-page: #09090f;
+  --bg-sidebar: #0f0f18;
+  --bg-card: #161523;
+  --bg-card-hover: #201e31;
+  --border-color: rgba(217, 70, 239, 0.22);
+  --text-primary: #fff9ff;
+  --text-secondary: #dac7e8;
+  --text-muted: #9d86ad;
+  --warning: #facc15;
+  --shadow-card: 0 16px 44px rgba(5, 3, 12, 0.38);
+  --theme-page-bg:
+    radial-gradient(circle at 14% 0, rgba(217, 70, 239, 0.22), transparent 34%),
+    radial-gradient(circle at 84% 10%, rgba(34, 211, 238, 0.18), transparent 30%),
+    linear-gradient(145deg, #09090f, #151323 60%, #080811);
+  --theme-surface: #0f0f18;
+  --theme-panel-bg: linear-gradient(145deg, rgba(25, 22, 39, 0.98), rgba(12, 11, 21, 0.98));
+  --theme-panel-hover: linear-gradient(145deg, rgba(35, 30, 54, 0.98), rgba(17, 15, 28, 0.98));
+  --theme-input-bg: rgba(7, 7, 13, 0.9);
+  --theme-accent: #d946ef;
+  --theme-accent-2: #22d3ee;
+  --theme-accent-3: #facc15;
+  --theme-accent-soft: rgba(217, 70, 239, 0.13);
+  --theme-accent-contrast: #210825;
+  --theme-border: rgba(217, 70, 239, 0.22);
+  --theme-border-strong: rgba(217, 70, 239, 0.5);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) body {
+  background: var(--theme-page-bg);
+  color: var(--text-primary);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  .sidebar,
+  .bottom-navigation
+) {
+  border-color: var(--theme-border);
+  background: var(--theme-surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-card);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  .dashboard-hero,
+  .dashboard-hero__queue,
+  .dashboard-panel,
+  .dashboard-kpi,
+  .settings-header,
+  .settings-panel,
+  .dashboard-card,
+  .stat-card,
+  .card,
+  .hz-card,
+  .modal,
+  .catalog-modal,
+  .bulk-actions,
+  .catalog-folder-card,
+  .catalog-loading,
+  .catalog-empty-state,
+  .catalog-card,
+  .print-card,
+  .print-details-image,
+  .details-grid > div,
+  .filament-stat,
+  .filament-card,
+  .invoice-review,
+  .invoice-item,
+  .barcode-modal,
+  .deal-stat,
+  .deal-filter-panel,
+  .deal-card,
+  .deal-modal,
+  .deal-retailers-panel,
+  .deal-alerts-panel,
+  .deal-alert-rule,
+  .printer-connection-panel,
+  .printer-details-card,
+  .printer-job-card,
+  .printer-stat,
+  .inventory-stat-card,
+  .inventory-card,
+  .inventory-form,
+  .dashboard-queue__item,
+  .recent-print
+) {
+  border-color: var(--theme-border);
+  background: var(--theme-panel-bg);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-card);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  .dashboard-print-row,
+  .catalog-folder-card__menu-panel,
+  .folder-tree,
+  .folder-customizer,
+  .folder-icon-preview,
+  .prints-table,
+  .prints-table tbody tr,
+  .view-switcher,
+  .toolbar-select,
+  .prints-toolbar .search-wrapper,
+  .deal-price-grid,
+  .deal-modal__stats,
+  .deal-modal__checks,
+  .deal-history-chart,
+  .printer-details-grid,
+  .inventory-stock-control,
+  .inventory-form-actions,
+  .split-filament-card,
+  .split-toggle
+) {
+  border-color: var(--theme-border);
+  background: var(--theme-input-bg);
+  color: var(--text-primary);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  .dashboard-print-row:hover,
+  .catalog-folder-card:hover,
+  .catalog-card:hover,
+  .print-card:hover,
+  .inventory-card:hover,
+  .recent-print:hover,
+  .deal-card:hover
+) {
+  border-color: var(--theme-border-strong);
+  background: var(--theme-panel-hover);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  input,
+  select,
+  textarea,
+  .edit-print-folder-select,
+  .makerworld-import input,
+  .makerworld-folder-select,
+  .toolbar-select select,
+  .prints-toolbar .prints-search,
+  .printer-form-grid input,
+  .inventory-form-grid input,
+  .deal-filter-field input,
+  .deal-filter-field select,
+  .deal-alert-editor__field input,
+  .deal-alert-editor__field select
+) {
+  border-color: var(--theme-border);
+  background: var(--theme-input-bg);
+  color: var(--text-primary);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  input:focus,
+  select:focus,
+  textarea:focus,
+  .toolbar-select:focus-within,
+  .prints-toolbar .search-wrapper:focus-within
+) {
+  border-color: var(--theme-border-strong);
+  box-shadow: 0 0 0 3px var(--theme-accent-soft);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  .save-button,
+  .new-print-button,
+  .filter-button,
+  .dashboard-btn--primary,
+  .dashboard-queue__input button,
+  .printer-save-button,
+  .inventory-submit,
+  .barcode-manual button,
+  .hz-button.primary,
+  .ui-button.primary,
+  .install-plus
+) {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--theme-accent), var(--theme-accent-2));
+  color: var(--theme-accent-contrast);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  .dashboard-btn--ghost,
+  .catalog-action-button,
+  .catalog-back-button,
+  .catalog-export-button,
+  .printer-icon-button,
+  .printer-settings-button,
+  .inventory-cancel,
+  .cancel-button,
+  .table-button,
+  .folder-image-button,
+  .folder-image-clear,
+  .add-filament-button,
+  .set-cover-photo,
+  .hz-button.secondary,
+  .ui-button.secondary
+) {
+  border-color: var(--theme-border);
+  background: var(--theme-accent-soft);
+  color: var(--text-primary);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  .sidebar nav a.active,
+  .bottom-navigation a.active,
+  .view-switcher button.active,
+  .folder-tree button.active,
+  .table-split-toggle input:checked + span
+) {
+  border-color: var(--theme-border-strong);
+  background: var(--theme-accent-soft);
+  color: var(--theme-accent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--theme-accent) 18%, transparent);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  .dashboard-section-label,
+  .settings-section-label,
+  .settings-eyebrow,
+  .dashboard-eyebrow,
+  .printer-eyebrow,
+  .deal-card__meta span:first-child,
+  .dashboard-print-price,
+  .dashboard-link-row,
+  .catalog-action-button,
+  .catalog-breadcrumbs button,
+  .catalog-back-button,
+  .icon-button,
+  .stat-icon,
+  .card-icon,
+  .inventory-card-footer strong,
+  .deal-load-more
+) {
+  color: var(--theme-accent);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  .dashboard-stock__bar span
+) {
+  background: linear-gradient(90deg, var(--theme-accent), var(--theme-accent-2));
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  .cost-total-price,
+  .advice-price
+) {
+  color: var(--theme-accent);
+}
+
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
+  .prints-table th,
+  .prints-table td,
+  .dashboard-queue__footer,
+  .dashboard-print-main span,
+  .dashboard-print-time,
+  .settings-note,
+  .page-subtitle,
+  .printer-header p,
+  .deal-card__small,
+  .catalog-folder-card__text small,
+  .inventory-sku
+) {
+  color: var(--text-muted);
+}
+
+html[data-hazali-theme="glassmorphism"] :where(
+  .sidebar,
+  .bottom-navigation,
+  .dashboard-hero,
+  .dashboard-hero__queue,
+  .dashboard-panel,
+  .dashboard-kpi,
+  .settings-header,
+  .settings-panel,
+  .modal,
+  .catalog-card,
+  .inventory-card,
+  .deal-card,
+  .printer-connection-panel,
+  .printer-details-card
+) {
   backdrop-filter: blur(22px);
-}
-
-html[data-hazali-theme="glassmorphism"] .sidebar {
-  background: rgba(4, 22, 39, 0.56);
-}
-
-html[data-hazali-theme="glassmorphism"] .dashboard-queue__input input,
-html[data-hazali-theme="glassmorphism"] input,
-html[data-hazali-theme="glassmorphism"] select,
-html[data-hazali-theme="glassmorphism"] textarea {
-  border-color: rgba(255, 255, 255, 0.36);
-  background: rgba(4, 20, 36, 0.42);
-}
-
-html[data-hazali-theme="pokemon"] .sidebar,
-html[data-hazali-theme="pokemon"] .bottom-navigation,
-html[data-hazali-theme="pokemon"] .dashboard-panel,
-html[data-hazali-theme="pokemon"] .dashboard-kpi,
-html[data-hazali-theme="pokemon"] .dashboard-hero,
-html[data-hazali-theme="pokemon"] .dashboard-hero__queue,
-html[data-hazali-theme="pokemon"] .settings-header,
-html[data-hazali-theme="pokemon"] .settings-panel,
-html[data-hazali-theme="pokemon"] .inventory-card,
-html[data-hazali-theme="pokemon"] .catalog-card {
-  border-color: rgba(255, 203, 5, 0.26);
-  background:
-    linear-gradient(145deg, rgba(239, 43, 45, 0.14), rgba(31, 63, 145, 0.96) 44%, rgba(12, 26, 67, 0.98));
-}
-
-html[data-hazali-theme="pokemon"] .sidebar nav a.active,
-html[data-hazali-theme="pokemon"] .bottom-navigation a.active {
-  color: #ffcb05;
-  border-color: rgba(255, 203, 5, 0.5);
-  background: rgba(239, 43, 45, 0.16);
-  box-shadow: 0 0 18px rgba(255, 203, 5, 0.16);
-}
-
-html[data-hazali-theme="pokemon"] .dashboard-section-label,
-html[data-hazali-theme="pokemon"] .settings-section-label,
-html[data-hazali-theme="pokemon"] .settings-eyebrow,
-html[data-hazali-theme="pokemon"] .dashboard-eyebrow,
-html[data-hazali-theme="pokemon"] .dashboard-print-price,
-html[data-hazali-theme="pokemon"] .dashboard-link-row {
-  color: #ffcb05;
-}
-
-html[data-hazali-theme="pokemon"] .dashboard-btn--primary,
-html[data-hazali-theme="pokemon"] .dashboard-queue__input button,
-html[data-hazali-theme="pokemon"] .new-print-button,
-html[data-hazali-theme="pokemon"] .save-button {
-  color: #12245b;
-  background: linear-gradient(135deg, #ffcb05, #ffe066);
-}
-
-html[data-hazali-theme="dragonball-z"] .sidebar,
-html[data-hazali-theme="dragonball-z"] .bottom-navigation,
-html[data-hazali-theme="dragonball-z"] .dashboard-panel,
-html[data-hazali-theme="dragonball-z"] .dashboard-kpi,
-html[data-hazali-theme="dragonball-z"] .dashboard-hero,
-html[data-hazali-theme="dragonball-z"] .dashboard-hero__queue,
-html[data-hazali-theme="dragonball-z"] .settings-header,
-html[data-hazali-theme="dragonball-z"] .settings-panel,
-html[data-hazali-theme="dragonball-z"] .inventory-card,
-html[data-hazali-theme="dragonball-z"] .catalog-card {
-  border-color: rgba(255, 122, 0, 0.28);
-  background:
-    linear-gradient(145deg, rgba(255, 122, 0, 0.14), rgba(18, 10, 34, 0.98) 46%, rgba(23, 63, 216, 0.16));
-}
-
-html[data-hazali-theme="dragonball-z"] .sidebar nav a.active,
-html[data-hazali-theme="dragonball-z"] .bottom-navigation a.active {
-  color: #ffb000;
-  border-color: rgba(255, 122, 0, 0.5);
-  background: rgba(255, 122, 0, 0.16);
-  box-shadow: 0 0 18px rgba(255, 122, 0, 0.18);
-}
-
-html[data-hazali-theme="dragonball-z"] .dashboard-section-label,
-html[data-hazali-theme="dragonball-z"] .settings-section-label,
-html[data-hazali-theme="dragonball-z"] .settings-eyebrow,
-html[data-hazali-theme="dragonball-z"] .dashboard-eyebrow,
-html[data-hazali-theme="dragonball-z"] .dashboard-print-price,
-html[data-hazali-theme="dragonball-z"] .dashboard-link-row {
-  color: #ffb000;
-}
-
-html[data-hazali-theme="dragonball-z"] .dashboard-btn--primary,
-html[data-hazali-theme="dragonball-z"] .dashboard-queue__input button,
-html[data-hazali-theme="dragonball-z"] .new-print-button,
-html[data-hazali-theme="dragonball-z"] .save-button {
-  background: linear-gradient(135deg, #ff7a00, #ffb000);
 }

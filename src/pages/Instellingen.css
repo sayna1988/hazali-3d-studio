@@ -291,21 +291,45 @@
   backdrop-filter: blur(10px);
 }
 
-.settings-theme-option--pokemon .settings-theme-option__preview {
-  background: linear-gradient(145deg, #ef2b2d, #ffd536 58%, #2f6fd6);
+.settings-theme-option--aurora .settings-theme-option__preview {
+  background: linear-gradient(145deg, #07111f, #0f766e 52%, #7c3aed);
 }
 
-.settings-theme-option--pokemon i:nth-child(1) { background: #ffcb05; }
-.settings-theme-option--pokemon i:nth-child(2) { background: #2a75bb; }
-.settings-theme-option--pokemon i:nth-child(3) { background: #ffffff; }
+.settings-theme-option--aurora i:nth-child(1) { background: #2dd4bf; }
+.settings-theme-option--aurora i:nth-child(2) { background: #a78bfa; }
+.settings-theme-option--aurora i:nth-child(3) { background: #f472b6; }
 
-.settings-theme-option--dragonball-z .settings-theme-option__preview {
-  background: linear-gradient(145deg, #ff7a00, #173fd8);
+.settings-theme-option--graphite .settings-theme-option__preview {
+  background: linear-gradient(145deg, #15171a, #2f3437);
 }
 
-.settings-theme-option--dragonball-z i:nth-child(1) { background: #ffb000; }
-.settings-theme-option--dragonball-z i:nth-child(2) { background: #0b47c9; }
-.settings-theme-option--dragonball-z i:nth-child(3) { background: #f7f7ff; }
+.settings-theme-option--graphite i:nth-child(1) { background: #a3e635; }
+.settings-theme-option--graphite i:nth-child(2) { background: #22d3ee; }
+.settings-theme-option--graphite i:nth-child(3) { background: #e5e7eb; }
+
+.settings-theme-option--sage .settings-theme-option__preview {
+  background: linear-gradient(145deg, #10221a, #6ee7b7 56%, #fb7185);
+}
+
+.settings-theme-option--sage i:nth-child(1) { background: #7dd3a8; }
+.settings-theme-option--sage i:nth-child(2) { background: #fff7ed; }
+.settings-theme-option--sage i:nth-child(3) { background: #fb7185; }
+
+.settings-theme-option--copper .settings-theme-option__preview {
+  background: linear-gradient(145deg, #1f1712, #d97706 55%, #0f766e);
+}
+
+.settings-theme-option--copper i:nth-child(1) { background: #f59e0b; }
+.settings-theme-option--copper i:nth-child(2) { background: #14b8a6; }
+.settings-theme-option--copper i:nth-child(3) { background: #f8fafc; }
+
+.settings-theme-option--prism .settings-theme-option__preview {
+  background: linear-gradient(145deg, #09090f, #d946ef 42%, #22d3ee);
+}
+
+.settings-theme-option--prism i:nth-child(1) { background: #f0abfc; }
+.settings-theme-option--prism i:nth-child(2) { background: #38bdf8; }
+.settings-theme-option--prism i:nth-child(3) { background: #facc15; }
 
 @media (max-width: 980px) {
   .settings-icon-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
