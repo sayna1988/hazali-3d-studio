@@ -36,6 +36,11 @@ export const APP_THEME_VARIANTS = [
     label: "Prism",
     description: "Strakke donkere basis met fuchsia, cyan en gouden highlights.",
   },
+  {
+    id: "noir-gold",
+    label: "Noir Gold",
+    description: "Luxe zwart met metallic goud, diepe contrasten en glanzende accenten.",
+  },
 ] as const;
 
 export type AppThemeVariant = (typeof APP_THEME_VARIANTS)[number]["id"];
@@ -97,6 +102,8 @@ function themeColorForVariant(variant: AppThemeVariant) {
       return "#d97706";
     case "prism":
       return "#d946ef";
+    case "noir-gold":
+      return "#d5a536";
     default:
       return "#0094ff";
   }
