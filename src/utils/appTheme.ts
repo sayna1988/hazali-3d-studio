@@ -86,7 +86,7 @@ export function announceAppThemeVariant(variant: AppThemeVariant) {
 function themeColorForVariant(variant: AppThemeVariant) {
   switch (variant) {
     case "glassmorphism":
-      return "#d8f3ff";
+      return "#899083";
     case "aurora":
       return "#14b8a6";
     case "graphite":
