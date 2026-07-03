@@ -17,6 +17,7 @@ import {
   Check,
   LoaderCircle,
   GripVertical,
+  Settings,
 } from "lucide-react";
 import type { Print } from "../types/Print";
 import type { Filament } from "../types/Filament";
@@ -395,6 +396,18 @@ export default function Dashboard() {
             )}
             <button className="dashboard-link-row" onClick={() => navigate("/filamenten") }>
               Voorraad beheren <ChevronRight size={17} />
+            </button>
+          </div>
+
+          <div className="dashboard-panel dashboard-shortcuts">
+            <span className="dashboard-section-label">Studio</span>
+            <button type="button" onClick={() => navigate("/instellingen")}>
+              <Settings size={18} />
+              <span>
+                <strong>Instellingen</strong>
+                <small>Kosten, thema en app-icoon beheren</small>
+              </span>
+              <ChevronRight size={17} />
             </button>
           </div>
         </aside>

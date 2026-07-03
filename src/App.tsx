@@ -16,6 +16,7 @@ import PrintDetails from "./pages/PrintDetails";
 import Voorraad from "./pages/Voorraad";
 import Inventaris from "./pages/Inventaris";
 import Instellingen from "./pages/Instellingen";
+import ProductFotoGenerator from "./pages/ProductFotoGenerator";
 
 
 
@@ -68,6 +69,11 @@ function App() {
           <Route
             path="/instellingen"
             element={<Instellingen />}
+          />
+
+          <Route
+            path="/productfoto"
+            element={<ProductFotoGenerator />}
           />
 
         </Routes>

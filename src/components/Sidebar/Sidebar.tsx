@@ -7,7 +7,7 @@ import {
   LayoutDashboard,
   Package,
   Boxes,
-  Settings,
+  ImagePlus,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../auth/AuthProvider";
@@ -61,9 +61,9 @@ export default function Sidebar() {
           Filamenten
         </NavLink>
 
-        <NavLink to="/instellingen" className={({ isActive }) => isActive ? "active" : ""}>
-          <Settings size={16}/>
-          Instellingen
+        <NavLink to="/productfoto" className={({ isActive }) => isActive ? "active" : ""}>
+          <ImagePlus size={16}/>
+          Productfoto
         </NavLink>
 
       </nav>

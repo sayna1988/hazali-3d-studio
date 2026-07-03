@@ -6,7 +6,7 @@ import {
   House,
   Package,
   Boxes,
-  Settings
+  ImagePlus
 } from "lucide-react";
 
 export default function BottomNavigation() {
@@ -39,11 +39,11 @@ export default function BottomNavigation() {
 
       </NavLink>
 
-      <NavLink to="/instellingen">
+      <NavLink to="/productfoto">
 
-        <Settings size={22} />
+        <ImagePlus size={22} />
 
-        <span>Instellingen</span>
+        <span>Foto</span>
 
       </NavLink>
 
