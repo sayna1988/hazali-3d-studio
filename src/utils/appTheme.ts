@@ -46,6 +46,7 @@ export const APP_THEME_VARIANTS = [
 export type AppThemeVariant = (typeof APP_THEME_VARIANTS)[number]["id"];
 
 const APP_THEME_STORAGE_KEY = "appThemeVariant";
+const APP_THEME_COOKIE_NAME = "appThemeVariant";
 
 export function isAppThemeVariant(value: unknown): value is AppThemeVariant {
   return typeof value === "string" && APP_THEME_VARIANTS.some((theme) => theme.id === value);
@@ -66,6 +67,11 @@ export function storeAppThemeVariant(variant: AppThemeVariant) {
   if (typeof localStorage !== "undefined") {
     localStorage.setItem(APP_THEME_STORAGE_KEY, variant);
   }
+
+  if (typeof document !== "undefined") {
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${APP_THEME_COOKIE_NAME}=${variant}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+  }
 }
 
 export function applyAppThemeVariant(variant: AppThemeVariant) {
@@ -74,6 +80,7 @@ export function applyAppThemeVariant(variant: AppThemeVariant) {
   document
     .querySelector('meta[name="theme-color"]')
     ?.setAttribute("content", themeColorForVariant(variant));
+  setManifestThemeVariant(variant);
 }
 
 export function applyStoredAppThemeVariant() {
@@ -107,4 +114,16 @@ function themeColorForVariant(variant: AppThemeVariant) {
     default:
       return "#0094ff";
   }
+}
+
+function setManifestThemeVariant(variant: AppThemeVariant) {
+  if (typeof document === "undefined") return;
+
+  const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+  if (!manifest) return;
+
+  const manifestUrl = new URL(manifest.getAttribute("href") || "/api/manifest", window.location.origin);
+  manifestUrl.searchParams.set("theme", variant);
+  manifest.href = `${manifestUrl.pathname}${manifestUrl.search}`;
+  manifest.crossOrigin = "use-credentials";
 }

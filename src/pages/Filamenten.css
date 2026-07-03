@@ -82,8 +82,8 @@
 .filament-select--sort select { min-width: 128px; }
 .filament-select > svg:last-child { position: absolute; right: 10px; pointer-events: none; }
 .filament-select option { color: white; background: #0a192b; }
-.filament-add-button { display: flex; align-items: center; gap: 8px; min-height: 43px; padding: 0 16px; color: white; font-weight: 700; border: 0; border-radius: 12px; background: linear-gradient(135deg, #149eff, #087ddd); box-shadow: 0 8px 20px rgba(14, 141, 234, .22); cursor: pointer; transition: transform .2s, box-shadow .2s; }
-.filament-add-button:hover { transform: translateY(-1px); box-shadow: 0 11px 25px rgba(14, 141, 234, .3); }
+.filament-add-button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 13px; color: #bde7ff; font: inherit; font-size: 12px; font-weight: 800; white-space: nowrap; border: 1px solid rgba(56, 182, 255, .22); border-radius: 10px; background: rgba(31, 156, 255, .1); cursor: pointer; transition: transform .16s, border-color .16s, background .16s, color .16s; }
+.filament-add-button:hover { transform: translateY(-1px); border-color: rgba(56, 182, 255, .42); background: rgba(31, 156, 255, .16); color: white; }
 .filament-scan-button { display: flex; align-items: center; gap: 8px; min-height: 43px; padding: 0 15px; color: #7fc6ff; font-weight: 700; border: 1px solid rgba(31, 156, 255, .3); border-radius: 12px; background: rgba(31, 156, 255, .08); cursor: pointer; transition: .2s; }
 .filament-scan-button:hover { color: white; border-color: rgba(31, 156, 255, .55); background: rgba(31, 156, 255, .14); }
 .filament-toast { position: fixed; z-index: 3500; top: 24px; right: 24px; display: flex; align-items: center; gap: 11px; max-width: 440px; padding: 13px 14px; color: #dceeff; border: 1px solid rgba(47, 169, 255, .32); border-radius: 13px; background: rgba(8, 28, 48, .97); box-shadow: 0 18px 50px rgba(0, 0, 0, .4); animation: filament-slide-in .25s ease-out; }

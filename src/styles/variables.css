@@ -22,6 +22,25 @@
   --text-secondary: #93a7c7;
   --text-muted: #6f87ab;
 
+  /* ===== Theme Defaults ===== */
+
+  --theme-page-bg:
+    radial-gradient(circle at 18% 0, rgba(31, 156, 255, 0.22), transparent 34%),
+    linear-gradient(145deg, #020b18, #041222 58%, #06101f);
+  --theme-surface: var(--bg-sidebar);
+  --theme-panel-bg:
+    linear-gradient(145deg, rgba(9, 26, 49, 0.98), rgba(6, 19, 36, 0.98));
+  --theme-panel-hover:
+    linear-gradient(145deg, rgba(12, 35, 64, 0.98), rgba(8, 24, 45, 0.98));
+  --theme-input-bg: rgba(5, 15, 30, 0.9);
+  --theme-accent: var(--color-primary);
+  --theme-accent-2: var(--color-primary-hover);
+  --theme-accent-3: #93cfff;
+  --theme-accent-soft: rgba(31, 156, 255, 0.12);
+  --theme-accent-contrast: #ffffff;
+  --theme-border: rgba(91, 183, 255, 0.18);
+  --theme-border-strong: rgba(91, 183, 255, 0.5);
+
   /* ===== Status ===== */
 
   --success: #00d26a;
@@ -45,6 +64,17 @@
   --sidebar-width: 240px;
 
   --content-max-width: 1600px;
+
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+
+  --app-splash-bg:
+    radial-gradient(circle at 50% 16%, rgba(31, 156, 255, 0.24), transparent 34%),
+    linear-gradient(180deg, #041222 0%, #020b18 100%);
+  --app-splash-surface: rgba(7, 20, 38, 0.82);
+  --app-splash-border: rgba(91, 183, 255, 0.24);
 
   /* ===== Animation ===== */
 

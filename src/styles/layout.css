@@ -8,7 +8,11 @@
 
   flex:0 0 280px;
 
-  padding:20px;
+  padding:
+    calc(20px + var(--safe-area-top))
+    20px
+    calc(20px + var(--safe-area-bottom))
+    calc(20px + var(--safe-area-left));
 
   display:flex;
 
@@ -202,7 +206,14 @@
 
   min-width:0;
 
-  padding:30px;
+  padding:
+    calc(30px + var(--safe-area-top))
+    calc(30px + var(--safe-area-right))
+    calc(30px + var(--safe-area-bottom))
+    30px;
+
+  background:
+    var(--theme-page-bg, var(--bg-page));
 
 }
 
@@ -288,8 +299,8 @@
   .mobile-menu-button{
 
     position:fixed;
-    top:16px;
-    left:16px;
+    top:calc(16px + var(--safe-area-top));
+    left:calc(16px + var(--safe-area-left));
 
     width:48px;
     height:48px;
@@ -321,12 +332,13 @@ transition:.2s;
   .sidebar{
 
     position:fixed;
- padding-top:18px;
+ padding-top:calc(18px + var(--safe-area-top));
     top:0;
-    left:-300px;
+    left:calc(-300px - var(--safe-area-left));
 
-    width:260px;
+    width:calc(260px + var(--safe-area-left));
     height:100vh;
+    height:100dvh;
 
     transition:left .28s cubic-bezier(.2,.8,.2,1);
 
@@ -341,10 +353,12 @@ transition:.2s;
   }
 
   .content{
-padding-top:72px;
+padding-top:calc(72px + var(--safe-area-top));
+padding-right:calc(30px + var(--safe-area-right));
+padding-left:calc(30px + var(--safe-area-left));
 /* Keep the final controls scrollable above the floating navigation and
    iOS home indicator. */
-padding-bottom:calc(110px + env(safe-area-inset-bottom, 0px));
+padding-bottom:calc(110px + var(--safe-area-bottom));
     margin-left:0 !important;
     width:100%;
 

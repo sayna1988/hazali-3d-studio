@@ -10,9 +10,9 @@
 
         position:fixed;
 
-        left:16px;
-        right:16px;
-        bottom:calc(16px + env(safe-area-inset-bottom, 0px));
+        left:calc(16px + var(--safe-area-left));
+        right:calc(16px + var(--safe-area-right));
+        bottom:calc(16px + var(--safe-area-bottom));
 
         height:74px;
 

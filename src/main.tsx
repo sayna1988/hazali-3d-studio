@@ -11,6 +11,7 @@ import "./styles/index.css";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
 import { AuthGate } from "./auth/AuthGate";
+import SplashScreen from "./components/SplashScreen/SplashScreen";
 import { applyStoredAppIconVariant } from "./utils/appIcon";
 import { applyStoredAppThemeVariant } from "./utils/appTheme";
 
@@ -21,6 +22,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
+        <SplashScreen />
         <AuthGate><App /></AuthGate>
       </AuthProvider>
     </BrowserRouter>

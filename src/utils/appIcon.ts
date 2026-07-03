@@ -83,7 +83,9 @@ export function setAppManifest(variant: AppIconVariant) {
     document.head.appendChild(manifest);
   }
 
-  manifest.href = getAppManifestPath(variant);
+  const manifestUrl = new URL(manifest.getAttribute("href") || getAppManifestPath(variant), window.location.origin);
+  manifestUrl.searchParams.set("variant", variant);
+  manifest.href = `${manifestUrl.pathname}${manifestUrl.search}`;
   manifest.crossOrigin = "use-credentials";
 }
 

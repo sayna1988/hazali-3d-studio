@@ -210,7 +210,12 @@ html[data-hazali-theme="noir-gold"] {
   --theme-metallic-gold-soft: linear-gradient(135deg, rgba(111, 69, 16, 0.42), rgba(255, 246, 194, 0.28) 35%, rgba(213, 165, 54, 0.34) 55%, rgba(79, 48, 10, 0.36));
 }
 
-html[data-hazali-theme]:not([data-hazali-theme="hazali"]) body {
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]),
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) body,
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) #root,
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) .app,
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) .content,
+html[data-hazali-theme]:not([data-hazali-theme="hazali"]) .auth-page {
   background: var(--theme-page-bg);
   color: var(--text-primary);
 }
@@ -236,6 +241,7 @@ html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
   .stat-card,
   .card,
   .hz-card,
+  .auth-card,
   .modal,
   .catalog-modal,
   .bulk-actions,
@@ -353,6 +359,7 @@ html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
   .dashboard-queue__input button,
   .printer-save-button,
   .inventory-submit,
+  .auth-card button:not(.auth-secondary):not(.face-id-button):not(.device-reset),
   .barcode-manual button,
   .hz-button.primary,
   .ui-button.primary,
@@ -368,6 +375,8 @@ html[data-hazali-theme]:not([data-hazali-theme="hazali"]) :where(
   .catalog-action-button,
   .catalog-back-button,
   .catalog-export-button,
+  .makerworld-import button,
+  .filament-add-button,
   .printer-icon-button,
   .printer-settings-button,
   .inventory-cancel,
@@ -491,6 +500,7 @@ html[data-hazali-theme="glassmorphism"] :where(
   .settings-header,
   .settings-panel,
   .modal,
+  .auth-card,
   .catalog-card,
   .inventory-card,
   .deal-card,
@@ -576,6 +586,7 @@ html[data-hazali-theme="glassmorphism"] :where(
   .dashboard-queue__input button,
   .printer-save-button,
   .inventory-submit,
+  .auth-card button:not(.auth-secondary):not(.face-id-button):not(.device-reset),
   .barcode-manual button,
   .hz-button.primary,
   .ui-button.primary
@@ -592,6 +603,8 @@ html[data-hazali-theme="glassmorphism"] :where(
   .catalog-action-button,
   .catalog-back-button,
   .catalog-export-button,
+  .makerworld-import button,
+  .filament-add-button,
   .printer-icon-button,
   .printer-settings-button,
   .inventory-cancel,
@@ -669,6 +682,7 @@ html[data-hazali-theme="noir-gold"] :is(
   .settings-header,
   .settings-panel,
   .modal,
+  .auth-card,
   .catalog-card,
   .catalog-folder-card,
   .inventory-card,
@@ -696,6 +710,7 @@ html[data-hazali-theme="noir-gold"] :is(
   .dashboard-queue__input button,
   .printer-save-button,
   .inventory-submit,
+  .auth-card button:not(.auth-secondary):not(.face-id-button):not(.device-reset),
   .barcode-manual button,
   .hz-button.primary,
   .ui-button.primary,
@@ -715,6 +730,8 @@ html[data-hazali-theme="noir-gold"] :is(
   .catalog-action-button,
   .catalog-back-button,
   .catalog-export-button,
+  .makerworld-import button,
+  .filament-add-button,
   .printer-icon-button,
   .printer-settings-button,
   .inventory-cancel,
