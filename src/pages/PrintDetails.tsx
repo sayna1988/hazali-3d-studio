@@ -369,7 +369,7 @@ export default function PrintDetails() {
 
           <div className="print-photo-carousel">
             <div className="print-details-image">
-              {actieveFoto ? <img src={actieveFoto} alt={printData.naam} /> : <ImageIcon size={72} color="#8CA0BD" />}
+              {actieveFoto ? <img src={actieveFoto} alt={printData.naam} /> : <ImageIcon size={72} color="var(--text-muted)" />}
               {fotoOpties.length > 1 && <>
                 <button type="button" className="carousel-arrow previous" aria-label="Vorige foto" onClick={() => bladerFoto(-1)}><ChevronLeft size={20} /></button>
                 <button type="button" className="carousel-arrow next" aria-label="Volgende foto" onClick={() => bladerFoto(1)}><ChevronRight size={20} /></button>
@@ -455,7 +455,7 @@ export default function PrintDetails() {
 
                 <Package
                   size={16}
-                  color="#0094FF"
+                  color="var(--theme-accent, #0094FF)"
                 />
 
                 <h4>
@@ -481,7 +481,7 @@ export default function PrintDetails() {
 
                 <Clock3
                   size={16}
-                  color="#0094FF"
+                  color="var(--theme-accent, #0094FF)"
                 />
 
                 <h4>
@@ -512,7 +512,7 @@ export default function PrintDetails() {
 
                 <Euro
                   size={16}
-                  color="#0094FF"
+                  color="var(--theme-accent, #0094FF)"
                 />
 
                 <h4>
@@ -539,7 +539,7 @@ export default function PrintDetails() {
 
                 <TrendingUp
                   size={16}
-                  color="#0094FF"
+                  color="var(--theme-accent, #0094FF)"
                 />
 
                 <h4>
@@ -710,9 +710,9 @@ export default function PrintDetails() {
                             borderRadius:
                               "12px",
                             background:
-                              "rgba(0,148,255,.12)",
+                              "var(--theme-accent-soft, rgba(0,148,255,.12))",
                             border:
-                              "1px solid rgba(0,148,255,.2)"
+                              "1px solid var(--theme-border, rgba(0,148,255,.2))"
                           }}
                         >
 
@@ -796,7 +796,7 @@ export default function PrintDetails() {
 
               <FileText
                 size={16}
-                color="#0094FF"
+                color="var(--theme-accent, #0094FF)"
               />
 
               <strong>
@@ -816,7 +816,7 @@ export default function PrintDetails() {
               style={{
                 width: "100%", marginTop: 12, resize: "vertical", minHeight: 100,
                 padding: "12px 14px", borderRadius: 10, color: "var(--text-primary)",
-                background: "rgba(5,15,30,.65)", border: "1px solid rgba(0,148,255,.25)", outline: "none"
+                background: "var(--theme-input-bg, rgba(5,15,30,.65))", border: "1px solid var(--theme-border, rgba(0,148,255,.25))", outline: "none"
               }}
             />
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 10 }}>

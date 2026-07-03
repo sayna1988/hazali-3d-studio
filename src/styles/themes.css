@@ -180,10 +180,10 @@ html[data-hazali-theme="prism"] {
 html[data-hazali-theme="noir-gold"] {
   --color-primary: #d5a536;
   --color-primary-hover: #fff2a6;
-  --bg-page: #030303;
-  --bg-sidebar: #070707;
-  --bg-card: #0d0c0a;
-  --bg-card-hover: #17130c;
+  --bg-page: #0f0f0e;
+  --bg-sidebar: #11100f;
+  --bg-card: #171614;
+  --bg-card-hover: #211f1b;
   --border-color: rgba(213, 165, 54, 0.24);
   --text-primary: #fff8dc;
   --text-secondary: #e6d3a2;
@@ -191,15 +191,14 @@ html[data-hazali-theme="noir-gold"] {
   --warning: #d5a536;
   --shadow-card: 0 18px 48px rgba(0, 0, 0, 0.5);
   --theme-page-bg:
-    radial-gradient(circle at 18% 0, rgba(213, 165, 54, 0.18), transparent 32%),
-    radial-gradient(circle at 86% 9%, rgba(255, 242, 166, 0.08), transparent 26%),
-    linear-gradient(145deg, #020202, #0b0906 56%, #000);
-  --theme-surface: #070707;
+    linear-gradient(180deg, rgba(255, 246, 194, 0.05), transparent 32%),
+    linear-gradient(145deg, #0b0b0a 0%, #151412 56%, #080807 100%);
+  --theme-surface: #11100f;
   --theme-panel-bg:
-    linear-gradient(145deg, rgba(23, 20, 14, 0.98), rgba(7, 7, 7, 0.98) 54%, rgba(16, 12, 7, 0.98));
+    linear-gradient(145deg, rgba(31, 29, 25, 0.98), rgba(16, 15, 14, 0.98) 54%, rgba(8, 8, 7, 0.98));
   --theme-panel-hover:
-    linear-gradient(145deg, rgba(33, 28, 18, 0.98), rgba(11, 11, 11, 0.98) 52%, rgba(24, 17, 9, 0.98));
-  --theme-input-bg: rgba(6, 6, 6, 0.94);
+    linear-gradient(145deg, rgba(41, 38, 31, 0.98), rgba(22, 20, 17, 0.98) 52%, rgba(13, 12, 10, 0.98));
+  --theme-input-bg: rgba(12, 12, 11, 0.94);
   --theme-accent: #d5a536;
   --theme-accent-2: #fff2a6;
   --theme-accent-3: #8b5b16;
@@ -660,7 +659,7 @@ html[data-hazali-theme="glassmorphism"] :where(
     #8d9388;
 }
 
-html[data-hazali-theme="noir-gold"] :where(
+html[data-hazali-theme="noir-gold"] :is(
   .sidebar,
   .bottom-navigation,
   .dashboard-hero,
@@ -689,7 +688,7 @@ html[data-hazali-theme="noir-gold"] :where(
     0 24px 56px rgba(0, 0, 0, 0.42);
 }
 
-html[data-hazali-theme="noir-gold"] :where(
+html[data-hazali-theme="noir-gold"] :is(
   .save-button,
   .new-print-button,
   .filter-button,
@@ -711,7 +710,7 @@ html[data-hazali-theme="noir-gold"] :where(
     0 14px 34px rgba(213, 165, 54, 0.18);
 }
 
-html[data-hazali-theme="noir-gold"] :where(
+html[data-hazali-theme="noir-gold"] :is(
   .dashboard-btn--ghost,
   .catalog-action-button,
   .catalog-back-button,
@@ -733,7 +732,7 @@ html[data-hazali-theme="noir-gold"] :where(
   color: #ffe8a1;
 }
 
-html[data-hazali-theme="noir-gold"] :where(
+html[data-hazali-theme="noir-gold"] :is(
   .sidebar nav a.active,
   .bottom-navigation a.active,
   .view-switcher button.active,
@@ -748,7 +747,7 @@ html[data-hazali-theme="noir-gold"] :where(
     0 0 22px rgba(213, 165, 54, 0.16);
 }
 
-html[data-hazali-theme="noir-gold"] :where(
+html[data-hazali-theme="noir-gold"] :is(
   .sidebar nav a.active,
   .bottom-navigation a.active
 ) {
@@ -759,7 +758,7 @@ html[data-hazali-theme="noir-gold"] :where(
   box-shadow: none;
 }
 
-html[data-hazali-theme="noir-gold"] :where(
+html[data-hazali-theme="noir-gold"] :is(
   .sidebar nav a.active svg,
   .bottom-navigation a.active svg
 ) {
@@ -781,7 +780,7 @@ html[data-hazali-theme="noir-gold"] .bottom-navigation a.active svg {
   stroke: currentColor !important;
 }
 
-html[data-hazali-theme="noir-gold"] :where(
+html[data-hazali-theme="noir-gold"] :is(
   .dashboard-section-label,
   .settings-section-label,
   .settings-eyebrow,
@@ -803,7 +802,7 @@ html[data-hazali-theme="noir-gold"] :where(
   text-shadow: 0 0 16px rgba(213, 165, 54, 0.22);
 }
 
-html[data-hazali-theme="noir-gold"] :where(
+html[data-hazali-theme="noir-gold"] :is(
   .dashboard-hero h1,
   .settings-header h1,
   .printer-header h1,
@@ -813,7 +812,7 @@ html[data-hazali-theme="noir-gold"] :where(
   color: #fff9e8;
 }
 
-html[data-hazali-theme="noir-gold"] :where(
+html[data-hazali-theme="noir-gold"] :is(
   .dashboard-kpi__top > span,
   .catalog-folder-card__icon,
   .filament-stat__icon,
@@ -827,7 +826,7 @@ html[data-hazali-theme="noir-gold"] :where(
   color: #fff0a8;
 }
 
-html[data-hazali-theme="noir-gold"] :where(
+html[data-hazali-theme="noir-gold"] :is(
   input,
   select,
   textarea,
@@ -844,16 +843,411 @@ html[data-hazali-theme="noir-gold"] :where(
   background: rgba(4, 4, 4, 0.84);
 }
 
-html[data-hazali-theme="noir-gold"] :where(
+html[data-hazali-theme="noir-gold"] :is(
   .dashboard-stock__bar span
 ) {
   background: var(--theme-metallic-gold);
   box-shadow: 0 0 18px rgba(213, 165, 54, 0.28);
 }
 
-html[data-hazali-theme="noir-gold"] :where(
+html[data-hazali-theme="noir-gold"] :is(
   .settings-theme-option--noir-gold .settings-theme-option__preview
 ) {
   border: 1px solid rgba(213, 165, 54, 0.26);
   box-shadow: inset 0 1px 0 rgba(255, 246, 194, 0.12);
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .sidebar nav a,
+  .bottom-navigation a,
+  .sidebar-account
+) {
+  color: var(--text-muted);
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .dashboard-hero__glow,
+  .dashboard-kpi--blue
+) {
+  --kpi-color: #d5a536;
+}
+
+html[data-hazali-theme="noir-gold"] .dashboard-hero__glow {
+  background: rgba(213, 165, 54, 0.13);
+}
+
+html[data-hazali-theme="noir-gold"] .inventory-page::before {
+  background:
+    linear-gradient(180deg, rgba(213, 165, 54, 0.08), transparent 72%);
+}
+
+html[data-hazali-theme="noir-gold"] .deal-stat::after,
+html[data-hazali-theme="noir-gold"] .inventory-stat-card::after {
+  background: rgba(213, 165, 54, 0.07);
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .dashboard-queue__composer,
+  .dashboard-queue__list,
+  .dashboard-queue__empty,
+  .dashboard-hero__queue .dashboard-queue__item,
+  .three-mf-dropzone,
+  .makerworld-import,
+  .invoice-dropzone,
+  .invoice-review,
+  .invoice-item,
+  .filament-form,
+  .ean-results,
+  .barcode-modal,
+  .barcode-camera,
+  .deal-alert-form,
+  .deal-alert-source,
+  .deal-alert-rule,
+  .deal-modal__header,
+  .deal-modal__footer,
+  .inventory-workspace,
+  .inventory-table-wrap,
+  .inventory-empty,
+  .inventory-modal,
+  .catalog-card-image,
+  .inventory-card-visual,
+  .inventory-image-placeholder,
+  .catalog-grid-empty
+) {
+  border-color: rgba(213, 165, 54, 0.24);
+  background:
+    linear-gradient(145deg, rgba(34, 32, 28, 0.94), rgba(14, 14, 13, 0.95));
+  color: var(--text-primary);
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .dashboard-queue__composer textarea,
+  .dashboard-queue__input input,
+  .invoice-item__grid input,
+  .invoice-item__grid select,
+  .filament-form input,
+  .filament-form select,
+  .filament-form__ean input,
+  .barcode-manual input,
+  .deal-alert-form input,
+  .deal-alert-editor__field input,
+  .deal-alert-editor__field select,
+  .inventory-search,
+  .inventory-filter-group,
+  .inventory-sort,
+  .inventory-sort select,
+  .inventory-view-switcher,
+  .inventory-form-grid input,
+  .inventory-stock-control,
+  .inventory-table-stock button,
+  .quantity-stepper,
+  .quantity-stepper input,
+  .settings-theme-option
+) {
+  border-color: rgba(213, 165, 54, 0.2);
+  background: rgba(12, 12, 11, 0.88);
+  color: var(--text-primary);
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .three-mf-dropzone:hover,
+  .three-mf-dropzone:focus-visible,
+  .three-mf-dropzone.is-dragging,
+  .invoice-dropzone:hover,
+  .invoice-dropzone:focus-visible,
+  .invoice-dropzone.is-dragging,
+  .dashboard-btn--ghost:hover,
+  .dashboard-print-row:hover,
+  .filament-scan-button:hover,
+  .ean-results__list > button:hover,
+  .filament-edit:hover,
+  .catalog-card-actions button:hover,
+  .inventory-card:hover,
+  .inventory-photo-field:hover,
+  .inventory-filter-group button:hover,
+  .inventory-view-switcher button:hover,
+  .sidebar-account:hover,
+  .settings-theme-option:hover
+) {
+  border-color: rgba(255, 224, 127, 0.46);
+  background:
+    linear-gradient(145deg, rgba(43, 39, 31, 0.95), rgba(18, 17, 15, 0.95));
+  color: #fff0a8;
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .dashboard-queue__composer textarea:focus,
+  .dashboard-queue__input input:focus,
+  .invoice-item__grid input:focus,
+  .invoice-item__grid select:focus,
+  .filament-search:focus-within,
+  .filament-select:focus-within,
+  .filament-form input:focus,
+  .filament-form select:focus,
+  .barcode-manual input:focus,
+  .inventory-search:focus-within,
+  .inventory-form-grid input:focus,
+  .makerworld-import input:focus,
+  .makerworld-folder-select:focus
+) {
+  border-color: rgba(255, 224, 127, 0.58);
+  box-shadow: 0 0 0 3px rgba(213, 165, 54, 0.12);
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .dashboard-btn--primary,
+  .dashboard-queue__input button,
+  .dashboard-queue__start,
+  .inventory-add-button,
+  .inventory-empty button,
+  .invoice-save,
+  .filament-form__footer button,
+  .filament-empty button,
+  .deal-alerts-panel__head button,
+  .deal-alert-form button,
+  .deal-modal__footer a,
+  .deal-alert-modal .deal-modal__footer button[type="submit"],
+  .inventory-submit
+) {
+  border-color: transparent;
+  background: var(--theme-metallic-gold);
+  color: #120d04;
+  text-shadow: 0 1px 0 rgba(255, 246, 194, 0.38);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(80, 48, 8, 0.55),
+    0 14px 34px rgba(213, 165, 54, 0.18);
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .dashboard-text-btn,
+  .dropzone-action,
+  .invoice-dropzone__action,
+  .filament-scan-button,
+  .ean-results__footer button,
+  .deal-filter-toggles button,
+  .deal-alert-rule__actions button,
+  .deal-modal__footer button,
+  .catalog-card-actions button,
+  .catalog-card-stock,
+  .catalog-card-stock button,
+  .catalog-stock-editor button,
+  .quantity-stepper button,
+  .inventory-stock-control button,
+  .inventory-table-stock button,
+  .inventory-modal-close,
+  .ean-results__header > button,
+  .barcode-modal__header button
+) {
+  border-color: rgba(213, 165, 54, 0.28);
+  background: var(--theme-metallic-gold-soft);
+  color: #ffe8a1;
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .dashboard-eyebrow,
+  .dashboard-section-label,
+  .dashboard-link-row,
+  .dashboard-print-price,
+  .dashboard-queue__model-link:hover .dashboard-queue__body strong,
+  .dashboard-queue__model-link:focus-visible .dashboard-queue__body strong,
+  .dashboard-shortcuts button:hover,
+  .inventory-eyebrow,
+  .inventory-table-value,
+  .inventory-card-footer strong,
+  .deal-alerts-panel__head span,
+  .deal-modal__header span,
+  .deal-filter-toggles button,
+  .filament-card__tags span:first-child,
+  .manage-tags-button,
+  .color-time-list span,
+  .catalog-card-stock,
+  .settings-theme-option.is-selected strong
+) {
+  color: #f7dc75;
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .dashboard-hero__queue-header > span,
+  .dashboard-empty__icon,
+  .dashboard-print-thumb,
+  .dashboard-shortcuts button > svg:first-child,
+  .dashboard-queue__index,
+  .dropzone-icon,
+  .makerworld-import-icon,
+  .invoice-dropzone__icon,
+  .filament-stat__icon,
+  .filament-empty > span,
+  .deal-stat__icon:not(.deal-stat__icon--green):not(.deal-stat__icon--orange):not(.deal-stat__icon--warning),
+  .inventory-stat-icon.blue,
+  .inventory-form-heading > span,
+  .inventory-empty > span,
+  .inventory-table-placeholder,
+  .settings-panel__symbol
+) {
+  border: 1px solid rgba(255, 224, 127, 0.22);
+  background: var(--theme-metallic-gold-soft);
+  color: #fff0a8;
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .dropzone-progress,
+  .dashboard-stock__bar span,
+  .barcode-camera__frame span,
+  .deal-history-chart span
+) {
+  border-color: rgba(255, 224, 127, 0.5);
+  background: var(--theme-metallic-gold);
+  box-shadow: 0 0 18px rgba(213, 165, 54, 0.28);
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .print-tags span,
+  .split-print-badge,
+  .table-split-toggle,
+  .table-split-toggle:has(input:checked),
+  .add-to-catalog,
+  .catalog-folder-card.drop-active,
+  .settings-theme-option.is-selected
+) {
+  border-color: rgba(255, 224, 127, 0.42);
+  background: rgba(213, 165, 54, 0.12);
+  color: #ffe8a1 !important;
+  box-shadow: none;
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  input[type="checkbox"],
+  input[type="radio"],
+  .table-split-toggle input,
+  .catalog-grid-heading input,
+  .catalog-card-select input,
+  .deal-filter-toggles input,
+  .deal-alert-editor input[type="checkbox"]
+) {
+  accent-color: #d5a536;
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .card,
+  .hz-card,
+  .stat-card,
+  .bulk-actions,
+  .catalog-loading,
+  .catalog-empty-state,
+  .folder-customizer,
+  .folder-tree,
+  .split-toggle,
+  .split-filament-card,
+  .print-details-image,
+  .split-detail-badge,
+  .deal-retailer-row,
+  .deal-state,
+  .deal-history-chart,
+  .deal-modal__stats div,
+  .deal-price-grid div,
+  .filament-toast,
+  .inventory-table-placeholder
+) {
+  border-color: rgba(213, 165, 54, 0.24);
+  background:
+    linear-gradient(145deg, rgba(34, 32, 28, 0.94), rgba(14, 14, 13, 0.95));
+  color: var(--text-primary);
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .edit-print-folder-select,
+  .split-filament-card select,
+  .split-color-editor input,
+  .detail-color-heading > div input,
+  .detail-color-link input,
+  .detail-color-link select,
+  .deal-retailer-form input,
+  .deal-retailer-form select,
+  .deal-filter-field input,
+  .deal-filter-field select,
+  .filament-search,
+  .filament-select,
+  .folder-color-picker input,
+  .folder-icon-preview
+) {
+  border-color: rgba(213, 165, 54, 0.22);
+  background: rgba(12, 12, 11, 0.9);
+  color: var(--text-primary);
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .deal-retailers-panel__head button,
+  .deal-retailer-form button,
+  .deal-load-more,
+  .deal-state button
+) {
+  border-color: transparent;
+  background: var(--theme-metallic-gold);
+  color: #120d04;
+  text-shadow: 0 1px 0 rgba(255, 246, 194, 0.38);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(80, 48, 8, 0.55),
+    0 14px 34px rgba(213, 165, 54, 0.18);
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .bulk-actions__clear,
+  .catalog-breadcrumbs button,
+  .folder-tree button,
+  .folder-image-button,
+  .folder-image-clear,
+  .set-cover-photo,
+  .add-filament-button,
+  .detail-add-color,
+  .makerworld-source-link,
+  .deal-card__actions button,
+  .deal-card__actions a,
+  .deal-alert-rule__actions button
+) {
+  border-color: rgba(213, 165, 54, 0.28);
+  background: var(--theme-metallic-gold-soft);
+  color: #ffe8a1;
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .folder-tree button.active,
+  .inventory-filter-group button.active,
+  .inventory-view-switcher button.active,
+  .carousel-thumbnails button.active,
+  .catalog-folder-card.drop-active
+) {
+  border-color: rgba(255, 224, 127, 0.5);
+  background: rgba(213, 165, 54, 0.15);
+  color: #fff0a8;
+  box-shadow: 0 0 0 3px rgba(213, 165, 54, 0.12);
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .deal-retailers-panel__head span,
+  .bulk-actions__summary strong,
+  .split-detail-badge,
+  .split-color-stats,
+  .detail-add-color,
+  .makerworld-source-link,
+  .folder-icon-preview,
+  .folder-tree button:hover,
+  .catalog-folder-card__menu > button:hover,
+  .catalog-folder-card__menu-panel button:hover,
+  .manage-tags-button:hover
+) {
+  color: #f7dc75;
+}
+
+html[data-hazali-theme="noir-gold"] :is(
+  .split-toggle input,
+  .folder-color-toggle input,
+  .folder-color-picker input,
+  .select-column input,
+  .invoice-item__select input,
+  .deal-retailer-form__check input,
+  .deal-retailer-row input
+) {
+  accent-color: #d5a536;
 }
