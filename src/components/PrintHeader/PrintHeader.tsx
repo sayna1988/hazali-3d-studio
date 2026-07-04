@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { FileUp, Link2, Upload } from "lucide-react";
 import "./PrintHeader.css";
 import type { CatalogFolder } from "../../types/CatalogFolder";
 import { sortFolders } from "../../services/CatalogFolderService";
+import BottomSheet from "../BottomSheet/BottomSheet";
 
 interface Props {
   onFiles: (files: File[]) => void;
@@ -53,7 +54,74 @@ export default function PrintHeader({
   makerWorldImporting = false,
   importProgress = null
 }: Props) {
+  const [importSheetOpen, setImportSheetOpen] = useState(false);
+
+  return (
+    <div className="prints-header">
+      <div>
+        <h1>Catalogus</h1>
+        <p className="page-subtitle">Overzicht van al je opgeslagen prints.</p>
+      </div>
+
+      <button type="button" className="prints-header__sheet-trigger" onClick={() => setImportSheetOpen(true)}>
+        <FileUp size={18} />
+        Importeren
+      </button>
+
+      <ImportControls
+        onFiles={onFiles}
+        onMakerWorld={onMakerWorld}
+        makerWorldFolderId={makerWorldFolderId}
+        onMakerWorldFolderChange={onMakerWorldFolderChange}
+        folders={folders}
+        importing={importing}
+        makerWorldImporting={makerWorldImporting}
+        importProgress={importProgress}
+        className="prints-header__desktop-imports"
+      />
+
+      <BottomSheet
+        open={importSheetOpen}
+        title="Prints importeren"
+        description="Voeg 3MF-bestanden of een MakerWorld-link toe aan de catalogus."
+        onClose={() => setImportSheetOpen(false)}
+      >
+        <ImportControls
+          onFiles={(files) => {
+            onFiles(files);
+            setImportSheetOpen(false);
+          }}
+          onMakerWorld={(url, folderId) => {
+            onMakerWorld(url, folderId);
+            setImportSheetOpen(false);
+          }}
+          makerWorldFolderId={makerWorldFolderId}
+          onMakerWorldFolderChange={onMakerWorldFolderChange}
+          folders={folders}
+          importing={importing}
+          makerWorldImporting={makerWorldImporting}
+          importProgress={importProgress}
+          className="prints-import-sheet"
+        />
+      </BottomSheet>
+    </div>
+  );
+}
+
+function ImportControls({
+  onFiles,
+  onMakerWorld,
+  makerWorldFolderId,
+  onMakerWorldFolderChange,
+  folders = [],
+  importing = false,
+  makerWorldImporting = false,
+  importProgress = null,
+  className = ""
+}: Props & { className?: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputId = useId();
+  const makerWorldUrlId = useId();
   const [dragging, setDragging] = useState(false);
   const [makerWorldUrl, setMakerWorldUrl] = useState("");
   const makerWorldFolderOptions = useMemo(() => folderOptions(folders), [folders]);
@@ -73,12 +141,7 @@ export default function PrintHeader({
   }
 
   return (
-    <div className="prints-header">
-      <div>
-        <h1>Catalogus</h1>
-        <p className="page-subtitle">Overzicht van al je opgeslagen prints.</p>
-      </div>
-
+    <div className={`prints-import-controls ${className}`.trim()}>
       <div
         className={`three-mf-dropzone${dragging ? " is-dragging" : ""}${importing ? " is-importing" : ""}`}
         onDragEnter={(event) => { event.preventDefault(); if (!importing) setDragging(true); }}
@@ -115,12 +178,12 @@ export default function PrintHeader({
         <span className="dropzone-icon"><FileUp size={24} /></span>
         <span className="dropzone-copy">
           <strong>{importing ? `3MF-bestanden analyseren (${importProgress?.current ?? 0}/${importProgress?.total ?? 0})` : "Sleep je 3MF-bestanden hierheen"}</strong>
-          <small>{importing ? "Sluit deze pagina niet tijdens het importeren." : "Of klik om één of meerdere bestanden te kiezen"}</small>
+          <small>{importing ? "Sluit deze pagina niet tijdens het importeren." : "Of klik om een of meerdere bestanden te kiezen"}</small>
         </span>
         <span className="dropzone-action"><Upload size={16} /> Bestanden kiezen</span>
         <input
           ref={inputRef}
-          id="import3mf"
+          id={fileInputId}
           type="file"
           accept=".3mf,application/vnd.ms-package.3dmanufacturing-3dmodel+xml"
           multiple
@@ -132,13 +195,13 @@ export default function PrintHeader({
 
       <form className="makerworld-import" onSubmit={submitMakerWorld}>
         <span className="makerworld-import-icon"><Link2 size={21} /></span>
-        <label htmlFor="makerworld-url">
+        <label htmlFor={makerWorldUrlId}>
           <strong>Importeer vanuit MakerWorld</strong>
-          <small>De 3MF, modelnaam, tags en printfoto’s worden toegevoegd.</small>
+          <small>De 3MF, modelnaam, tags en printfoto's worden toegevoegd.</small>
         </label>
         <div className="makerworld-import-controls">
           <input
-            id="makerworld-url"
+            id={makerWorldUrlId}
             type="url"
             inputMode="url"
             value={makerWorldUrl}
@@ -163,7 +226,7 @@ export default function PrintHeader({
           </select>
           <button type="submit" disabled={!makerWorldUrl.trim() || makerWorldImporting || importing}>
             {makerWorldImporting ? <span className="makerworld-spinner" aria-hidden="true" /> : <Link2 size={16} />}
-            {makerWorldImporting ? "Importeren…" : "Importeren"}
+            {makerWorldImporting ? "Importeren..." : "Importeren"}
           </button>
         </div>
       </form>

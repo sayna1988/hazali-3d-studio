@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DragEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { FolderPlus, Move } from "lucide-react";
+import { FolderPlus, Move, SlidersHorizontal } from "lucide-react";
 import "./Prints.css";
 import EditPrintModal from "../components/EditPrintModal/EditPrintModal";
 import { import3MF } from "../services/PrintImportService";
 import PrintsTable from "../components/PrintsTable/PrintsTable";
 import PrintToolbar from "../components/PrintToolbar/PrintToolbar";
 import PrintHeader from "../components/PrintHeader/PrintHeader";
+import BottomSheet from "../components/BottomSheet/BottomSheet";
 import type { Print } from "../types/Print";
 import { loadPrints, loadPrintSummaries, deletePrint, savePrint } from "../services/PrintService";
 import type { CatalogFolder } from "../types/CatalogFolder";
@@ -96,6 +97,8 @@ export default function Prints() {
   const [deleteFolderTarget, setDeleteFolderTarget] = useState<CatalogFolder | null>(null);
   const [movePrintSelection, setMovePrintSelection] = useState<MovePrintSelection | null>(null);
   const [openMenuFolderId, setOpenMenuFolderId] = useState<number | null>(null);
+  const [catalogFiltersOpen, setCatalogFiltersOpen] = useState(false);
+  const [bulkSheetOpen, setBulkSheetOpen] = useState(false);
   const [draggedPrintIds, setDraggedPrintIds] = useState<number[]>([]);
   const [dropTargetFolderId, setDropTargetFolderId] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -704,7 +707,7 @@ export default function Prints() {
             </button>
           )}
         </div>
-        <div className="bulk-actions__controls">
+        <div className="bulk-actions__controls bulk-actions__desktop-controls">
           <PrintToolbar
             zoekterm={zoekterm}
             setZoekterm={setZoekterm}
@@ -727,7 +730,80 @@ export default function Prints() {
             Verwijderen
           </button>
         </div>
+        <div className="bulk-actions__mobile-controls">
+          <button type="button" className="catalog-action-button" onClick={() => setCatalogFiltersOpen(true)}>
+            <SlidersHorizontal size={15} />
+            Zoeken en filters
+          </button>
+          <button type="button" className="catalog-action-button" onClick={() => { resetFolderModalState(); setCreateFolderOpen(true); }}>
+            <FolderPlus size={15} />
+            Nieuwe map
+          </button>
+          <button type="button" className="catalog-action-button bulk-actions__move" onClick={() => setBulkSheetOpen(true)} disabled={geselecteerdePrintIds.length === 0}>
+            <Move size={15} />
+            Acties
+          </button>
+        </div>
       </section>
+      <BottomSheet
+        open={catalogFiltersOpen}
+        title="Catalogus zoeken"
+        description="Verfijn de catalogusweergave zonder de lijst te verlaten."
+        onClose={() => setCatalogFiltersOpen(false)}
+      >
+        <PrintToolbar
+          zoekterm={zoekterm}
+          setZoekterm={setZoekterm}
+          sortering={sortering}
+          setSortering={setSortering}
+          weergave={weergave}
+          setWeergave={setWeergave}
+          onExport={() => void exporteerCatalogus()}
+          exportBezig={exportBezig}
+        />
+      </BottomSheet>
+      <BottomSheet
+        open={bulkSheetOpen}
+        title="Geselecteerde prints"
+        description={`${geselecteerdePrintIds.length} ${geselecteerdePrintIds.length === 1 ? "print" : "prints"} geselecteerd`}
+        onClose={() => setBulkSheetOpen(false)}
+      >
+        <div className="bulk-sheet-actions">
+          <button
+            type="button"
+            className="catalog-action-button"
+            onClick={() => {
+              setBulkSheetOpen(false);
+              openBulkPrintsVerplaatsen();
+            }}
+            disabled={bulkBezig || geselecteerdePrintIds.length === 0}
+          >
+            <Move size={16} />
+            Verplaatsen
+          </button>
+          <button
+            type="button"
+            className="catalog-action-button danger"
+            onClick={() => {
+              setBulkSheetOpen(false);
+              void bulkVerwijderen();
+            }}
+            disabled={bulkBezig || geselecteerdePrintIds.length === 0}
+          >
+            Verwijderen
+          </button>
+          <button
+            type="button"
+            className="catalog-action-button"
+            onClick={() => {
+              setGeselecteerdePrintIds([]);
+              setBulkSheetOpen(false);
+            }}
+          >
+            Selectie wissen
+          </button>
+        </div>
+      </BottomSheet>
       <section className="catalog-organizer" aria-label="Catalogusmappen">
         <CatalogBreadcrumbs path={currentFolderPath} onNavigate={setCurrentFolderId} />
       </section>

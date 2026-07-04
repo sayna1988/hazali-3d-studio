@@ -88,6 +88,7 @@
 .bulk-actions__clear{padding:0;border:0;background:transparent;color:#38b6ff;font:inherit;font-weight:700;cursor:pointer}
 .bulk-actions__clear:hover{text-decoration:underline}
 .bulk-actions__controls{display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end;flex-wrap:wrap;min-width:0}
+.bulk-actions__mobile-controls{display:none}
 .bulk-actions__controls .prints-toolbar{flex:1 1 620px;min-width:320px}
 .bulk-actions__controls input{width:min(380px,100%);padding:12px 14px;border:1px solid #204e86;border-radius:10px;background:#0d2345;color:white;font-size:14px}
 .bulk-actions__controls input:disabled{opacity:.65;cursor:not-allowed}
@@ -97,6 +98,8 @@
 .catalog-action-button.danger{border-color:rgba(255,99,99,.24);background:rgba(255,99,99,.08);color:#fecaca}
 .catalog-action-button.danger:hover{border-color:rgba(255,99,99,.38);background:rgba(255,99,99,.13);color:white}
 .bulk-actions__move{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.bulk-sheet-actions{display:grid;gap:10px}
+.bulk-sheet-actions .catalog-action-button{width:100%;min-height:46px}
 .catalog-loading,.catalog-empty-state{display:grid;place-items:center;min-height:150px;margin-top:18px;padding:28px;border:1px dashed rgba(56,182,255,.22);border-radius:18px;background:rgba(6,20,38,.55);color:#7f99bb;text-align:center}
 .catalog-organizer{display:grid;gap:10px;margin:0 0 10px}
 .catalog-organizer__top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
@@ -127,6 +130,10 @@
 .catalog-folder-card__menu-panel button{display:flex;width:100%;padding:9px 10px;border:0;border-radius:8px;background:transparent;color:#bdd9f4;font:inherit;font-size:12px;font-weight:700;text-align:left;cursor:pointer}
 .catalog-folder-card__menu-panel button:hover{background:rgba(31,156,255,.13);color:white}
 .catalog-folder-card__menu-panel button.danger{color:#ffb4bd}
+.catalog-folder-sheet-actions{display:grid;gap:8px}
+.catalog-folder-sheet-actions button{display:flex;align-items:center;min-height:46px;width:100%;padding:0 14px;border:1px solid rgba(148,177,218,.12);border-radius:12px;background:rgba(255,255,255,.035);color:#d7ecff;font:inherit;font-weight:750;cursor:pointer}
+.catalog-folder-sheet-actions button:active{transform:translateY(1px)}
+.catalog-folder-sheet-actions button.danger{border-color:rgba(255,99,99,.24);background:rgba(255,99,99,.09);color:#ffc4ca}
 .catalog-current-folder-label{display:inline-flex;align-items:center;gap:7px;margin:-4px 0 12px;color:#7f99bb;font-size:12px}
 .catalog-modal h2{display:flex;align-items:center;gap:9px}
 .catalog-modal__hint{margin:-13px 0 18px;color:#8ca5c5;font-size:13px;line-height:1.5}
@@ -160,6 +167,51 @@
     .bulk-actions__controls input{width:100%}
     .catalog-organizer__top{align-items:stretch;flex-direction:column}
     .catalog-breadcrumbs{width:100%}
+}
+@media (max-width: 700px){
+    .bulk-actions__desktop-controls{display:none}
+    .bulk-actions__mobile-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+    .bulk-actions__mobile-controls .catalog-action-button:first-child{grid-column:1/-1}
+    .bulk-actions__mobile-controls .catalog-action-button{min-height:42px}
+    .bottom-sheet .prints-toolbar{grid-template-columns:1fr}
+    .bottom-sheet .toolbar-select,
+    .bottom-sheet .toolbar-select select,
+    .bottom-sheet .toolbar-select--sort select,
+    .bottom-sheet .view-switcher,
+    .bottom-sheet .catalog-export-button{width:100%}
+    .modal-overlay{
+        align-items:flex-end;
+        padding:0;
+        background:rgba(0,7,16,.78);
+        backdrop-filter:blur(10px);
+    }
+    .modal{
+        width:100%;
+        max-width:100%;
+        max-height:94vh;
+        border-right:0;
+        border-bottom:0;
+        border-left:0;
+        border-radius:22px 22px 0 0;
+        padding:18px 18px max(22px, var(--safe-area-bottom));
+    }
+    .modal::before{
+        content:"";
+        display:block;
+        width:46px;
+        height:5px;
+        margin:0 auto 16px;
+        border-radius:999px;
+        background:rgba(148,177,218,.34);
+    }
+    .modal-buttons{
+        position:sticky;
+        bottom:calc(-1 * max(22px, var(--safe-area-bottom)));
+        margin-right:-18px;
+        margin-left:-18px;
+        padding:14px 18px max(18px, var(--safe-area-bottom));
+        background:linear-gradient(180deg,rgba(8,23,45,0),#08172d 18px);
+    }
 }
 @media (max-width: 390px){
     .catalog-folder-grid{grid-template-columns:1fr}

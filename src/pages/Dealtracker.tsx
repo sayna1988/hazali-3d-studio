@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import Page from "../components/Page/Page";
+import BottomSheet from "../components/BottomSheet/BottomSheet";
 import { useAuth } from "../auth/AuthProvider";
 import {
   createDealTrackerRule,
@@ -131,6 +132,7 @@ export default function Dealtracker() {
   const [rulesLoading, setRulesLoading] = useState(false);
   const [ruleError, setRuleError] = useState("");
   const [alertEditor, setAlertEditor] = useState<AlertEditorState>(null);
+  const [dealFiltersOpen, setDealFiltersOpen] = useState(false);
   const [nowMs] = useState(() => Date.now());
 
   const laden = useCallback(async () => {
@@ -336,7 +338,12 @@ export default function Dealtracker() {
         onDelete={(rule) => void removeRule(rule)}
       />
 
-      <section className="deal-filter-panel" aria-label="Dealtracker filters">
+      <button type="button" className="deal-filter-sheet-trigger" onClick={() => setDealFiltersOpen(true)}>
+        <SlidersHorizontal size={17} />
+        Filters en sortering
+      </button>
+
+      <section className="deal-filter-panel deal-filter-panel--desktop" aria-label="Dealtracker filters">
         <div className="deal-filter-search">
           <Search size={18} />
           <input value={zoekterm} onChange={(event) => setZoekterm(event.target.value)} placeholder="Zoek op product, merk, kleur of winkel..." />
@@ -358,6 +365,36 @@ export default function Dealtracker() {
           <button type="button" onClick={() => { setMateriaal("Alle"); setMerk("Alle"); setWinkel("Alle"); setKleur("Alle"); setDiameter("Alle"); setMinRolgewicht(750); setMaxPrijsKg(""); setAlleenOpVoorraad(true); setAlleenBekendeVerzending(false); setZoekterm(""); }}><SlidersHorizontal size={16} /> Filters wissen</button>
         </div>
       </section>
+
+      <BottomSheet
+        open={dealFiltersOpen}
+        title="Dealtracker filters"
+        description="Verfijn aanbiedingen op materiaal, winkel, prijs en voorraadstatus."
+        onClose={() => setDealFiltersOpen(false)}
+      >
+        <section className="deal-filter-panel deal-filter-panel--sheet" aria-label="Dealtracker filters">
+          <div className="deal-filter-search">
+            <Search size={18} />
+            <input value={zoekterm} onChange={(event) => setZoekterm(event.target.value)} placeholder="Zoek op product, merk, kleur of winkel..." />
+            {zoekterm && <button type="button" onClick={() => setZoekterm("")} aria-label="Zoekopdracht wissen"><X size={16} /></button>}
+          </div>
+          <div className="deal-filter-grid">
+            <SelectFilter label="Materiaal" value={materiaal} onChange={setMateriaal} options={filterOptions.materialen} />
+            <SelectFilter label="Merk" value={merk} onChange={setMerk} options={filterOptions.merken} />
+            <SelectFilter label="Webwinkel" value={winkel} onChange={setWinkel} options={filterOptions.winkels} />
+            <SelectFilter label="Kleur" value={kleur} onChange={setKleur} options={filterOptions.kleuren} />
+            <SelectFilter label="Diameter" value={diameter} onChange={setDiameter} options={filterOptions.diameters} />
+            <label className="deal-filter-field"><span>Min. rolgewicht</span><input type="number" min="0" step="50" value={minRolgewicht} onChange={(event) => setMinRolgewicht(Number(event.target.value))} /></label>
+            <label className="deal-filter-field"><span>Max euro/kg</span><input inputMode="decimal" value={maxPrijsKg} onChange={(event) => setMaxPrijsKg(event.target.value)} placeholder="Bijv. 15" /></label>
+            <label className="deal-filter-field deal-filter-field--sort"><span><ArrowUpDown size={14} /> Sortering</span><select value={sortering} onChange={(event) => setSortering(event.target.value as Sortering)}><option value="prijs-kg">Laagste prijs/kg</option><option value="totaalprijs">Laagste totaalprijs</option><option value="korting">Grootste korting</option><option value="nieuwste">Nieuwste aanbieding</option><option value="controle">Recent gecontroleerd</option></select></label>
+          </div>
+          <div className="deal-filter-toggles">
+            <label><input type="checkbox" checked={alleenOpVoorraad} onChange={(event) => setAlleenOpVoorraad(event.target.checked)} /> Alleen op voorraad</label>
+            <label><input type="checkbox" checked={alleenBekendeVerzending} onChange={(event) => setAlleenBekendeVerzending(event.target.checked)} /> Alleen bekende verzendkosten</label>
+            <button type="button" onClick={() => { setMateriaal("Alle"); setMerk("Alle"); setWinkel("Alle"); setKleur("Alle"); setDiameter("Alle"); setMinRolgewicht(750); setMaxPrijsKg(""); setAlleenOpVoorraad(true); setAlleenBekendeVerzending(false); setZoekterm(""); }}><SlidersHorizontal size={16} /> Filters wissen</button>
+          </div>
+        </section>
+      </BottomSheet>
 
       {loading ? (
         <div className="deal-state"><LoaderCircle className="deal-spin" size={28} /><h2>Aanbiedingen laden</h2><p>Hazali haalt de laatst opgeslagen dealtrackergegevens op.</p></div>

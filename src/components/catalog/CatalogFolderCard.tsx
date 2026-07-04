@@ -2,6 +2,7 @@ import { Folder, MoreVertical } from "lucide-react";
 import type { DragEvent } from "react";
 import type { CSSProperties } from "react";
 import type { CatalogFolder } from "../../types/CatalogFolder";
+import BottomSheet from "../BottomSheet/BottomSheet";
 
 interface Props {
   folder: CatalogFolder;
@@ -81,6 +82,21 @@ export default function CatalogFolderCard({
             <button type="button" role="menuitem" className="danger" onClick={onDelete}>Verwijderen</button>
           </div>
         )}
+        <BottomSheet
+          open={menuOpen}
+          title={folder.name}
+          description={`${childFolderCount} ${childFolderCount === 1 ? "submap" : "submappen"} en ${itemCount} ${itemCount === 1 ? "item" : "items"}`}
+          onClose={onToggleMenu}
+          className="catalog-folder-action-sheet"
+          mobileOnly
+        >
+          <div className="catalog-folder-sheet-actions">
+            <button type="button" onClick={onOpen}>Openen</button>
+            <button type="button" onClick={onRename}>Hernoemen</button>
+            <button type="button" onClick={onMove}>Verplaatsen</button>
+            <button type="button" className="danger" onClick={onDelete}>Verwijderen</button>
+          </div>
+        </BottomSheet>
       </div>
     </article>
   );

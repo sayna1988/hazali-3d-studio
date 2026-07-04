@@ -82,6 +82,10 @@
 .filament-select--sort select { min-width: 128px; }
 .filament-select > svg:last-child { position: absolute; right: 10px; pointer-events: none; }
 .filament-select option { color: white; background: #0a192b; }
+.filament-filter-button { display: none; align-items: center; justify-content: center; gap: 8px; min-height: 43px; padding: 0 13px; color: #bde7ff; font: inherit; font-size: 12px; font-weight: 800; border: 1px solid rgba(56, 182, 255, .22); border-radius: 10px; background: rgba(31, 156, 255, .1); cursor: pointer; }
+.filament-filter-sheet { display: grid; gap: 10px; }
+.filament-filter-sheet .filament-select { width: 100%; }
+.filament-filter-sheet .filament-select select, .filament-filter-sheet .filament-select--sort select { min-width: 0; }
 .filament-add-button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 13px; color: #bde7ff; font: inherit; font-size: 12px; font-weight: 800; white-space: nowrap; border: 1px solid rgba(56, 182, 255, .22); border-radius: 10px; background: rgba(31, 156, 255, .1); cursor: pointer; transition: transform .16s, border-color .16s, background .16s, color .16s; }
 .filament-add-button:hover { transform: translateY(-1px); border-color: rgba(56, 182, 255, .42); background: rgba(31, 156, 255, .16); color: white; }
 .filament-scan-button { display: flex; align-items: center; gap: 8px; min-height: 43px; padding: 0 15px; color: #7fc6ff; font-weight: 700; border: 1px solid rgba(31, 156, 255, .3); border-radius: 12px; background: rgba(31, 156, 255, .08); cursor: pointer; transition: .2s; }
@@ -114,6 +118,9 @@
 .ean-results__footer span { color: #6f86a5; font-size: 11px; }
 
 .filament-form { margin: 0 0 22px; padding: 22px; border: 1px solid rgba(31, 156, 255, .23); border-radius: 17px; background: linear-gradient(135deg, rgba(13, 35, 61, .86), rgba(7, 20, 37, .96)); animation: filament-slide-in .24s ease-out; }
+.filament-form-sheet { width: min(900px, 100%); }
+.filament-form-sheet .bottom-sheet__body { padding: 0; }
+.filament-form--sheet { margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 @keyframes filament-slide-in { from { opacity: 0; transform: translateY(-8px); } }
 .filament-form__heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .filament-form__heading span { color: #4bb0ff; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
@@ -236,8 +243,11 @@
   .filament-workspace { padding: 15px; border-radius: 17px; }
   .filament-toolbar__actions { display: grid; grid-template-columns: 1fr 1fr; }
   .invoice-dropzone{padding:14px}.invoice-dropzone__action{display:none}.invoice-dropzone__copy small{line-height:1.35}
-  .invoice-review-overlay{padding:0}.invoice-review{min-height:100%;border:0;border-radius:0}.invoice-review__header{padding:19px 17px}.invoice-review__meta{grid-template-columns:1fr 1fr}.invoice-review__items{max-height:none;padding:16px}.invoice-item__grid{grid-template-columns:1fr 1fr}.invoice-review__footer{position:sticky;bottom:0;align-items:stretch;flex-direction:column}.invoice-review__footer>div{display:grid;grid-template-columns:1fr 1fr}.invoice-review__footer button{justify-content:center}
-  .filament-search, .filament-add-button { grid-column: 1 / -1; width: 100%; }
+  .invoice-review-overlay{display:flex;align-items:flex-end;padding:0;overflow:hidden}.invoice-review{width:100%;max-height:94vh;border-right:0;border-bottom:0;border-left:0;border-radius:22px 22px 0 0}.invoice-review__header{padding:19px 17px}.invoice-review__meta{grid-template-columns:1fr 1fr}.invoice-review__items{max-height:48vh;padding:16px}.invoice-item__grid{grid-template-columns:1fr 1fr}.invoice-review__footer{position:sticky;bottom:0;align-items:stretch;flex-direction:column}.invoice-review__footer>div{display:grid;grid-template-columns:1fr 1fr}.invoice-review__footer button{justify-content:center}
+  .filament-search { grid-column: 1 / -1; width: 100%; }
+  .filament-toolbar__actions > .filament-select { display: none; }
+  .filament-filter-button { display: flex; }
+  .filament-add-button { width: 100%; }
   .filament-scan-button { grid-column: 1 / -1; width: 100%; justify-content: center; }
   .filament-add-button { justify-content: center; }
   .filament-select { min-width: 0; }
@@ -246,8 +256,8 @@
   .filament-form__footer button { width: 100%; justify-content: center; }
   .filament-toast { top: 14px; right: 14px; left: 14px; max-width: none; }
   .barcode-overlay { padding: 10px; }
-  .ean-results-overlay { padding: 10px; }
-  .ean-results { max-height: calc(100vh - 20px); padding: 16px; border-radius: 18px; }
+  .ean-results-overlay { display: flex; align-items: flex-end; padding: 0; }
+  .ean-results { width: 100%; max-height: 94vh; padding: 16px; border-right: 0; border-bottom: 0; border-left: 0; border-radius: 22px 22px 0 0; }
   .ean-results__footer { align-items: stretch; flex-direction: column-reverse; }
   .ean-results__footer button { width: 100%; }
   .barcode-modal { max-height: calc(100vh - 20px); padding: 16px; border-radius: 18px; }

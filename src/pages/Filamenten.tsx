@@ -30,6 +30,7 @@ import { rolGegevens, totaalGewicht } from "../utils/filamentInventory";
 import { filamentColorLabel, filamentColorValue } from "../utils/filamentColor";
 import type { Filament } from "../types/Filament";
 import Page from "../components/Page/Page";
+import BottomSheet from "../components/BottomSheet/BottomSheet";
 import "./Filamenten.css";
 
 const MATERIAAL_TYPES = ["PLA", "PETG", "ABS", "TPU", "ASA", "PA", "PC"];
@@ -192,6 +193,7 @@ export default function Filamenten() {
   const [typeFilter, setTypeFilter] = useState("Alle");
   const [sortering, setSortering] = useState("naam");
   const [toonFormulier, setToonFormulier] = useState(false);
+  const [filamentFiltersOpen, setFilamentFiltersOpen] = useState(false);
   const [foutmelding, setFoutmelding] = useState("");
   const [ean, setEan] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -618,6 +620,10 @@ export default function Filamenten() {
               <input value={zoekterm} onChange={(e) => setZoekterm(e.target.value)} placeholder="Zoek op naam, merk of kleur..." />
               {zoekterm && <button type="button" onClick={() => setZoekterm("")} aria-label="Zoekopdracht wissen"><X size={16} /></button>}
             </label>
+            <button className="filament-filter-button" type="button" onClick={() => setFilamentFiltersOpen(true)}>
+              <SlidersHorizontal size={18} />
+              Filters
+            </button>
             <label className="filament-select">
               <SlidersHorizontal size={17} />
               <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} aria-label="Filter op materiaal">
@@ -642,9 +648,40 @@ export default function Filamenten() {
             </button>
           </div>
         </div>
+        <BottomSheet
+          open={filamentFiltersOpen}
+          title="Filamenten filteren"
+          description="Kies materiaal en sortering voor je voorraadlijst."
+          onClose={() => setFilamentFiltersOpen(false)}
+        >
+          <div className="filament-filter-sheet">
+            <label className="filament-select">
+              <SlidersHorizontal size={17} />
+              <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} aria-label="Filter op materiaal">
+                {materiaalTypes.map((item) => <option key={item}>{item}</option>)}
+              </select>
+              <ChevronDown size={15} />
+            </label>
+            <label className="filament-select filament-select--sort">
+              <select value={sortering} onChange={(e) => setSortering(e.target.value)} aria-label="Sorteer filamenten">
+                <option value="naam">Naam A-Z</option>
+                <option value="voorraad">Laagste voorraad</option>
+                <option value="prijs">Hoogste prijs</option>
+              </select>
+              <ChevronDown size={15} />
+            </label>
+          </div>
+        </BottomSheet>
 
         {toonFormulier && (
-          <form className="filament-form" onSubmit={opslaan}>
+          <BottomSheet
+            open={toonFormulier}
+            title={bewerkenId === null ? "Filament toevoegen" : "Filament bewerken"}
+            description={bewerkenId === null ? "Leg merk, kleur, materiaal en voorraad vast." : "Werk de voorraad- en kostengegevens van deze rol bij."}
+            onClose={sluitFormulier}
+            className="filament-form-sheet"
+          >
+          <form className="filament-form filament-form--sheet" onSubmit={opslaan}>
             <div className="filament-form__heading">
               <div><span>{bewerkenId === null ? "Nieuwe rol" : "Filament bewerken"}</span><h3>{bewerkenId === null ? "Voeg filament toe aan je voorraad" : "Werk de gegevens van deze rol bij"}</h3></div>
               <div className="filament-form__swatch" style={{ background: filamentKleur(kleur) }} />
@@ -665,6 +702,7 @@ export default function Filamenten() {
               <button type="submit"><Check size={18} /> {bewerkenId === null ? "Rol opslaan" : "Wijzigingen opslaan"}</button>
             </div>
           </form>
+          </BottomSheet>
         )}
 
         {gefilterd.length > 0 ? (
