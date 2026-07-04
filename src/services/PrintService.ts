@@ -1,5 +1,6 @@
 import { db } from "../database/db";
 import type { Print } from "../types/Print";
+import { berekenCatalogusPrijs } from "../utils/printPricing";
 import { queueCloudPrintDeletion, syncPrints, uploadPrint } from "./PrintSyncService";
 
 let legacyFileMigration: Promise<void> | null = null;
@@ -66,15 +67,18 @@ export async function deletePrint(id: number) {
 }
 
 export async function savePrint(print: Print) {
-  const kostprijs =
-    Number(print.materiaalKosten || 0) +
-    Number(print.stroomKosten || 0) +
-    Number(print.onderhoudKosten || 0) +
-    Number(print.verpakkingKosten || 0) +
-    Number(print.overigeKosten || 0);
-  const winst = Number(print.verkoopprijs || 0) - kostprijs;
+  const filamenten = await db.filamenten.toArray();
+  const pricing = berekenCatalogusPrijs(print, filamenten);
+  const bijgewerkt = {
+    ...print,
+    materiaalKosten: pricing.materiaalKosten,
+    kostprijs: pricing.kostprijs,
+    winst: pricing.winst,
+    syncPending: true
+  };
 
-  await db.prints.update(print.id!, { ...print, kostprijs, winst, syncPending: true });
+  await db.prints.update(print.id!, bijgewerkt);
   const saved = await db.prints.get(print.id!);
   await uploadLater(saved);
+  return saved ? withoutSourceFile(saved) : undefined;
 }

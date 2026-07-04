@@ -16,6 +16,8 @@ export interface SettingsModel {
 
   onderhoud: number;
 
+  werkKosten: number;
+
   platform: string;
 
   platformKosten: number;

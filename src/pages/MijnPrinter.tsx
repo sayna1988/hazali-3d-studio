@@ -110,6 +110,7 @@ export default function MijnPrinter() {
       btw: current?.btw ?? 21,
       verpakking: current?.verpakking ?? 0.3,
       onderhoud: current?.onderhoud ?? 0.1,
+      werkKosten: current?.werkKosten ?? 0,
       platform: current?.platform ?? "Etsy",
       platformKosten: current?.platformKosten ?? 6.5,
       printerIp,

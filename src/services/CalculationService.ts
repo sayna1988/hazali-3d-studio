@@ -45,7 +45,8 @@ export function berekenPrint(
       ? settings.onderhoud
       : 0.10;
 
-  const overigeKosten = 0;
+  const overigeKosten =
+    settings?.werkKosten ?? 0;
 
   const kostprijs =
     materiaalKosten +

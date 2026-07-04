@@ -21,7 +21,8 @@ export async function import3MF(file: File, folderId: number | null = null) {
   const stroomKosten = settings ? printUren * (settings.printerVermogen / 1000) * settings.stroomPrijs : 0;
   const onderhoudKosten = settings?.onderhoud ?? 0;
   const verpakkingKosten = settings?.verpakking ?? 0;
-  const kostprijs = materiaalKosten + stroomKosten + onderhoudKosten + verpakkingKosten;
+  const overigeKosten = settings?.werkKosten ?? 0;
+  const kostprijs = materiaalKosten + stroomKosten + onderhoudKosten + verpakkingKosten + overigeKosten;
 
   const id = await createPrint({
 
@@ -82,7 +83,7 @@ export async function import3MF(file: File, folderId: number | null = null) {
 
   verpakkingKosten,
 
-  overigeKosten: 0,
+  overigeKosten,
 
   platform: settings?.platform ?? "",
 

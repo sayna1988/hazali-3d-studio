@@ -1,7 +1,7 @@
 import "./Instellingen.css";
 import { useEffect, useState } from "react";
 import type { SyntheticEvent } from "react";
-import { Check, Image, Palette, Sparkles } from "lucide-react";
+import { Check, Euro, Image, Palette, Save, Sparkles } from "lucide-react";
 import { db } from "../database/db";
 import { saveSettings as saveAppSettings } from "../services/SettingsSyncService";
 import type { SettingsModel } from "../types/Settings";
@@ -25,6 +25,15 @@ import {
   storeAppThemeVariant,
 } from "../utils/appTheme";
 
+type KostenInstellingen = Pick<SettingsModel, "stroomPrijs" | "onderhoud" | "verpakking" | "werkKosten">;
+
+const DEFAULT_KOSTEN: KostenInstellingen = {
+  stroomPrijs: 0.23,
+  onderhoud: 0.1,
+  verpakking: 0.3,
+  werkKosten: 0,
+};
+
 export default function Instellingen() {
   const [appIconVariant, setAppIconVariant] = useState<AppIconVariant>(() => getStoredAppIconVariant());
   const [appIconSaving, setAppIconSaving] = useState(false);
@@ -32,6 +41,9 @@ export default function Instellingen() {
   const [appThemeVariant, setAppThemeVariant] = useState<AppThemeVariant>(() => getStoredAppThemeVariant());
   const [appThemeSaving, setAppThemeSaving] = useState(false);
   const [appThemeMessage, setAppThemeMessage] = useState("Hazali is actief.");
+  const [kosten, setKosten] = useState<KostenInstellingen>(DEFAULT_KOSTEN);
+  const [kostenSaving, setKostenSaving] = useState(false);
+  const [kostenMessage, setKostenMessage] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -39,6 +51,8 @@ export default function Instellingen() {
     async function loadSettings() {
       const settings = await db.settings.get(1);
       if (!active) return;
+
+      setKosten(kostenFromSettings(settings));
 
       const iconVariant = normalizeAppIconVariant(settings?.appIconVariant ?? getStoredAppIconVariant());
       setAppIconVariant(iconVariant);
@@ -78,7 +92,7 @@ export default function Instellingen() {
 
     try {
       const currentSettings = await db.settings.get(1);
-      await saveAppSettings(settingsWithPersonalization(currentSettings, { appIconVariant: variant }));
+      await saveAppSettings(settingsWithChanges(currentSettings, { appIconVariant: variant }));
       setAppIconMessage(`Optie ${variant} is actief.`);
     } catch (error) {
       setAppIconVariant(previousVariant);
@@ -106,7 +120,7 @@ export default function Instellingen() {
 
     try {
       const currentSettings = await db.settings.get(1);
-      await saveAppSettings(settingsWithPersonalization(currentSettings, { appThemeVariant: variant }));
+      await saveAppSettings(settingsWithChanges(currentSettings, { appThemeVariant: variant }));
       setAppThemeMessage(`${theme.label} is actief.`);
     } catch (error) {
       setAppThemeVariant(previousVariant);
@@ -116,6 +130,30 @@ export default function Instellingen() {
       setAppThemeMessage(error instanceof Error ? error.message : `${previousTheme.label} is actief.`);
     } finally {
       setAppThemeSaving(false);
+    }
+  }
+
+  function updateKosten(key: keyof KostenInstellingen, value: number) {
+    setKosten((current) => ({
+      ...current,
+      [key]: Number.isFinite(value) ? Math.max(0, value) : 0,
+    }));
+    setKostenMessage("");
+  }
+
+  async function saveKostenSettings() {
+    if (kostenSaving) return;
+
+    setKostenSaving(true);
+    setKostenMessage("Kosten opslaan...");
+    try {
+      const currentSettings = await db.settings.get(1);
+      await saveAppSettings(settingsWithChanges(currentSettings, kosten));
+      setKostenMessage("Kosten opgeslagen.");
+    } catch (error) {
+      setKostenMessage(error instanceof Error ? error.message : "Kosten opslaan is mislukt.");
+    } finally {
+      setKostenSaving(false);
     }
   }
 
@@ -130,9 +168,82 @@ export default function Instellingen() {
         <div>
           <span className="settings-eyebrow"><Sparkles size={15} /> Studio voorkeuren</span>
           <h1>Instellingen</h1>
-          <p>Beheer de uitstraling van Hazali op dit apparaat en synchroniseer je keuze met je account.</p>
+          <p>Beheer kostprijzen, thema en app-icoon op dit apparaat en synchroniseer je keuze met je account.</p>
         </div>
       </header>
+
+      <section className="settings-panel settings-cost-settings" aria-labelledby="settings-cost-title">
+        <div className="settings-panel__header">
+          <div>
+            <span className="settings-section-label">Kostprijs</span>
+            <h2 id="settings-cost-title">Kosten</h2>
+          </div>
+          <Euro size={22} className="settings-panel__symbol" />
+          {kostenMessage && <div className="settings-cost-message" aria-live="polite">{kostenMessage}</div>}
+        </div>
+        <div className="settings-cost-grid">
+          <label>
+            <span>Stroom</span>
+            <div className="settings-money-input">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={kosten.stroomPrijs}
+                onChange={(event) => updateKosten("stroomPrijs", Number(event.target.value))}
+              />
+              <small>EUR/kWh</small>
+            </div>
+          </label>
+          <label>
+            <span>Onderhoud</span>
+            <div className="settings-money-input">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={kosten.onderhoud}
+                onChange={(event) => updateKosten("onderhoud", Number(event.target.value))}
+              />
+              <small>EUR</small>
+            </div>
+          </label>
+          <label>
+            <span>Verpakking</span>
+            <div className="settings-money-input">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={kosten.verpakking}
+                onChange={(event) => updateKosten("verpakking", Number(event.target.value))}
+              />
+              <small>EUR</small>
+            </div>
+          </label>
+          <label>
+            <span>Werk kosten</span>
+            <div className="settings-money-input">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={kosten.werkKosten}
+                onChange={(event) => updateKosten("werkKosten", Number(event.target.value))}
+              />
+              <small>EUR</small>
+            </div>
+          </label>
+        </div>
+        <button type="button" className="settings-save-button" disabled={kostenSaving} onClick={() => void saveKostenSettings()}>
+          {kostenSaving ? <Check size={17} /> : <Save size={17} />}
+          {kostenSaving ? "Opslaan..." : "Kosten opslaan"}
+        </button>
+      </section>
 
       <section className="settings-panel settings-icon-settings" aria-labelledby="settings-app-icon-title">
         <div className="settings-panel__header">
@@ -216,18 +327,35 @@ export default function Instellingen() {
   );
 }
 
-function settingsWithPersonalization(
+function kostenFromSettings(current: SettingsModel | undefined): KostenInstellingen {
+  return {
+    stroomPrijs: current?.stroomPrijs ?? DEFAULT_KOSTEN.stroomPrijs,
+    onderhoud: current?.onderhoud ?? DEFAULT_KOSTEN.onderhoud,
+    verpakking: current?.verpakking ?? DEFAULT_KOSTEN.verpakking,
+    werkKosten: current?.werkKosten ?? DEFAULT_KOSTEN.werkKosten,
+  };
+}
+
+type SettingsChanges = Partial<
+  Pick<
+    SettingsModel,
+    "appIconVariant" | "appThemeVariant" | "stroomPrijs" | "onderhoud" | "verpakking" | "werkKosten"
+  >
+>;
+
+function settingsWithChanges(
   current: SettingsModel | undefined,
-  changes: Pick<SettingsModel, "appIconVariant" | "appThemeVariant">,
+  changes: SettingsChanges,
 ): SettingsModel {
   return {
     id: 1,
     printerNaam: current?.printerNaam ?? "Bambu Lab P2S",
-    stroomPrijs: current?.stroomPrijs ?? 0.23,
+    stroomPrijs: changes.stroomPrijs ?? current?.stroomPrijs ?? DEFAULT_KOSTEN.stroomPrijs,
     printerVermogen: current?.printerVermogen ?? 180,
     btw: current?.btw ?? 21,
-    verpakking: current?.verpakking ?? 0.3,
-    onderhoud: current?.onderhoud ?? 0.1,
+    verpakking: changes.verpakking ?? current?.verpakking ?? DEFAULT_KOSTEN.verpakking,
+    onderhoud: changes.onderhoud ?? current?.onderhoud ?? DEFAULT_KOSTEN.onderhoud,
+    werkKosten: changes.werkKosten ?? current?.werkKosten ?? DEFAULT_KOSTEN.werkKosten,
     platform: current?.platform ?? "Etsy",
     platformKosten: current?.platformKosten ?? 6.5,
     printerIp: current?.printerIp,

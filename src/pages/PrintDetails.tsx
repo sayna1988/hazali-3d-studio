@@ -4,6 +4,7 @@ import { db } from "../database/db";
 import { savePrint, withoutSourceFile } from "../services/PrintService";
 import { loadFilaments } from "../services/FilamentService";
 import { totaalGewicht } from "../utils/filamentInventory";
+import { berekenCatalogusPrijs } from "../utils/printPricing";
 import type { Print } from "../types/Print";
 import type { Filament } from "../types/Filament";
 import { colorsMatch } from "../utils/colorNames";
@@ -101,7 +102,8 @@ export default function PrintDetails() {
     if (!printData?.id) return;
     setOpmerkingOpslaan(true);
     try {
-      await savePrint({ ...printData, opmerkingen: printData.opmerkingen ?? "" });
+      const opgeslagenPrint = await savePrint({ ...printData, opmerkingen: printData.opmerkingen ?? "" });
+      if (opgeslagenPrint) setPrintData(opgeslagenPrint);
       setOpmerkingOpgeslagen(true);
     } finally {
       setOpmerkingOpslaan(false);
@@ -183,8 +185,8 @@ export default function PrintDetails() {
         uren: minutenTotaal > 0 ? Math.floor(minutenTotaal / 60) : printData.uren,
         minuten: minutenTotaal > 0 ? minutenTotaal % 60 : printData.minuten
       };
-      await savePrint(bijgewerkt);
-      setPrintData(bijgewerkt);
+      const opgeslagenPrint = await savePrint(bijgewerkt);
+      setPrintData(opgeslagenPrint ?? bijgewerkt);
       setFilamentOpgeslagen(true);
     } finally {
       setFilamentOpslaan(false);
@@ -196,12 +198,20 @@ export default function PrintDetails() {
     setHoofdfotoOpslaan(true);
     try {
       const bijgewerkt = { ...printData, foto };
-      await savePrint(bijgewerkt);
-      setPrintData(bijgewerkt);
+      const opgeslagenPrint = await savePrint(bijgewerkt);
+      setPrintData(opgeslagenPrint ?? bijgewerkt);
     } finally {
       setHoofdfotoOpslaan(false);
     }
   }
+
+  const actuelePrijs = useMemo(
+    () => printData ? berekenCatalogusPrijs(printData, filamentVoorraad) : null,
+    [printData, filamentVoorraad]
+  );
+  const materiaalKosten = actuelePrijs?.materiaalKosten ?? Number(printData?.materiaalKosten || 0);
+  const kostprijs = actuelePrijs?.kostprijs ?? Number(printData?.kostprijs || 0);
+  const winst = actuelePrijs?.winst ?? Number(printData?.winst || 0);
 
   const margin =
     useMemo(() => {
@@ -218,9 +228,7 @@ export default function PrintDetails() {
       return Math.round(
 
         (
-          Number(
-            printData.winst || 0
-          ) /
+          winst /
 
           Number(
             printData.verkoopprijs || 1
@@ -230,7 +238,7 @@ export default function PrintDetails() {
 
       );
 
-    }, [printData]);
+    }, [printData, winst]);
 
   function formatDate(
     value?: string
@@ -526,7 +534,7 @@ export default function PrintDetails() {
                   {
 
                     Number(
-                      printData.kostprijs || 0
+                      kostprijs
                     ).toFixed(2)
 
                   }
@@ -553,7 +561,7 @@ export default function PrintDetails() {
                   {
 
                     Number(
-                      printData.winst || 0
+                      winst
                     ).toFixed(2)
 
                   }
@@ -589,7 +597,7 @@ export default function PrintDetails() {
     <strong>
       €
       {Number(
-        printData.materiaalKosten || 0
+        materiaalKosten
       ).toFixed(2)}
     </strong>
 
@@ -636,7 +644,7 @@ export default function PrintDetails() {
 
   <div className="detail-line">
 
-    <span>Overige kosten</span>
+    <span>Werk kosten</span>
 
     <strong>
       €
@@ -656,7 +664,7 @@ export default function PrintDetails() {
     <strong>
       €
       {Number(
-        printData.kostprijs || 0
+        kostprijs
       ).toFixed(2)}
     </strong>
 
