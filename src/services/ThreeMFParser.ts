@@ -116,7 +116,8 @@ const valuesForKeys = (text: string, keys: string[]) => {
   for (const key of keys) {
     const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const patterns = [
-      new RegExp(`(?:key|name|type)=["']${escaped}["'][^>]*(?:value=["']([^"']+)["']|>([^<]+))`, "gi"),
+      new RegExp(`(?:key|name|type)=["']${escaped}["'][^>]*?value=["']([^"']+)["']`, "gi"),
+      new RegExp(`(?:key|name|type)=["']${escaped}["'][^>]*>([^<]+)`, "gi"),
       new RegExp(`["']${escaped}["']\\s*:\\s*(?:["']([^"']*)["']|([^,}\\]\r\n]+))`, "gi"),
       new RegExp(`^\\s*${escaped}\\s*=\\s*([^\\r\\n]+)`, "gim")
     ];
@@ -140,6 +141,8 @@ const listValue = (values: string[]) => values.flatMap((value) => {
   }
 });
 
+const uniqueValues = <T,>(values: T[]) => values.filter((value, index, list) => list.indexOf(value) === index);
+
 function jsonValuesForKeys(documents: Array<{ name: string; text: string }>, keys: string[]) {
   const wanted = new Set(keys.map((key) => key.toLowerCase()));
   const found: string[] = [];
@@ -159,6 +162,27 @@ function jsonValuesForKeys(documents: Array<{ name: string; text: string }>, key
     try { visit(JSON.parse(document.text)); } catch { /* Niet ieder .config-bestand is JSON. */ }
   }
   return found;
+}
+
+function usedFilamentIndexes(documents: Array<{ name: string; text: string }>, colorCount: number) {
+  if (colorCount < 2) return [];
+  const indexKeys = ["extruder", "extruder_id", "filament_id", "filament_index"];
+  const relevantDocuments = documents.filter((doc) => /model_settings|slice_info|plate.*\.config|\.model$/i.test(doc.name));
+  if (!relevantDocuments.length) return [];
+  const text = relevantDocuments.map((doc) => doc.text).join("\n");
+  const attributeValues = [...text.matchAll(/\b(?:extruder|extruder_id|filament_id|filament_index)\s*=\s*["'](\d+)["']/gi)]
+    .map((match) => match[1]);
+  const values = [
+    ...jsonValuesForKeys(relevantDocuments, indexKeys),
+    ...listValue(valuesForKeys(text, indexKeys)),
+    ...attributeValues
+  ];
+  const numbers = uniqueValues(values.map(numberValue).filter((value): value is number => value !== undefined && Number.isInteger(value) && value >= 0));
+  if (!numbers.length) return [];
+  const oneBased = numbers.every((value) => value >= 1 && value <= colorCount);
+  return numbers
+    .map((value) => oneBased ? value - 1 : value)
+    .filter((index) => index >= 0 && index < colorCount);
 }
 
 const colorDistance = (a: [number, number, number], b: [number, number, number]) =>
@@ -323,11 +347,16 @@ export async function parse3MF(file: File): Promise<Parsed3MF> {
     .map(numberValue).filter((v): v is number => v !== undefined && v > 0);
   const lengths = valuesForKeys(combined, ["total filament length [mm]", "filament used [mm]", "filament_length", "used_filament_length"])
     .map(numberValue).filter((v): v is number => v !== undefined && v > 0);
-  const colorKeys = ["filament_colour", "filament_color", "filament_colors", "extruder_colour", "extruder_color", "default_filament_colour"];
+  // `default_filament_colour` is a filament-profile fallback in Bambu/MakerWorld
+  // 3MFs and can be present even when that color is not used for the print.
+  const colorKeys = ["filament_colour", "filament_color", "filament_colors", "extruder_colour", "extruder_color"];
   const metadataColors = [
     ...jsonValuesForKeys(documents, colorKeys),
     ...listValue(valuesForKeys(combined, colorKeys))
   ].map(cleanColor).filter((color) => /^#[0-9A-F]{6}$/i.test(color));
+  const indexedMetadataColors = uniqueValues(usedFilamentIndexes(documents, metadataColors.length)
+    .map((index) => metadataColors[index])
+    .filter((color): color is string => Boolean(color)));
   const materialKeys = ["filament_type", "material", "filament_settings_id"];
   const materials = [
     ...jsonValuesForKeys(documents, materialKeys),
@@ -350,7 +379,7 @@ export async function parse3MF(file: File): Promise<Parsed3MF> {
   const thumbnailFile = thumbnailName ? zip.file(thumbnailName) : null;
   const thumbnailBlob = thumbnailFile ? await thumbnailFile.async("blob") : undefined;
   const thumbnail = await asDataUrl(thumbnailBlob);
-  const uniqueMetadataColors = metadataColors.filter((color, index, list) => list.indexOf(color) === index);
+  const uniqueMetadataColors = indexedMetadataColors.length ? indexedMetadataColors : uniqueValues(metadataColors);
   const fallbackColors = usedColors.length || uniqueMetadataColors.length ? [] : await previewColors(thumbnailBlob);
   const colors = usedColors.length ? usedColors : uniqueMetadataColors.length ? uniqueMetadataColors : fallbackColors;
   const kleurBron: Parsed3MF["kleurBron"] = usedColors.length || uniqueMetadataColors.length ? "3mf-metadata" : fallbackColors.length ? "preview" : "geen";
