@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import "./BottomSheet.css";
 
@@ -57,7 +58,7 @@ export default function BottomSheet({
 
   if (!open || !canRender) return null;
 
-  return (
+  return createPortal(
     <div
       className={`bottom-sheet-backdrop${mobileOnly ? " bottom-sheet-backdrop--mobile-only" : ""}`}
       role="dialog"
@@ -83,6 +84,7 @@ export default function BottomSheet({
         <div className="bottom-sheet__body">{children}</div>
         {footer && <footer className="bottom-sheet__footer">{footer}</footer>}
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }

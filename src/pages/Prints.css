@@ -169,6 +169,7 @@
     .catalog-breadcrumbs{width:100%}
 }
 @media (max-width: 700px){
+    .catalog-folder-card__menu-panel{display:none}
     .bulk-actions__desktop-controls{display:none}
     .bulk-actions__mobile-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
     .bulk-actions__mobile-controls .catalog-action-button:first-child{grid-column:1/-1}
