@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Fingerprint, KeyRound, LockKeyhole } from "lucide-react";
+import { getAppIconPath, getStoredAppIconVariant } from "../utils/appIcon";
 
 interface Props {
   userId: string;
@@ -33,6 +34,7 @@ function readPinRecord(key: string): PinRecord | null {
 }
 
 export function DeviceLock({ userId, signOut, children }: Props) {
+  const logoSrc = getAppIconPath(getStoredAppIconVariant(), 192);
   const pinKey = `hazali-pin:${userId}`;
   const faceKey = `hazali-passkey:${userId}`;
   const unlockKey = `hazali-unlocked:${userId}`;
@@ -131,7 +133,7 @@ export function DeviceLock({ userId, signOut, children }: Props) {
   return (
     <main className="auth-page">
       <section className="auth-card device-lock-card">
-        <img src="/logo.png" alt="Hazali" />
+        <img src={logoSrc} alt="Hazali" />
         <span><LockKeyhole size={13} /> Privéstudio</span>
         <h1>{hasPin ? "Ontgrendel je studio" : "Beveilig dit apparaat"}</h1>
         <p>{hasPin ? "Gebruik je 6-cijferige pincode of Face ID." : "Stel één keer een lokale pincode in. Deze wordt alleen versleuteld op dit apparaat bewaard."}</p>

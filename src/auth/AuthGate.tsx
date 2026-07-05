@@ -1,10 +1,15 @@
 import { useState } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import { getAppIconPath, getStoredAppIconVariant } from "../utils/appIcon";
 import { useAuth } from "./AuthProvider";
 import { DeviceLock } from "./DeviceLock";
 import "./AuthGate.css";
 
 const OTP_LENGTH = 8;
+
+function authLogoSrc() {
+  return getAppIconPath(getStoredAppIconVariant(), 192);
+}
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, loading, syncError, signOut } = useAuth();
@@ -52,7 +57,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     return (
       <main className="auth-page">
         <section className="auth-card">
-          <img src="/logo.png" alt="Hazali" />
+          <img src={authLogoSrc()} alt="Hazali" />
           <span>Cloud sync</span>
           <h1>Log in bij je studio</h1>
           <p>Gebruik op desktop en mobiel hetzelfde e-mailadres. Je krijgt een veilige inlogcode zonder wachtwoord.</p>
@@ -80,5 +85,5 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 }
 
 function AuthShell({ title, text }: { title: string; text: string }) {
-  return <main className="auth-page"><section className="auth-card"><img src="/logo.png" alt="Hazali" /><h1>{title}</h1><p>{text}</p></section></main>;
+  return <main className="auth-page"><section className="auth-card"><img src={authLogoSrc()} alt="Hazali" /><h1>{title}</h1><p>{text}</p></section></main>;
 }

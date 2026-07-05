@@ -21,6 +21,14 @@ export default defineConfig(({ mode }) => {
 
       registerType: "autoUpdate",
 
+      includeAssets: [
+        "icons/app-icon-*-192.png",
+        "icons/app-icon-03.png",
+        "icons/app-icon-03-180.png",
+        "favicon.svg",
+        "icons.svg"
+      ],
+
       manifest: false
 
     })

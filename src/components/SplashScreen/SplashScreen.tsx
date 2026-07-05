@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./SplashScreen.css";
+import { getAppIconPath, getStoredAppIconVariant } from "../../utils/appIcon";
 
 const SPLASH_VISIBLE_MS = 720;
 const SPLASH_FADE_MS = 260;
@@ -8,6 +9,7 @@ type SplashState = "visible" | "leaving" | "hidden";
 
 export default function SplashScreen() {
   const [splashState, setSplashState] = useState<SplashState>("visible");
+  const logoSrc = getAppIconPath(getStoredAppIconVariant(), 192);
 
   useEffect(() => {
     const leaveTimer = window.setTimeout(() => {
@@ -33,7 +35,7 @@ export default function SplashScreen() {
       aria-label="Hazali 3D Studio wordt geladen"
     >
       <div className="hazali-splash__content">
-        <img src="/logo.png" alt="Hazali 3D Studio" className="hazali-splash__logo" />
+        <img src={logoSrc} alt="Hazali 3D Studio" className="hazali-splash__logo" />
         <span className="hazali-splash__loader" aria-hidden="true" />
       </div>
     </div>
