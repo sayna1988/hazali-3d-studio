@@ -108,6 +108,23 @@ test("herstelt OCR-gramwaarden waar decimalen zijn weggevallen", () => {
   assert.equal(result.colors[1]?.recognizedTotalGram, 12.24);
 });
 
+test("splitst gecombineerde OCR-regels naar meerdere kleuren", () => {
+  const result = parseSlicingResultText(`
+    1 1.34 m 0.03 m 7.28 m 0.37 m 9.02 m
+    4 0.43 m 0.36 m 2.48 m 0.78 m 4.04 m
+    405 g 011 g 2205 g 113 g 2734 g 129 g 108 g 752 g 235 g 1224 g
+    Total
+    535 g 119 g 2957 g 348 g 3958 g
+  `);
+
+  assert.equal(result.colors.length, 2);
+  assert.equal(result.colors[0]?.label, "1");
+  assert.equal(result.colors[1]?.label, "4");
+  assert.equal(result.colors[0]?.totalGram, 27.34);
+  assert.equal(result.colors[1]?.totalGram, 12.24);
+  assert.equal(calculateSlicingTotals(result.colors).totalGram, 39.58);
+});
+
 test("accepteert komma-decimalen en OCR-verwarring in getallen", () => {
   const result = parseSlicingResultText(`
     2 0,50 m 0,00 m 1,20 m 0,40 m 2,10 m

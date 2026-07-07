@@ -115,15 +115,20 @@ export function parseSlicingResultText(text: string): SlicingParseResult {
     if (values.length < 4) return [];
 
     const previousLine = lines[lineIndex - 1] ?? "";
-    const label = findNearestFilamentLabel(lines, lineIndex);
+    const valueRows = splitGramValueRows(values);
+    const labels = findNearestFilamentLabels(lines, lineIndex, valueRows.length);
+    const lineHasSummary = hasSummaryLabel(line);
+    const previousLineHasSummary = hasSummaryLabel(previousLine);
 
-    return [{
-      values,
+    return valueRows.map((valueRow, rowIndex) => ({
+      values: valueRow,
       lineIndex,
       line,
-      label,
-      isSummary: hasSummaryLabel(line) || hasSummaryLabel(previousLine),
-    }];
+      label: labels[rowIndex],
+      isSummary: lineHasSummary
+        ? rowIndex === valueRows.length - 1
+        : previousLineHasSummary && valueRows.length === 1,
+    }));
   });
 
   const explicitRows = candidates.filter((candidate) => !candidate.isSummary);
@@ -228,13 +233,46 @@ function parseOcrNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function findNearestFilamentLabel(lines: string[], gramLineIndex: number) {
-  for (let offset = 1; offset <= 3; offset += 1) {
-    const label = extractFilamentLabel(lines[gramLineIndex - offset] ?? "");
-    if (label) return label;
+function splitGramValueRows(values: number[]) {
+  const columns = values.length % 5 === 0 ? 5 : values.length % 4 === 0 ? 4 : values.length;
+  if (values.length === columns) return [values];
+
+  const rows: number[][] = [];
+  for (let index = 0; index < values.length; index += columns) {
+    rows.push(values.slice(index, index + columns));
   }
 
-  return extractFilamentLabel(lines[gramLineIndex] ?? "");
+  return rows;
+}
+
+function findNearestFilamentLabels(
+  lines: string[],
+  gramLineIndex: number,
+  count: number,
+) {
+  const labels: string[] = [];
+  const startIndex = Math.max(0, gramLineIndex - 4);
+
+  for (let lineIndex = startIndex; lineIndex <= gramLineIndex; lineIndex += 1) {
+    labels.push(...extractMeterFilamentLabels(lines[lineIndex] ?? ""));
+  }
+
+  if (labels.length >= count) return labels.slice(-count);
+
+  if (count === 1) {
+    const label = extractFilamentLabel(lines[gramLineIndex] ?? "");
+    return label ? [label] : [];
+  }
+
+  return labels;
+}
+
+function extractMeterFilamentLabels(line: string) {
+  if (hasSummaryLabel(line)) return [];
+
+  return Array.from(line.matchAll(/(?:^|\s)(\d{1,2})\s+[0-9OoIl|]+(?:[.,]\s*[0-9OoIl|]+)?\s*m\b/gi))
+    .map((match) => match[1])
+    .filter((label): label is string => Boolean(label));
 }
 
 function extractFilamentLabel(line: string) {
