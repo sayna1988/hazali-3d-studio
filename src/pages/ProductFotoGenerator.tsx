@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import Page from "../components/Page/Page";
 
-const OUTPUT_SIZE = 1080;
+const OUTPUT_WIDTH = 1080;
+const OUTPUT_HEIGHT = 1350;
 const DEFAULT_TEXT = "Wing\nBall";
 const LOGO_SRC = "/logo.png";
 
@@ -195,7 +196,7 @@ export default function ProductFotoGenerator() {
   }
 
   return (
-    <Page title="Productfoto" subtitle="Instagram output in 1080 x 1080 met vaste Hazali branding.">
+    <Page title="Productfoto" subtitle="Instagram output in 1080 x 1350 met vaste Hazali branding.">
       <div className="product-generator" style={paletteStyle}>
         <section className="product-generator__controls" aria-label="Productfoto generator">
           <div className="product-generator__panel">
@@ -276,7 +277,7 @@ export default function ProductFotoGenerator() {
 
         <section className="product-generator__preview-panel" aria-label="Voorbeeld">
           <div className="product-generator__preview-top">
-            <span><Sparkles size={16} /> Instagram vierkant</span>
+            <span><Sparkles size={16} /> Instagram staand</span>
             <button type="button" onClick={downloadImage} disabled={isRendering}>
               <Download size={17} />
               Download JPG
@@ -284,12 +285,12 @@ export default function ProductFotoGenerator() {
           </div>
 
           <div className="product-generator__preview-frame">
-            <canvas ref={canvasRef} width={OUTPUT_SIZE} height={OUTPUT_SIZE} />
+            <canvas ref={canvasRef} width={OUTPUT_WIDTH} height={OUTPUT_HEIGHT} />
           </div>
 
           <div className="product-generator__status" aria-live="polite">
             <span>{hasPendingText ? "Tekst gewijzigd; genereer opnieuw." : message}</span>
-            <strong>1080 x 1080</strong>
+            <strong>1080 x 1350</strong>
           </div>
         </section>
       </div>
@@ -319,10 +320,10 @@ function renderProductPhoto(
     analysis: ImageAnalysis;
   },
 ) {
-  context.clearRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+  context.clearRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
   drawBackground(context, options.analysis.palette);
-  drawHeadline(context, options.text, options.analysis.palette);
   drawDecorations(context, options.analysis.palette);
+  drawHeadline(context, options.text, options.analysis.palette);
 
   if (options.productImage) {
     drawProduct(context, options.productImage, options.analysis);
@@ -330,141 +331,177 @@ function renderProductPhoto(
     drawEmptyProductSlot(context, options.analysis.palette);
   }
 
+  drawForegroundHighlights(context, options.analysis.palette);
   drawLogo(context, options.logoImage);
 }
 
 function drawBackground(context: CanvasRenderingContext2D, palette: Palette) {
-  const gradient = context.createLinearGradient(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
-  gradient.addColorStop(0, rgbToCss(mix(palette.light, palette.primary, 0.1)));
-  gradient.addColorStop(0.52, "#ffffff");
-  gradient.addColorStop(1, rgbToCss(mix(palette.light, palette.secondary, 0.13)));
+  const headlineAccent = pickHeadlineAccent(palette);
+  const supportAccent = pickSupportAccent(palette, headlineAccent);
+  const gradient = context.createLinearGradient(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+  gradient.addColorStop(0, rgbToCss(mix(palette.light, supportAccent, 0.18)));
+  gradient.addColorStop(0.34, "#f8f4ed");
+  gradient.addColorStop(0.62, "#ffffff");
+  gradient.addColorStop(1, rgbToCss(mix(palette.light, headlineAccent, 0.16)));
   context.fillStyle = gradient;
-  context.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+  context.fillRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
-  context.save();
-  context.globalAlpha = 0.88;
-  context.lineCap = "round";
-  context.lineWidth = 34;
-  context.strokeStyle = rgbToCss(palette.primary);
-  context.beginPath();
-  context.arc(1020, 920, 360, Math.PI * 1.04, Math.PI * 1.56);
-  context.stroke();
+  drawRibbon(context, supportAccent, 76, 0.72, (pathContext) => {
+    pathContext.moveTo(-72, -28);
+    pathContext.bezierCurveTo(42, 92, 78, 190, 174, 320);
+  });
+  drawRibbon(context, headlineAccent, 22, 0.82, (pathContext) => {
+    pathContext.moveTo(18, -34);
+    pathContext.bezierCurveTo(82, 68, 116, 160, 206, 276);
+  });
+  drawRibbon(context, headlineAccent, 48, 0.76, (pathContext) => {
+    pathContext.moveTo(1118, 400);
+    pathContext.bezierCurveTo(928, 622, 944, 880, 1118, 1090);
+  });
+  drawRibbon(context, supportAccent, 28, 0.72, (pathContext) => {
+    pathContext.moveTo(1138, 500);
+    pathContext.bezierCurveTo(980, 708, 1004, 914, 1140, 1068);
+  });
 
-  context.globalAlpha = 0.28;
-  context.lineWidth = 14;
-  context.beginPath();
-  context.arc(190, 228, 360, Math.PI * 0.78, Math.PI * 1.3);
-  context.stroke();
+  const spotlight = context.createRadialGradient(OUTPUT_WIDTH / 2, 640, 40, OUTPUT_WIDTH / 2, 650, 720);
+  spotlight.addColorStop(0, "rgba(255, 255, 255, 0.98)");
+  spotlight.addColorStop(0.45, "rgba(255, 255, 255, 0.64)");
+  spotlight.addColorStop(1, "rgba(255, 255, 255, 0)");
+  context.fillStyle = spotlight;
+  context.fillRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
-  context.globalAlpha = 0.3;
-  context.strokeStyle = rgbToCss(palette.secondary);
-  context.lineWidth = 18;
-  context.beginPath();
-  context.moveTo(40, 846);
-  context.bezierCurveTo(258, 792, 478, 844, 684, 798);
-  context.stroke();
+  const vignette = context.createRadialGradient(OUTPUT_WIDTH / 2, 690, 260, OUTPUT_WIDTH / 2, 690, 850);
+  vignette.addColorStop(0, "rgba(255, 255, 255, 0)");
+  vignette.addColorStop(1, rgbToRgba(palette.dark, 0.16));
+  context.fillStyle = vignette;
+  context.fillRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
 
-  context.globalAlpha = 0.45;
-  context.strokeStyle = "rgba(255, 255, 255, 0.92)";
-  context.lineWidth = 5;
-  context.beginPath();
-  context.arc(530, 616, 325, Math.PI * 1.04, Math.PI * 1.92);
-  context.stroke();
-  context.restore();
+  drawSoftCircle(context, 62, 560, 15, "rgba(255, 255, 255, 0.56)");
+  drawSoftCircle(context, 96, 638, 8, "rgba(255, 255, 255, 0.72)");
+  drawSoftCircle(context, 848, 88, 20, "rgba(255, 255, 255, 0.24)");
+  drawSoftCircle(context, 1018, 334, 15, "rgba(255, 255, 255, 0.46)");
+  drawSoftCircle(context, 980, 580, 8, rgbToRgba(headlineAccent, 0.28));
 
-  const floorGradient = context.createLinearGradient(0, 740, 0, OUTPUT_SIZE);
+  const floorY = 1068;
+  const floorGradient = context.createLinearGradient(0, floorY - 150, 0, OUTPUT_HEIGHT);
   floorGradient.addColorStop(0, "rgba(255, 255, 255, 0)");
-  floorGradient.addColorStop(1, "rgba(226, 232, 240, 0.86)");
+  floorGradient.addColorStop(0.34, "rgba(255, 255, 255, 0.84)");
+  floorGradient.addColorStop(1, "rgba(225, 218, 208, 0.92)");
   context.fillStyle = floorGradient;
-  context.fillRect(0, 740, OUTPUT_SIZE, 340);
+  context.fillRect(0, floorY - 150, OUTPUT_WIDTH, OUTPUT_HEIGHT - floorY + 150);
 
-  context.strokeStyle = "rgba(148, 163, 184, 0.22)";
-  context.lineWidth = 2;
+  const floorShine = context.createLinearGradient(0, floorY, OUTPUT_WIDTH, floorY);
+  floorShine.addColorStop(0, "rgba(255, 255, 255, 0)");
+  floorShine.addColorStop(0.5, rgbToRgba(headlineAccent, 0.26));
+  floorShine.addColorStop(1, "rgba(255, 255, 255, 0)");
+  context.strokeStyle = floorShine;
+  context.lineWidth = 4;
   context.beginPath();
-  context.moveTo(80, 794);
-  context.quadraticCurveTo(540, 776, 1000, 802);
+  context.moveTo(42, floorY);
+  context.quadraticCurveTo(OUTPUT_WIDTH / 2, floorY - 18, OUTPUT_WIDTH - 42, floorY);
   context.stroke();
 }
 
 function drawDecorations(context: CanvasRenderingContext2D, palette: Palette) {
+  const headlineAccent = pickHeadlineAccent(palette);
+  const supportAccent = pickSupportAccent(palette, headlineAccent);
+
   context.save();
-  context.lineCap = "round";
-  context.strokeStyle = rgbToCss(palette.primary);
-  context.globalAlpha = 0.9;
-  context.lineWidth = 17;
-
+  context.strokeStyle = rgbToRgba(headlineAccent, 0.28);
+  context.lineWidth = 5;
   context.beginPath();
-  context.moveTo(134, 332);
-  context.quadraticCurveTo(186, 356, 244, 368);
+  context.ellipse(520, 760, 320, 430, -0.24, Math.PI * 1.12, Math.PI * 1.92);
   context.stroke();
 
+  context.strokeStyle = "rgba(255, 255, 255, 0.72)";
+  context.lineWidth = 3;
   context.beginPath();
-  context.moveTo(108, 388);
-  context.quadraticCurveTo(176, 386, 252, 416);
+  context.ellipse(604, 760, 420, 385, 0.64, Math.PI * 0.92, Math.PI * 1.88);
   context.stroke();
 
+  context.strokeStyle = rgbToRgba(headlineAccent, 0.2);
   context.beginPath();
-  context.moveTo(862, 324);
-  context.quadraticCurveTo(804, 358, 748, 372);
+  context.ellipse(562, 768, 396, 478, 0.2, Math.PI * 1.08, Math.PI * 1.72);
   context.stroke();
+  context.restore();
 
-  context.beginPath();
-  context.moveTo(910, 384);
-  context.quadraticCurveTo(828, 384, 758, 418);
-  context.stroke();
+  drawPennant(context, 176, 418, 122, 36, supportAccent, 1);
+  drawPennant(context, 262, 386, 112, 30, headlineAccent, 1);
+  drawPennant(context, 904, 420, 122, 36, supportAccent, -1);
+  drawPennant(context, 816, 386, 112, 30, headlineAccent, -1);
 
-  context.globalAlpha = 0.66;
-  context.lineWidth = 4;
-  drawSpark(context, 142, 238, 34, palette.primary);
-  drawSpark(context, 944, 172, 24, palette.primary);
+  context.save();
+  drawSpark(context, 130, 300, 24, headlineAccent);
+  drawSpark(context, 996, 226, 16, headlineAccent);
+  drawSpark(context, 470, 410, 12, supportAccent);
   context.restore();
 }
 
 function drawHeadline(context: CanvasRenderingContext2D, text: string, palette: Palette) {
   const lines = createHeadlineLines(text);
-  const startY = lines.length === 1 ? 178 : 138;
-  const lineGap = lines.length === 1 ? 0 : 126;
+  const headlineAccent = pickHeadlineAccent(palette);
+  const startY = lines.length === 1 ? 230 : lines.length === 2 ? 180 : 150;
+  const lineGap = lines.length === 1 ? 0 : lines.length === 2 ? 148 : 116;
 
   lines.forEach((line, index) => {
-    const maxWidth = 760;
-    const fontSize = fitText(context, line, maxWidth, 152, 68);
+    const maxWidth = index === 0 ? 900 : 760;
+    const startSize = lines.length > 2 ? 132 : index === 0 ? 178 : 166;
+    const minSize = lines.length > 2 ? 58 : 70;
+    const fontSize = fitText(context, line, maxWidth, startSize, minSize);
     const y = startY + index * lineGap;
-    context.font = `900 ${fontSize}px Arial, Helvetica, sans-serif`;
-    context.textAlign = "center";
-    context.textBaseline = "middle";
-    context.lineJoin = "round";
-
-    context.save();
-    context.shadowColor = "rgba(4, 12, 24, 0.28)";
-    context.shadowBlur = 18;
-    context.shadowOffsetY = 15;
-    context.strokeStyle = "rgba(2, 12, 25, 0.95)";
-    context.lineWidth = Math.max(13, fontSize * 0.17);
-    context.strokeText(line, OUTPUT_SIZE / 2, y + 8);
-
-    context.shadowColor = "transparent";
-    context.strokeStyle = "rgba(255, 255, 255, 0.92)";
-    context.lineWidth = Math.max(5, fontSize * 0.06);
-    context.strokeText(line, OUTPUT_SIZE / 2, y);
-
-    const fill = context.createLinearGradient(0, y - fontSize / 2, 0, y + fontSize / 2);
-    if (index === 0) {
-      fill.addColorStop(0, rgbToCss(mix(palette.primary, { r: 255, g: 255, b: 255 }, 0.46)));
-      fill.addColorStop(0.52, rgbToCss(palette.primary));
-      fill.addColorStop(1, rgbToCss(mix(palette.primary, palette.dark, 0.18)));
-    } else {
-      fill.addColorStop(0, "#ffffff");
-      fill.addColorStop(0.68, "#f6f8fb");
-      fill.addColorStop(1, "#cbd5e1");
-    }
-    context.fillStyle = fill;
-    context.fillText(line, OUTPUT_SIZE / 2, y);
-
-    context.globalAlpha = 0.2;
-    context.fillStyle = "#ffffff";
-    context.fillText(line, OUTPUT_SIZE / 2 - 5, y - Math.max(13, fontSize * 0.15));
-    context.restore();
+    drawStyledHeadlineLine(context, line, OUTPUT_WIDTH / 2, y, fontSize, index, palette, headlineAccent);
   });
+}
+
+function drawStyledHeadlineLine(
+  context: CanvasRenderingContext2D,
+  line: string,
+  x: number,
+  y: number,
+  fontSize: number,
+  lineIndex: number,
+  palette: Palette,
+  headlineAccent: Rgb,
+) {
+  context.save();
+  context.font = `900 ${fontSize}px Arial, Helvetica, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.lineJoin = "round";
+
+  context.shadowColor = "rgba(5, 10, 18, 0.36)";
+  context.shadowBlur = 22;
+  context.shadowOffsetY = 18;
+  context.strokeStyle = rgbToRgba(palette.dark, 0.98);
+  context.lineWidth = Math.max(16, fontSize * 0.24);
+  context.strokeText(line, x + 7, y + 13);
+
+  context.shadowColor = "transparent";
+  context.strokeStyle = "rgba(255, 249, 226, 0.95)";
+  context.lineWidth = Math.max(10, fontSize * 0.14);
+  context.strokeText(line, x, y);
+
+  context.strokeStyle = rgbToRgba(palette.dark, 0.98);
+  context.lineWidth = Math.max(9, fontSize * 0.09);
+  context.strokeText(line, x, y + 4);
+
+  const fill = context.createLinearGradient(0, y - fontSize / 2, 0, y + fontSize / 2);
+  if (lineIndex === 0) {
+    fill.addColorStop(0, rgbToCss(mix(headlineAccent, { r: 255, g: 255, b: 255 }, 0.58)));
+    fill.addColorStop(0.46, rgbToCss(headlineAccent));
+    fill.addColorStop(1, rgbToCss(mix(headlineAccent, palette.dark, 0.26)));
+  } else {
+    fill.addColorStop(0, "#ffffff");
+    fill.addColorStop(0.62, "#f4f1ea");
+    fill.addColorStop(1, "#c9c3b7");
+  }
+  context.fillStyle = fill;
+  context.fillText(line, x, y);
+
+  context.globalAlpha = lineIndex === 0 ? 0.24 : 0.34;
+  context.fillStyle = "#ffffff";
+  context.fillText(line, x - 5, y - Math.max(15, fontSize * 0.17));
+  context.restore();
 }
 
 function drawProduct(
@@ -472,78 +509,179 @@ function drawProduct(
   image: HTMLImageElement,
   analysis: ImageAnalysis,
 ) {
-  const cutout = createProductCutout(image, analysis.crop, 650, 560);
-  const productX = (OUTPUT_SIZE - cutout.width) / 2;
-  const productY = 850 - cutout.height;
+  const cutout = createProductCutout(image, analysis.crop, 820, 660);
+  const productX = (OUTPUT_WIDTH - cutout.width) / 2;
+  const productBottom = 1122;
+  const productY = productBottom - cutout.height;
   const centerX = productX + cutout.width / 2;
 
   context.save();
-  const shadowGradient = context.createRadialGradient(centerX, 858, 20, centerX, 858, 250);
-  shadowGradient.addColorStop(0, "rgba(15, 23, 42, 0.32)");
-  shadowGradient.addColorStop(0.58, "rgba(15, 23, 42, 0.12)");
-  shadowGradient.addColorStop(1, "rgba(15, 23, 42, 0)");
+  const shadowGradient = context.createRadialGradient(centerX, productBottom + 16, 20, centerX, productBottom + 16, 310);
+  shadowGradient.addColorStop(0, "rgba(12, 18, 28, 0.34)");
+  shadowGradient.addColorStop(0.56, "rgba(12, 18, 28, 0.13)");
+  shadowGradient.addColorStop(1, "rgba(12, 18, 28, 0)");
   context.fillStyle = shadowGradient;
   context.beginPath();
-  context.ellipse(centerX, 858, Math.min(254, cutout.width * 0.48), 44, 0, 0, Math.PI * 2);
+  context.ellipse(centerX, productBottom + 16, Math.min(310, cutout.width * 0.52), 54, 0, 0, Math.PI * 2);
   context.fill();
 
-  context.shadowColor = "rgba(15, 23, 42, 0.26)";
-  context.shadowBlur = 34;
-  context.shadowOffsetY = 18;
+  context.shadowColor = "rgba(12, 18, 28, 0.3)";
+  context.shadowBlur = 38;
+  context.shadowOffsetY = 20;
   context.drawImage(cutout, productX, productY);
   context.restore();
 
-  const reflection = context.createLinearGradient(0, 850, 0, 990);
-  reflection.addColorStop(0, "rgba(255, 255, 255, 0.22)");
+  context.save();
+  context.globalAlpha = 0.16;
+  context.translate(productX, productBottom + 14);
+  context.scale(1, -0.28);
+  context.drawImage(cutout, 0, -cutout.height);
+  context.restore();
+
+  const reflection = context.createLinearGradient(0, productBottom - 10, 0, productBottom + 150);
+  reflection.addColorStop(0, "rgba(255, 255, 255, 0.36)");
+  reflection.addColorStop(0.52, "rgba(255, 255, 255, 0.16)");
   reflection.addColorStop(1, "rgba(255, 255, 255, 0)");
   context.fillStyle = reflection;
   context.beginPath();
-  context.ellipse(centerX, 908, Math.min(230, cutout.width * 0.44), 34, 0, 0, Math.PI * 2);
+  context.ellipse(centerX, productBottom + 62, Math.min(290, cutout.width * 0.46), 42, 0, 0, Math.PI * 2);
   context.fill();
 }
 
 function drawEmptyProductSlot(context: CanvasRenderingContext2D, palette: Palette) {
+  const headlineAccent = pickHeadlineAccent(palette);
   context.save();
-  context.strokeStyle = rgbToCss(mix(palette.primary, { r: 255, g: 255, b: 255 }, 0.24));
+  context.strokeStyle = rgbToRgba(headlineAccent, 0.52);
   context.lineWidth = 5;
   context.setLineDash([16, 16]);
-  roundRect(context, 322, 484, 436, 310, 34);
+  roundRect(context, 292, 610, 496, 360, 38);
   context.stroke();
   context.setLineDash([]);
-  context.fillStyle = "rgba(255, 255, 255, 0.72)";
-  roundRect(context, 352, 514, 376, 250, 26);
+  context.fillStyle = "rgba(255, 255, 255, 0.64)";
+  roundRect(context, 326, 646, 428, 288, 30);
   context.fill();
-  context.fillStyle = rgbToCss(palette.primary);
-  context.font = "800 34px Arial, Helvetica, sans-serif";
+  context.fillStyle = rgbToCss(headlineAccent);
+  context.font = "800 36px Arial, Helvetica, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.fillText("Productfoto", OUTPUT_SIZE / 2, 640);
+  context.fillText("Productfoto", OUTPUT_WIDTH / 2, 790);
   context.restore();
 }
 
 function drawLogo(context: CanvasRenderingContext2D, logo: HTMLImageElement) {
-  const size = 148;
-  const x = OUTPUT_SIZE - size - 42;
-  const y = OUTPUT_SIZE - size - 34;
+  const size = 164;
+  const x = OUTPUT_WIDTH - size - 34;
+  const y = OUTPUT_HEIGHT - size - 26;
 
   context.save();
-  roundRect(context, x, y, size, size, 20);
-  context.clip();
   context.drawImage(logo, x, y, size, size);
+  context.restore();
+}
+
+function drawForegroundHighlights(context: CanvasRenderingContext2D, palette: Palette) {
+  const headlineAccent = pickHeadlineAccent(palette);
+  context.save();
+  context.globalAlpha = 0.7;
+  drawSpark(context, 826, 1068, 12, headlineAccent);
+  drawSpark(context, 738, 1110, 9, { r: 255, g: 255, b: 255 });
+  drawSoftCircle(context, 202, 1116, 6, rgbToRgba(headlineAccent, 0.3));
   context.restore();
 }
 
 function drawSpark(context: CanvasRenderingContext2D, x: number, y: number, size: number, color: Rgb) {
   context.save();
-  context.strokeStyle = rgbToCss(color);
-  context.lineWidth = Math.max(3, size * 0.1);
+  context.translate(x, y);
+  context.fillStyle = rgbToCss(color);
+  context.strokeStyle = "rgba(255, 255, 255, 0.72)";
+  context.lineWidth = Math.max(1, size * 0.08);
   context.beginPath();
-  context.moveTo(x, y - size);
-  context.lineTo(x, y + size);
-  context.moveTo(x - size, y);
-  context.lineTo(x + size, y);
+  context.moveTo(0, -size);
+  context.quadraticCurveTo(size * 0.18, -size * 0.18, size, 0);
+  context.quadraticCurveTo(size * 0.18, size * 0.18, 0, size);
+  context.quadraticCurveTo(-size * 0.18, size * 0.18, -size, 0);
+  context.quadraticCurveTo(-size * 0.18, -size * 0.18, 0, -size);
+  context.closePath();
+  context.fill();
   context.stroke();
   context.restore();
+}
+
+function drawRibbon(
+  context: CanvasRenderingContext2D,
+  color: Rgb,
+  lineWidth: number,
+  alpha: number,
+  drawPath: (pathContext: CanvasRenderingContext2D) => void,
+) {
+  context.save();
+  context.globalAlpha = alpha;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.lineWidth = lineWidth;
+  context.strokeStyle = rgbToCss(color);
+  context.beginPath();
+  drawPath(context);
+  context.stroke();
+  context.restore();
+}
+
+function drawPennant(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  color: Rgb,
+  direction: 1 | -1,
+) {
+  context.save();
+  context.translate(x, y);
+  context.scale(direction, 1);
+  const gradient = context.createLinearGradient(0, -height, width, height);
+  gradient.addColorStop(0, rgbToCss(mix(color, { r: 255, g: 255, b: 255 }, 0.34)));
+  gradient.addColorStop(1, rgbToCss(mix(color, { r: 0, g: 0, b: 0 }, 0.18)));
+  context.fillStyle = gradient;
+  context.beginPath();
+  context.moveTo(0, 0);
+  context.quadraticCurveTo(width * 0.42, -height * 0.74, width, -height * 0.46);
+  context.lineTo(width * 0.68, height * 0.08);
+  context.quadraticCurveTo(width * 0.3, height * 0.24, 0, 0);
+  context.closePath();
+  context.fill();
+  context.restore();
+}
+
+function drawSoftCircle(context: CanvasRenderingContext2D, x: number, y: number, radius: number, color: string) {
+  context.save();
+  const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+  gradient.addColorStop(0, color);
+  gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+  context.fillStyle = gradient;
+  context.beginPath();
+  context.arc(x, y, radius, 0, Math.PI * 2);
+  context.fill();
+  context.restore();
+}
+
+function pickHeadlineAccent(palette: Palette): Rgb {
+  const candidates = [palette.primary, palette.secondary].map((color) => normalizeDisplayColor(color, 0.42, 0.55));
+  return candidates.sort((a, b) => accentScore(b) - accentScore(a))[0] ?? DEFAULT_PALETTE.primary;
+}
+
+function pickSupportAccent(palette: Palette, headlineAccent: Rgb): Rgb {
+  const candidates = [palette.primary, palette.secondary]
+    .map((color) => normalizeDisplayColor(color, 0.38, 0.5))
+    .sort((a, b) => colorDistance(b, headlineAccent) - colorDistance(a, headlineAccent));
+
+  return candidates.find((color) => colorDistance(color, headlineAccent) > 28) ??
+    normalizeDisplayColor(shiftHue(headlineAccent, 32), 0.38, 0.5);
+}
+
+function accentScore(color: Rgb) {
+  const hsl = rgbToHsl(color);
+  const warmGoldBonus = hsl.h >= 28 && hsl.h <= 64 ? 88 : 0;
+  const warmBonus = hsl.h <= 24 || hsl.h >= 340 ? 28 : 0;
+  return brightness(color) * 0.68 + hsl.s * 110 + warmGoldBonus + warmBonus;
 }
 
 function analyseProductImage(image: HTMLImageElement): ImageAnalysis {
@@ -626,6 +764,8 @@ function detectProductBox(imageData: ImageData, background: Rgb): Rect {
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const dataIndex = (y * width + x) * 4;
+      if (data[dataIndex + 3] < 24) continue;
+
       const pixel = { r: data[dataIndex], g: data[dataIndex + 1], b: data[dataIndex + 2] };
       const pixelBrightness = brightness(pixel);
       const pixelSaturation = rgbToHsl(pixel).s;
@@ -694,6 +834,8 @@ function extractPalette(imageData: ImageData, crop: Rect, background: Rgb): Pale
   for (let y = startY; y < endY; y += 3) {
     for (let x = startX; x < endX; x += 3) {
       const index = (y * width + x) * 4;
+      if (data[index + 3] < 40) continue;
+
       const color = { r: data[index], g: data[index + 1], b: data[index + 2] };
       const hsl = rgbToHsl(color);
       const colorBrightness = brightness(color);
@@ -708,10 +850,13 @@ function extractPalette(imageData: ImageData, crop: Rect, background: Rgb): Pale
         dark = color;
       }
 
-      if (hsl.s < 0.12 && colorBrightness > 120) continue;
+      if (hsl.s < 0.18) continue;
+      if (colorBrightness < 34 || colorBrightness > 244) continue;
 
       const bucket = `${Math.round(color.r / 24)}-${Math.round(color.g / 24)}-${Math.round(color.b / 24)}`;
-      const score = Math.max(1, hsl.s * 3 + distance / 90 + Math.abs(155 - colorBrightness) / 220);
+      const centeredLightness = 1 - Math.abs(hsl.l - 0.52);
+      const warmAccentLift = hsl.h >= 24 && hsl.h <= 68 ? 0.55 : hsl.h <= 18 || hsl.h >= 342 ? 0.24 : 0;
+      const score = Math.max(1, hsl.s * 4 + distance / 120 + centeredLightness * 1.5 + warmAccentLift);
       const current = buckets.get(bucket);
       if (current) {
         current.color = {
@@ -734,12 +879,12 @@ function extractPalette(imageData: ImageData, crop: Rect, background: Rgb): Pale
   const primary = rankedColors[0] ?? DEFAULT_PALETTE.primary;
   const primaryHue = rgbToHsl(primary).h;
   const secondary = rankedColors.find((color) => hueDistance(rgbToHsl(color).h, primaryHue) > 25) ??
-    normalizeDisplayColor(mix(DEFAULT_PALETTE.secondary, primary, 0.12));
+    normalizeDisplayColor(shiftHue(primary, 34), 0.38, 0.5);
 
   return {
     primary,
     secondary,
-    dark: normalizeDisplayColor(dark, 0.16, 0.2),
+    dark: normalizeDarkColor(dark),
     light: { r: 246, g: 248, b: 250 },
   };
 }
@@ -756,6 +901,7 @@ function sampleBorderColor(imageData: ImageData): Rgb {
       const isBorder = x < 12 || y < 12 || x > width - 13 || y > height - 13;
       if (!isBorder) continue;
       const index = (y * width + x) * 4;
+      if (data[index + 3] < 32) continue;
       r += data[index];
       g += data[index + 1];
       b += data[index + 2];
@@ -838,6 +984,15 @@ function normalizeDisplayColor(color: Rgb, minSaturation = 0.32, targetLightness
   });
 }
 
+function normalizeDarkColor(color: Rgb): Rgb {
+  const hsl = rgbToHsl(color);
+  return hslToRgb({
+    h: hsl.h,
+    s: clampNumber(hsl.s, 0, 0.54),
+    l: clampNumber((hsl.l + 0.16) / 2, 0.08, 0.26),
+  });
+}
+
 function brightness(color: Rgb) {
   return color.r * 0.299 + color.g * 0.587 + color.b * 0.114;
 }
@@ -863,8 +1018,20 @@ function mix(a: Rgb, b: Rgb, amount: number): Rgb {
   };
 }
 
+function shiftHue(color: Rgb, degrees: number): Rgb {
+  const hsl = rgbToHsl(color);
+  return hslToRgb({
+    ...hsl,
+    h: (hsl.h + degrees + 360) % 360,
+  });
+}
+
 function rgbToCss(color: Rgb) {
   return `rgb(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)})`;
+}
+
+function rgbToRgba(color: Rgb, alpha: number) {
+  return `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${alpha})`;
 }
 
 function rgbToHsl(color: Rgb): Hsl {

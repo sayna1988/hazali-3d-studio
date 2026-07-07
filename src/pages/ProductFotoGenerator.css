@@ -219,8 +219,8 @@
 .product-generator__preview-frame canvas {
   display: block;
   width: 100%;
-  max-width: min(100%, 760px);
-  aspect-ratio: 1 / 1;
+  max-width: min(100%, 640px);
+  aspect-ratio: 4 / 5;
 }
 
 .product-generator__status {
