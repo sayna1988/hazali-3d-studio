@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import BottomNavigation from "./components/BottomNavigation/BottomNavigation";
 import Sidebar from "./components/Sidebar/Sidebar";
+import Calculator from "./pages/Calculator";
 import Dashboard from "./pages/Dashboard";
 import Dealtracker from "./pages/Dealtracker";
 import Filamenten from "./pages/Filamenten";
@@ -49,6 +50,11 @@ function App() {
           <Route
             path="/dealtracker"
             element={<Dealtracker />}
+          />
+
+          <Route
+            path="/calculator"
+            element={<Calculator />}
           />
 
           <Route

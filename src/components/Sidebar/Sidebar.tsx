@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Package,
   Boxes,
+  Calculator,
   ImagePlus,
   LogOut,
 } from "lucide-react";
@@ -59,6 +60,11 @@ export default function Sidebar() {
         <NavLink to="/filamenten" className={({ isActive }) => isActive ? "active" : ""}>
           <Boxes size={16}/>
           Filamenten
+        </NavLink>
+
+        <NavLink to="/calculator" className={({ isActive }) => isActive ? "active" : ""}>
+          <Calculator size={16}/>
+          Calculator
         </NavLink>
 
         <NavLink to="/productfoto" className={({ isActive }) => isActive ? "active" : ""}>

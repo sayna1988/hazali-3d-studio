@@ -6,6 +6,7 @@ import {
   House,
   Package,
   Boxes,
+  Calculator,
   ImagePlus
 } from "lucide-react";
 
@@ -36,6 +37,14 @@ export default function BottomNavigation() {
         <Boxes size={22} />
 
         <span>Filament</span>
+
+      </NavLink>
+
+      <NavLink to="/calculator">
+
+        <Calculator size={22} />
+
+        <span>Calc</span>
 
       </NavLink>
 

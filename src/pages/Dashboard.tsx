@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Boxes,
+  Calculator,
   ChevronRight,
   Clock3,
   Euro,
@@ -273,6 +274,9 @@ export default function Dashboard() {
             Alles wat er in je 3D-printstudio gebeurt, helder op één plek.
           </p>
           <div className="dashboard-hero__actions">
+            <button className="dashboard-btn dashboard-btn--primary" onClick={() => navigate("/calculator")}>
+              Calculator <Calculator size={17} />
+            </button>
             <button className="dashboard-btn dashboard-btn--ghost" onClick={() => navigate("/prints") }>
               Bekijk alle prints <ArrowRight size={17} />
             </button>
