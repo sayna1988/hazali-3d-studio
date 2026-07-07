@@ -85,6 +85,29 @@ test("berekent materiaalprijs per gekoppelde kleur via prijs per kilogram", () =
   assert.equal(totals.materialCost, 0.68);
 });
 
+test("herstelt OCR-gramwaarden waar decimalen zijn weggevallen", () => {
+  const result = parseSlicingResultText(`
+    1 1.34 m 0.03 m 7.28 m 0.37 m 9.02 m
+    405 g 011 g 2205 g 113 g 2734 g
+    4 0.43 m 0.36 m 2.48 m 0.78 m 4.04 m
+    1 29 g 1 08 g 7 52 g 2 35 g 12 24 g
+    Total
+    535 g 119 g 2957 g 348 g 3958 g
+  `);
+
+  assert.equal(result.colors.length, 2);
+  assert.equal(result.colors[0]?.modelGram, 4.05);
+  assert.equal(result.colors[0]?.supportGram, 0.11);
+  assert.equal(result.colors[0]?.purgedGram, 22.05);
+  assert.equal(result.colors[0]?.towerGram, 1.13);
+  assert.equal(result.colors[0]?.recognizedTotalGram, 27.34);
+  assert.equal(result.colors[1]?.modelGram, 1.29);
+  assert.equal(result.colors[1]?.supportGram, 1.08);
+  assert.equal(result.colors[1]?.purgedGram, 7.52);
+  assert.equal(result.colors[1]?.towerGram, 2.35);
+  assert.equal(result.colors[1]?.recognizedTotalGram, 12.24);
+});
+
 test("accepteert komma-decimalen en OCR-verwarring in getallen", () => {
   const result = parseSlicingResultText(`
     2 0,50 m 0,00 m 1,20 m 0,40 m 2,10 m

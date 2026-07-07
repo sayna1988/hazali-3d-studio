@@ -195,7 +195,7 @@ export function createManualSlicingColor(index: number): SlicingColorInput {
 }
 
 function extractGramValues(line: string) {
-  return Array.from(line.matchAll(/([0-9OoIl|]+(?:[.,][0-9OoIl|]+)?)\s*[gq]\b/gi))
+  return Array.from(line.matchAll(/([0-9OoIl|]+(?:(?:[.,]\s*|\s+)[0-9OoIl|]{1,2})?)\s*[gq]\b/gi))
     .map((match) => parseOcrNumber(match[1] ?? ""))
     .filter((value): value is number => value !== null);
 }
@@ -204,22 +204,37 @@ function parseOcrNumber(value: string) {
   const normalized = value
     .replace(/[Oo]/g, "0")
     .replace(/[Il|]/g, "1")
-    .replace(",", ".");
+    .replace(",", ".")
+    .trim();
 
-  const parsed = Number(normalized);
+  if (normalized.includes(".")) {
+    const parsed = Number(normalized.replace(/\s+/g, ""));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  const spacedDecimal = normalized.match(/^(\d+)\s+(\d{1,2})$/);
+  if (spacedDecimal?.[1] && spacedDecimal[2]) {
+    const parsed = Number(`${spacedDecimal[1]}.${spacedDecimal[2]}`);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  const compact = normalized.replace(/\s+/g, "");
+  if (!/^\d+$/.test(compact)) return null;
+
+  const parsed = compact.length >= 2
+    ? Number(compact) / 100
+    : Number(compact);
+
   return Number.isFinite(parsed) ? parsed : null;
 }
 
 function findNearestFilamentLabel(lines: string[], gramLineIndex: number) {
-  const sameLineLabel = extractFilamentLabel(lines[gramLineIndex] ?? "");
-  if (sameLineLabel) return sameLineLabel;
-
   for (let offset = 1; offset <= 3; offset += 1) {
     const label = extractFilamentLabel(lines[gramLineIndex - offset] ?? "");
     if (label) return label;
   }
 
-  return undefined;
+  return extractFilamentLabel(lines[gramLineIndex] ?? "");
 }
 
 function extractFilamentLabel(line: string) {
