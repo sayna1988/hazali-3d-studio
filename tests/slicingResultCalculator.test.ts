@@ -176,6 +176,41 @@ test("leest drie-koloms gramregels ook wanneer OCR de g weglaat", () => {
   assert.equal(result.colors[2]?.modelGram, 76.93);
 });
 
+test("herstelt drie-koloms OCR waar g als extra 9 wordt gelezen", () => {
+  const result = parseSlicingResultText(`
+    Filament Model Support Total
+
+    CE 3069m 000m 3069 m
+    97439 000g 97439
+
+    2 2595m 012m 2607m
+    82399 039g 82779
+
+    m3 2518m 000m 2518m
+    76939 000g 76939
+
+    Total 882m 012m 8194m
+    256759 039g 257.139
+  `);
+  const totals = calculateSlicingTotals(result.colors);
+
+  assert.equal(result.colors.length, 3);
+  assert.equal(result.colors[0]?.label, "1");
+  assert.equal(result.colors[0]?.modelGram, 97.43);
+  assert.equal(result.colors[0]?.supportGram, 0);
+  assert.equal(result.colors[0]?.recognizedTotalGram, 97.43);
+  assert.equal(result.colors[1]?.label, "2");
+  assert.equal(result.colors[1]?.modelGram, 82.39);
+  assert.equal(result.colors[1]?.supportGram, 0.39);
+  assert.equal(result.colors[1]?.recognizedTotalGram, 82.77);
+  assert.equal(result.colors[2]?.label, "3");
+  assert.equal(result.colors[2]?.modelGram, 76.93);
+  assert.equal(result.colors[2]?.recognizedTotalGram, 76.93);
+  assert.equal(totals.modelGram, 256.75);
+  assert.equal(totals.supportGram, 0.39);
+  assert.equal(totals.recognizedTotalGram, 257.13);
+});
+
 test("accepteert komma-decimalen en OCR-verwarring in getallen", () => {
   const result = parseSlicingResultText(`
     2 0,50 m 0,00 m 1,20 m 0,40 m 2,10 m

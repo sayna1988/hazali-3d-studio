@@ -229,6 +229,51 @@
   gap: 10px;
 }
 
+.slicer-calculator__table-totals {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(148, 177, 218, .14);
+}
+
+.slicer-calculator__table-totals div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  padding: 11px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .025);
+}
+
+.slicer-calculator__table-totals span {
+  overflow: hidden;
+  color: #778dac;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slicer-calculator__table-totals strong {
+  overflow: hidden;
+  color: #f4f8ff;
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slicer-calculator__table-totals .is-total {
+  border-color: rgba(84, 221, 162, .25);
+  background: rgba(34, 197, 94, .07);
+}
+
+.slicer-calculator__table-totals .is-cost {
+  border-color: rgba(125, 211, 252, .25);
+  background: rgba(14, 165, 233, .07);
+}
+
 .slicer-calculator__row {
   display: grid;
   grid-template-columns: minmax(150px, .85fr) minmax(230px, 1.2fr) repeat(4, minmax(84px, .55fr)) minmax(122px, .7fr) 38px;
@@ -363,6 +408,10 @@
 
 @media (max-width: 860px) {
   .slicer-calculator__row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .slicer-calculator__table-totals {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

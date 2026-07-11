@@ -403,6 +403,43 @@ export default function Calculator() {
               </article>
             ))}
           </div>
+
+          <div className="slicer-calculator__table-totals" aria-label="Totalen onder kleuren">
+            <div>
+              <span>Kleuren</span>
+              <strong>{totals.colors}</strong>
+            </div>
+            <div>
+              <span>Model</span>
+              <strong>{formatGram(totals.modelGram)} g</strong>
+            </div>
+            <div>
+              <span>Support</span>
+              <strong>{formatGram(totals.supportGram)} g</strong>
+            </div>
+            <div>
+              <span>Purged</span>
+              <strong>{formatGram(totals.purgedGram)} g</strong>
+            </div>
+            <div>
+              <span>Tower</span>
+              <strong>{formatGram(totals.towerGram)} g</strong>
+            </div>
+            <div className="is-total">
+              <span>Totaal</span>
+              <strong>{formatGram(totals.totalGram)} g</strong>
+            </div>
+            {totals.recognizedTotalGram !== undefined && (
+              <div>
+                <span>OCR totaal</span>
+                <strong>{formatGram(totals.recognizedTotalGram)} g</strong>
+              </div>
+            )}
+            <div className="is-cost">
+              <span>Prijs</span>
+              <strong>{formatEuro(totals.materialCost)}</strong>
+            </div>
+          </div>
         </section>
 
         <section className="slicer-calculator__ocr-panel" aria-label="OCR tekst">

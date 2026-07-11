@@ -22,6 +22,11 @@ type GramCandidate = {
   isSummary: boolean;
 };
 
+type OcrNumberToken = {
+  raw: string;
+  value: number;
+};
+
 export function calculateSlicingColorUsage(color: SlicingColorInput): SlicingColorUsage {
   const modelGram = normalizeGram(color.modelGram);
   const supportGram = normalizeGram(color.supportGram);
@@ -202,9 +207,14 @@ function extractGramValues(line: string, previousLine: string) {
     .filter((value): value is number => value !== null);
 
   if (explicitValues.length >= 3) return explicitValues;
+  if (explicitValues.length > 0) {
+    const mixedValues = extractUnitlessGramValues(line, previousLine);
+    if (mixedValues.length >= 3) return mixedValues;
+  }
+
   if (!isLikelyUnitlessGramLine(line, previousLine)) return explicitValues;
 
-  return extractUnitlessGramValues(line);
+  return extractUnitlessGramValues(line, previousLine);
 }
 
 function parseOcrNumber(value: string) {
@@ -215,7 +225,11 @@ function parseOcrNumber(value: string) {
     .trim();
 
   if (normalized.includes(".")) {
-    const parsed = Number(normalized.replace(/\s+/g, ""));
+    const compactDecimal = normalized.replace(/\s+/g, "");
+    const decimalMatch = compactDecimal.match(/^(\d+)\.(\d+)$/);
+    const parsed = decimalMatch?.[1] && decimalMatch[2]
+      ? Number(`${decimalMatch[1]}.${decimalMatch[2].slice(0, 2)}`)
+      : Number(compactDecimal);
     return Number.isFinite(parsed) ? parsed : null;
   }
 
@@ -282,10 +296,15 @@ function isLikelyUnitlessGramLine(line: string, previousLine: string) {
   if (/[a-z]/i.test(line.replace(/[OoIl]/g, ""))) return false;
   if (!/\bm\b/i.test(previousLine)) return false;
 
-  return extractUnitlessGramValues(line).length >= 3;
+  return extractUnitlessGramValues(line, previousLine).length >= 3;
 }
 
-function extractUnitlessGramValues(line: string) {
+function extractUnitlessGramValues(line: string, previousLine = "") {
+  const tokens = extractUnitlessGramTokens(line);
+  return normalizeGramTokensAgainstMeters(tokens, previousLine);
+}
+
+function extractUnitlessGramTokens(line: string): OcrNumberToken[] {
   const normalized = line
     .replace(/[Oo]/g, "0")
     .replace(/[Il|]/g, "1")
@@ -294,22 +313,59 @@ function extractUnitlessGramValues(line: string) {
 
   if (normalized.includes(".")) {
     return Array.from(normalized.matchAll(/\d+(?:\.\s*\d+)?/g))
-      .map((match) => parseOcrNumber(match[0] ?? ""))
-      .filter((value): value is number => value !== null);
+      .map((match) => {
+        const raw = match[0] ?? "";
+        return {
+          raw,
+          value: parseOcrNumber(raw),
+        };
+      })
+      .filter((token): token is OcrNumberToken => token.value !== null);
   }
 
   const tokens = normalized.match(/\d+/g) ?? [];
   if (tokens.length >= 6 && tokens.length % 2 === 0 && tokens.every((token) => token.length <= 2)) {
-    const values: number[] = [];
+    const values: OcrNumberToken[] = [];
     for (let index = 0; index < tokens.length; index += 2) {
-      const parsed = parseOcrNumber(`${tokens[index]} ${tokens[index + 1]}`);
-      if (parsed !== null) values.push(parsed);
+      const raw = `${tokens[index]} ${tokens[index + 1]}`;
+      const parsed = parseOcrNumber(raw);
+      if (parsed !== null) values.push({ raw, value: parsed });
     }
     return values;
   }
 
   return tokens
-    .map((token) => parseOcrNumber(token))
+    .map((token) => ({
+      raw: token,
+      value: parseOcrNumber(token),
+    }))
+    .filter((token): token is OcrNumberToken => token.value !== null);
+}
+
+function normalizeGramTokensAgainstMeters(tokens: OcrNumberToken[], previousLine: string) {
+  const meterValues = extractMeterValues(previousLine);
+
+  return tokens.map((token, index) => {
+    const compact = token.raw.replace(/\D/g, "");
+    const meterValue = meterValues[index];
+    if (
+      compact.length >= 5 &&
+      compact.endsWith("9") &&
+      meterValue !== undefined &&
+      meterValue > 0 &&
+      token.value > meterValue * 10
+    ) {
+      const corrected = parseOcrNumber(compact.slice(0, -1));
+      if (corrected !== null && corrected <= meterValue * 10) return corrected;
+    }
+
+    return token.value;
+  });
+}
+
+function extractMeterValues(line: string) {
+  return Array.from(line.matchAll(/([0-9OoIl|]+(?:(?:[.,]\s*|\s+)[0-9OoIl|]{1,2})?)\s*m\b/gi))
+    .map((match) => parseOcrNumber(match[1] ?? ""))
     .filter((value): value is number => value !== null);
 }
 
@@ -338,7 +394,7 @@ function findNearestFilamentLabels(
 function extractMeterFilamentLabels(line: string) {
   if (hasSummaryLabel(line)) return [];
 
-  return Array.from(line.matchAll(/(?:^|\s)(\d{1,2})\s+[0-9OoIl|]+(?:[.,]\s*[0-9OoIl|]+)?\s*m\b/gi))
+  return Array.from(line.matchAll(/(?:^|[^\d])(\d{1,2})\s+[0-9OoIl|]+(?:[.,]\s*[0-9OoIl|]+)?\s*m\b/gi))
     .map((match) => match[1])
     .filter((label): label is string => Boolean(label));
 }
