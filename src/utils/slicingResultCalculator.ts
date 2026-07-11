@@ -111,11 +111,12 @@ export function parseSlicingResultText(text: string): SlicingParseResult {
     .filter(Boolean);
 
   const candidates = lines.flatMap((line, lineIndex) => {
-    const values = extractGramValues(line);
-    if (values.length < 4) return [];
-
     const previousLine = lines[lineIndex - 1] ?? "";
-    const valueRows = splitGramValueRows(values);
+    const values = extractGramValues(line, previousLine);
+    if (values.length < 3) return [];
+
+    const columnCount = detectGramColumnCount(lines, lineIndex, values);
+    const valueRows = splitGramValueRows(values, columnCount);
     const labels = findNearestFilamentLabels(lines, lineIndex, valueRows.length);
     const lineHasSummary = hasSummaryLabel(line);
     const previousLineHasSummary = hasSummaryLabel(previousLine);
@@ -137,11 +138,7 @@ export function parseSlicingResultText(text: string): SlicingParseResult {
   const ignoredSummaryRows = candidates.length - dataRows.length;
 
   const colors = dataRows.map((candidate, index) => {
-    const values = candidate.values.slice(-5);
-    const hasSupportColumn = values.length >= 5;
-    const normalizedValues = hasSupportColumn
-      ? values
-      : [values[0] ?? 0, 0, values[1] ?? 0, values[2] ?? 0, values[3] ?? 0];
+    const normalizedValues = normalizeGramColumns(candidate.values);
     const label = candidate.label ?? String(index + 1);
 
     return calculateSlicingColorUsage({
@@ -199,10 +196,15 @@ export function createManualSlicingColor(index: number): SlicingColorInput {
   };
 }
 
-function extractGramValues(line: string) {
-  return Array.from(line.matchAll(/([0-9OoIl|]+(?:(?:[.,]\s*|\s+)[0-9OoIl|]{1,2})?)\s*[gq]\b/gi))
+function extractGramValues(line: string, previousLine: string) {
+  const explicitValues = Array.from(line.matchAll(/([0-9OoIl|]+(?:(?:[.,]\s*|\s+)[0-9OoIl|]{1,2})?)\s*[gq]\b/gi))
     .map((match) => parseOcrNumber(match[1] ?? ""))
     .filter((value): value is number => value !== null);
+
+  if (explicitValues.length >= 3) return explicitValues;
+  if (!isLikelyUnitlessGramLine(line, previousLine)) return explicitValues;
+
+  return extractUnitlessGramValues(line);
 }
 
 function parseOcrNumber(value: string) {
@@ -233,8 +235,28 @@ function parseOcrNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function splitGramValueRows(values: number[]) {
-  const columns = values.length % 5 === 0 ? 5 : values.length % 4 === 0 ? 4 : values.length;
+function detectGramColumnCount(lines: string[], gramLineIndex: number, values: number[]) {
+  const headerContext = lines
+    .slice(Math.max(0, gramLineIndex - 6), gramLineIndex + 1)
+    .join(" ")
+    .toLowerCase();
+
+  if (/\bmodel\b/.test(headerContext) && /\bsupport\b/.test(headerContext) && /\btotal\b/.test(headerContext) && !/\b(purged|tower)\b/.test(headerContext)) {
+    return 3;
+  }
+
+  if (/\b(purged|tower)\b/.test(headerContext)) {
+    return /\bsupport\b/.test(headerContext) ? 5 : 4;
+  }
+
+  if (values.length % 5 === 0) return 5;
+  if (values.length % 4 === 0) return 4;
+  if (values.length % 3 === 0) return 3;
+
+  return values.length;
+}
+
+function splitGramValueRows(values: number[], columns: number) {
   if (values.length === columns) return [values];
 
   const rows: number[][] = [];
@@ -243,6 +265,52 @@ function splitGramValueRows(values: number[]) {
   }
 
   return rows;
+}
+
+function normalizeGramColumns(values: number[]) {
+  const rowValues = values.slice(-5);
+
+  if (rowValues.length >= 5) return rowValues;
+  if (rowValues.length === 4) return [rowValues[0] ?? 0, 0, rowValues[1] ?? 0, rowValues[2] ?? 0, rowValues[3] ?? 0];
+  if (rowValues.length === 3) return [rowValues[0] ?? 0, rowValues[1] ?? 0, 0, 0, rowValues[2] ?? 0];
+
+  return [rowValues[0] ?? 0, 0, 0, 0, rowValues[1] ?? rowValues[0] ?? 0];
+}
+
+function isLikelyUnitlessGramLine(line: string, previousLine: string) {
+  if (/[gq]\b/i.test(line)) return false;
+  if (/[a-z]/i.test(line.replace(/[OoIl]/g, ""))) return false;
+  if (!/\bm\b/i.test(previousLine)) return false;
+
+  return extractUnitlessGramValues(line).length >= 3;
+}
+
+function extractUnitlessGramValues(line: string) {
+  const normalized = line
+    .replace(/[Oo]/g, "0")
+    .replace(/[Il|]/g, "1")
+    .replace(",", ".")
+    .trim();
+
+  if (normalized.includes(".")) {
+    return Array.from(normalized.matchAll(/\d+(?:\.\s*\d+)?/g))
+      .map((match) => parseOcrNumber(match[0] ?? ""))
+      .filter((value): value is number => value !== null);
+  }
+
+  const tokens = normalized.match(/\d+/g) ?? [];
+  if (tokens.length >= 6 && tokens.length % 2 === 0 && tokens.every((token) => token.length <= 2)) {
+    const values: number[] = [];
+    for (let index = 0; index < tokens.length; index += 2) {
+      const parsed = parseOcrNumber(`${tokens[index]} ${tokens[index + 1]}`);
+      if (parsed !== null) values.push(parsed);
+    }
+    return values;
+  }
+
+  return tokens
+    .map((token) => parseOcrNumber(token))
+    .filter((value): value is number => value !== null);
 }
 
 function findNearestFilamentLabels(

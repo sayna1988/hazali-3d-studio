@@ -125,6 +125,57 @@ test("splitst gecombineerde OCR-regels naar meerdere kleuren", () => {
   assert.equal(calculateSlicingTotals(result.colors).totalGram, 39.58);
 });
 
+test("leest drie-koloms slicing result zonder purged en tower uit", () => {
+  const result = parseSlicingResultText(`
+    Filament Model Support Total
+    1 30.69 m 0.00 m 30.69 m
+    97.43 g 0.00 g 97.43 g
+    2 25.95 m 0.12 m 26.07 m
+    82.39 g 0.39 g 82.77 g
+    3 25.18 m 0.00 m 25.18 m
+    76.93 g 0.00 g 76.93 g
+    Total
+    256.75 g 0.39 g 257.13 g
+  `);
+
+  assert.equal(result.colors.length, 3);
+  assert.equal(result.colors[0]?.label, "1");
+  assert.equal(result.colors[0]?.modelGram, 97.43);
+  assert.equal(result.colors[0]?.supportGram, 0);
+  assert.equal(result.colors[0]?.purgedGram, 0);
+  assert.equal(result.colors[0]?.towerGram, 0);
+  assert.equal(result.colors[0]?.totalGram, 97.43);
+  assert.equal(result.colors[1]?.label, "2");
+  assert.equal(result.colors[1]?.modelGram, 82.39);
+  assert.equal(result.colors[1]?.supportGram, 0.39);
+  assert.equal(result.colors[1]?.totalGram, 82.78);
+  assert.equal(result.colors[2]?.label, "3");
+  assert.equal(result.colors[2]?.modelGram, 76.93);
+  assert.equal(result.colors[2]?.supportGram, 0);
+  assert.equal(result.colors[2]?.totalGram, 76.93);
+  assert.equal(calculateSlicingTotals(result.colors).totalGram, 257.14);
+});
+
+test("leest drie-koloms gramregels ook wanneer OCR de g weglaat", () => {
+  const result = parseSlicingResultText(`
+    Filament Model Support Total
+    1 30.69 m 0.00 m 30.69 m
+    9743 000 9743
+    2 25.95 m 0.12 m 26.07 m
+    8239 039 8277
+    3 25.18 m 0.00 m 25.18 m
+    7693 000 7693
+    Total
+    25675 039 25713
+  `);
+
+  assert.equal(result.colors.length, 3);
+  assert.equal(result.colors[0]?.totalGram, 97.43);
+  assert.equal(result.colors[1]?.supportGram, 0.39);
+  assert.equal(result.colors[1]?.recognizedTotalGram, 82.77);
+  assert.equal(result.colors[2]?.modelGram, 76.93);
+});
+
 test("accepteert komma-decimalen en OCR-verwarring in getallen", () => {
   const result = parseSlicingResultText(`
     2 0,50 m 0,00 m 1,20 m 0,40 m 2,10 m
